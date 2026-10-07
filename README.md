@@ -185,14 +185,49 @@ mindmap
 
 ## <img src="docs/assets/icons/camera.svg" width="20" height="20" valign="middle"/> Capturas
 
+### Escritorio · modo oscuro
+
 | | |
 |---|---|
-| ![Panel](docs/screenshots/01-panel.png) | ![Priorización](docs/screenshots/02-priorizacion.png) |
+| ![Panel en oscuro](docs/screenshots/01-panel.png) | ![Priorización en oscuro](docs/screenshots/02-priorizacion.png) |
 | **Panel central de exposición y ciclo CTEM** | **Descubrimiento y priorización explicable** |
-| ![Detalle](docs/screenshots/03-detalle-hallazgo.png) | ![Rutas de ataque](docs/screenshots/04-rutas-de-ataque.png) |
+| ![Detalle en oscuro](docs/screenshots/03-detalle-hallazgo.png) | ![Rutas de ataque en oscuro](docs/screenshots/04-rutas-de-ataque.png) |
 | **Detalle analítico y desglose de factores** | **Grafo de rutas y puntos de estrangulamiento** |
-| ![Movilización](docs/screenshots/05-movilizacion.png) | ![Alcance](docs/screenshots/06-alcance.png) |
+| ![Movilización en oscuro](docs/screenshots/05-movilizacion.png) | ![Alcance en oscuro](docs/screenshots/06-alcance.png) |
 | **Movilización, informes ejecutivos y tickets** | **Alcance, activos críticos y subredes** |
+
+### Escritorio · modo claro
+
+| | |
+|---|---|
+| ![Panel en claro](docs/screenshots/claro-01-panel.png) | ![Priorización en claro](docs/screenshots/claro-02-priorizacion.png) |
+| **Panel central de exposición y ciclo CTEM** | **Descubrimiento y priorización explicable** |
+| ![Detalle en claro](docs/screenshots/claro-03-detalle-hallazgo.png) | ![Rutas de ataque en claro](docs/screenshots/claro-04-rutas-de-ataque.png) |
+| **Detalle analítico y desglose de factores** | **Grafo de rutas y puntos de estrangulamiento** |
+| ![Movilización en claro](docs/screenshots/claro-05-movilizacion.png) | ![Alcance en claro](docs/screenshots/claro-06-alcance.png) |
+| **Movilización, informes ejecutivos y tickets** | **Alcance, activos críticos y subredes** |
+
+### Móvil · modo oscuro
+
+| | |
+|---|---|
+| <img src="docs/screenshots/movil-01-panel.png" alt="Panel en el móvil, modo oscuro" width="280"/> | <img src="docs/screenshots/movil-02-priorizacion.png" alt="Priorización en el móvil, modo oscuro" width="280"/> |
+| **Panel** | **Priorización** |
+| <img src="docs/screenshots/movil-03-detalle-hallazgo.png" alt="Detalle de un hallazgo en el móvil, modo oscuro" width="280"/> | <img src="docs/screenshots/movil-04-rutas-de-ataque.png" alt="Rutas de ataque en el móvil, modo oscuro" width="280"/> |
+| **Detalle de un hallazgo** | **Rutas de ataque** |
+| <img src="docs/screenshots/movil-05-movilizacion.png" alt="Movilización en el móvil, modo oscuro" width="280"/> | <img src="docs/screenshots/movil-06-alcance.png" alt="Alcance en el móvil, modo oscuro" width="280"/> |
+| **Movilización** | **Alcance y activos** |
+
+### Móvil · modo claro
+
+| | |
+|---|---|
+| <img src="docs/screenshots/movil-claro-01-panel.png" alt="Panel en el móvil, modo claro" width="280"/> | <img src="docs/screenshots/movil-claro-02-priorizacion.png" alt="Priorización en el móvil, modo claro" width="280"/> |
+| **Panel** | **Priorización** |
+| <img src="docs/screenshots/movil-claro-03-detalle-hallazgo.png" alt="Detalle de un hallazgo en el móvil, modo claro" width="280"/> | <img src="docs/screenshots/movil-claro-04-rutas-de-ataque.png" alt="Rutas de ataque en el móvil, modo claro" width="280"/> |
+| **Detalle de un hallazgo** | **Rutas de ataque** |
+| <img src="docs/screenshots/movil-claro-05-movilizacion.png" alt="Movilización en el móvil, modo claro" width="280"/> | <img src="docs/screenshots/movil-claro-06-alcance.png" alt="Alcance en el móvil, modo claro" width="280"/> |
+| **Movilización** | **Alcance y activos** |
 
 ## <img src="docs/assets/icons/radar.svg" width="20" height="20" valign="middle"/> Ingesta activa con Nmap
 
