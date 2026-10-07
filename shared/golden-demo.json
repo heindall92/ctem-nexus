@@ -1,0 +1,657 @@
+{
+  "engineVersion": "1.0.0",
+  "input": {
+    "assets": [
+      {
+        "id": "a01",
+        "name": "Portal web de clientes",
+        "type": "aplicacion_web",
+        "ip": "203.0.113.10",
+        "owner": "Equipo Web",
+        "criticality": 4,
+        "internetExposed": true,
+        "tags": [
+          "dmz",
+          "java"
+        ]
+      },
+      {
+        "id": "a02",
+        "name": "Exchange OWA",
+        "type": "servidor",
+        "ip": "203.0.113.20",
+        "owner": "Sistemas",
+        "criticality": 4,
+        "internetExposed": true,
+        "tags": [
+          "dmz",
+          "correo"
+        ]
+      },
+      {
+        "id": "a03",
+        "name": "Citrix NetScaler Gateway",
+        "type": "perimetro",
+        "ip": "203.0.113.30",
+        "owner": "Redes",
+        "criticality": 4,
+        "internetExposed": true,
+        "tags": [
+          "vpn",
+          "perímetro"
+        ]
+      },
+      {
+        "id": "a04",
+        "name": "Servidor de aplicaciones APP01",
+        "type": "servidor",
+        "ip": "10.10.20.15",
+        "owner": "Sistemas",
+        "criticality": 3,
+        "internetExposed": false,
+        "tags": [
+          "interno"
+        ]
+      },
+      {
+        "id": "a05",
+        "name": "Estaciones de trabajo (VLAN 50)",
+        "type": "estacion",
+        "ip": "10.10.50.0/24",
+        "owner": "Puesto de trabajo",
+        "criticality": 2,
+        "internetExposed": false,
+        "tags": [
+          "usuarios"
+        ]
+      },
+      {
+        "id": "a06",
+        "name": "Controlador de dominio DC01",
+        "type": "controlador_dominio",
+        "ip": "10.10.10.5",
+        "owner": "Identidad",
+        "criticality": 5,
+        "internetExposed": false,
+        "tags": [
+          "ad",
+          "tier0"
+        ]
+      },
+      {
+        "id": "a07",
+        "name": "Entidad de certificación PKI-CA01",
+        "type": "pki",
+        "ip": "10.10.10.8",
+        "owner": "Identidad",
+        "criticality": 4,
+        "internetExposed": false,
+        "tags": [
+          "adcs",
+          "tier0"
+        ]
+      },
+      {
+        "id": "a08",
+        "name": "ERP y base de datos financiera",
+        "type": "base_datos",
+        "ip": "10.10.30.12",
+        "owner": "Finanzas TI",
+        "criticality": 5,
+        "internetExposed": false,
+        "tags": [
+          "sql",
+          "datos-sensibles"
+        ]
+      }
+    ],
+    "findings": [
+      {
+        "id": "H-001",
+        "title": "Log4Shell en Apache Log4j 2",
+        "kind": "cve",
+        "cve": "CVE-2021-44228",
+        "cvss": 10,
+        "epss": 0.944,
+        "kev": true,
+        "exploitPublic": true,
+        "assetId": "a01",
+        "status": "validado",
+        "remediation": "log4shell",
+        "detectedAt": "2026-09-02",
+        "technique": "RCE en el portal y pivote a la red de aplicaciones",
+        "leadsTo": [
+          "a04"
+        ],
+        "description": "JNDI lookup en cabeceras HTTP registradas por la aplicación."
+      },
+      {
+        "id": "H-002",
+        "title": "ProxyShell en Microsoft Exchange",
+        "kind": "cve",
+        "cve": "CVE-2021-34473",
+        "cvss": 9.8,
+        "epss": 0.943,
+        "kev": true,
+        "exploitPublic": true,
+        "assetId": "a02",
+        "status": "abierto",
+        "remediation": "proxyshell",
+        "detectedAt": "2026-09-02",
+        "technique": "Abuso de permisos de Exchange en AD (WriteDACL → DCSync)",
+        "leadsTo": [
+          "a06"
+        ]
+      },
+      {
+        "id": "H-003",
+        "title": "Citrix Bleed: fuga de memoria y robo de sesiones",
+        "kind": "cve",
+        "cve": "CVE-2023-4966",
+        "cvss": 9.4,
+        "epss": 0.94,
+        "kev": true,
+        "exploitPublic": true,
+        "assetId": "a03",
+        "status": "abierto",
+        "remediation": "citrix_bleed",
+        "detectedAt": "2026-09-03",
+        "technique": "Secuestro de sesión VPN y acceso a los puestos internos",
+        "leadsTo": [
+          "a05"
+        ]
+      },
+      {
+        "id": "H-004",
+        "title": "RCE sin autenticar en NetScaler Gateway",
+        "kind": "cve",
+        "cve": "CVE-2023-3519",
+        "cvss": 9.8,
+        "epss": 0.91,
+        "kev": true,
+        "exploitPublic": true,
+        "assetId": "a03",
+        "status": "abierto",
+        "remediation": "citrix_bleed",
+        "detectedAt": "2026-09-03",
+        "technique": "RCE en el appliance y acceso a la red interna",
+        "leadsTo": [
+          "a05"
+        ]
+      },
+      {
+        "id": "H-005",
+        "title": "Cuenta de servicio svc_sql con SPN «kerberoastable»",
+        "kind": "identidad",
+        "cvss": 8.1,
+        "epss": null,
+        "kev": false,
+        "exploitPublic": true,
+        "assetId": "a06",
+        "status": "abierto",
+        "remediation": "kerberoast",
+        "detectedAt": "2026-09-05",
+        "technique": "Kerberoasting de svc_sql y acceso a SQL Server",
+        "edgeFrom": "a05",
+        "leadsTo": [
+          "a08"
+        ],
+        "description": "Contraseña de 2017, RC4 permitido, miembro de grupos con acceso al ERP."
+      },
+      {
+        "id": "H-006",
+        "title": "Delegación sin restricciones en APP01",
+        "kind": "identidad",
+        "cvss": 8.8,
+        "epss": null,
+        "kev": false,
+        "exploitPublic": true,
+        "assetId": "a04",
+        "status": "abierto",
+        "remediation": "unconstrained_delegation",
+        "detectedAt": "2026-09-05",
+        "technique": "Delegación sin restricciones + coerción del DC (PrinterBug)",
+        "leadsTo": [
+          "a06"
+        ]
+      },
+      {
+        "id": "H-007",
+        "title": "ADCS ESC1: plantilla «UserAuth» permite SAN arbitrario",
+        "kind": "configuracion",
+        "cvss": 9,
+        "epss": null,
+        "kev": false,
+        "exploitPublic": true,
+        "assetId": "a07",
+        "status": "abierto",
+        "remediation": "adcs_esc1",
+        "detectedAt": "2026-09-05",
+        "technique": "ADCS ESC1: certificado a nombre de un administrador del dominio",
+        "edgeFrom": "a05",
+        "leadsTo": [
+          "a06"
+        ]
+      },
+      {
+        "id": "H-008",
+        "title": "Firma SMB no obligatoria en servidores",
+        "kind": "configuracion",
+        "cvss": 7.5,
+        "epss": null,
+        "kev": false,
+        "exploitPublic": true,
+        "assetId": "a04",
+        "status": "abierto",
+        "remediation": "smb_signing",
+        "detectedAt": "2026-09-06",
+        "technique": "NTLM relay hacia servidores sin firma SMB",
+        "edgeFrom": "a05",
+        "leadsTo": [
+          "a04"
+        ]
+      },
+      {
+        "id": "H-009",
+        "title": "Contraseña de administrador local reutilizada (sin LAPS)",
+        "kind": "identidad",
+        "cvss": 7.8,
+        "epss": null,
+        "kev": false,
+        "exploitPublic": true,
+        "assetId": "a05",
+        "status": "abierto",
+        "remediation": "laps",
+        "detectedAt": "2026-09-06",
+        "technique": "Reutilización de credenciales de administrador local",
+        "leadsTo": [
+          "a04"
+        ]
+      },
+      {
+        "id": "H-010",
+        "title": "SQL Server con cuenta «sa» y contraseña débil",
+        "kind": "configuracion",
+        "cvss": 8.8,
+        "epss": null,
+        "kev": false,
+        "exploitPublic": true,
+        "assetId": "a08",
+        "status": "abierto",
+        "remediation": "weak_credentials",
+        "detectedAt": "2026-09-06",
+        "technique": "Credenciales débiles de SQL Server desde APP01",
+        "edgeFrom": "a04",
+        "leadsTo": [
+          "a08"
+        ]
+      },
+      {
+        "id": "H-011",
+        "title": "LLMNR y NBT-NS habilitados",
+        "kind": "configuracion",
+        "cvss": 6.5,
+        "epss": null,
+        "kev": false,
+        "exploitPublic": true,
+        "assetId": "a05",
+        "status": "abierto",
+        "remediation": "llmnr",
+        "detectedAt": "2026-09-07",
+        "technique": "Envenenamiento LLMNR y captura de hashes NTLM",
+        "leadsTo": [
+          "a04"
+        ]
+      },
+      {
+        "id": "H-012",
+        "title": "Servicio de cola de impresión activo en el DC",
+        "kind": "configuracion",
+        "cvss": 6.8,
+        "epss": null,
+        "kev": false,
+        "exploitPublic": true,
+        "assetId": "a06",
+        "status": "abierto",
+        "remediation": "print_spooler",
+        "detectedAt": "2026-09-07"
+      },
+      {
+        "id": "H-013",
+        "title": "NTLM relay en Exchange (sin EPA)",
+        "kind": "cve",
+        "cve": "CVE-2024-21410",
+        "cvss": 9.8,
+        "epss": 0.31,
+        "kev": true,
+        "exploitPublic": false,
+        "assetId": "a02",
+        "status": "abierto",
+        "remediation": "patch_cve",
+        "detectedAt": "2026-09-02"
+      },
+      {
+        "id": "H-014",
+        "title": "Apache ActiveMQ: deserialización OpenWire",
+        "kind": "cve",
+        "cve": "CVE-2023-46604",
+        "cvss": 9.8,
+        "epss": 0.94,
+        "kev": true,
+        "exploitPublic": true,
+        "assetId": "a04",
+        "status": "abierto",
+        "remediation": "patch_cve",
+        "detectedAt": "2026-09-08"
+      },
+      {
+        "id": "H-015",
+        "title": "regreSSHion en OpenSSH",
+        "kind": "cve",
+        "cve": "CVE-2024-6387",
+        "cvss": 8.1,
+        "epss": 0.08,
+        "kev": false,
+        "exploitPublic": true,
+        "assetId": "a04",
+        "status": "no_explotable",
+        "remediation": "patch_cve",
+        "detectedAt": "2026-09-08",
+        "description": "Validado: glibc no vulnerable y LoginGraceTime=0 aplicado."
+      },
+      {
+        "id": "H-016",
+        "title": "Microsoft Office: RCE mediante documentos",
+        "kind": "cve",
+        "cve": "CVE-2023-36884",
+        "cvss": 8.8,
+        "epss": 0.72,
+        "kev": true,
+        "exploitPublic": true,
+        "assetId": "a05",
+        "status": "abierto",
+        "remediation": "patch_cve",
+        "detectedAt": "2026-09-09"
+      },
+      {
+        "id": "H-017",
+        "title": "TLS 1.0/1.1 y cifrados débiles habilitados",
+        "kind": "configuracion",
+        "cvss": 5.3,
+        "epss": null,
+        "kev": false,
+        "exploitPublic": false,
+        "assetId": "a01",
+        "status": "mitigado",
+        "remediation": "tls_hardening",
+        "detectedAt": "2026-09-02",
+        "resolvedAt": "2026-09-12"
+      },
+      {
+        "id": "H-018",
+        "title": "Usuarios sin preautenticación Kerberos (AS-REP roasting)",
+        "kind": "identidad",
+        "cvss": 7.5,
+        "epss": null,
+        "kev": false,
+        "exploitPublic": true,
+        "assetId": "a06",
+        "status": "abierto",
+        "remediation": "asrep_roast",
+        "detectedAt": "2026-09-10"
+      },
+      {
+        "id": "H-019",
+        "title": "Copias de seguridad del ERP sin cifrar",
+        "kind": "configuracion",
+        "cvss": 5.5,
+        "epss": null,
+        "kev": false,
+        "exploitPublic": false,
+        "assetId": "a08",
+        "status": "abierto",
+        "remediation": "weak_config",
+        "detectedAt": "2026-09-10"
+      },
+      {
+        "id": "H-020",
+        "title": "Inscripción web de ADCS por HTTP sin EPA (ESC8)",
+        "kind": "configuracion",
+        "cvss": 8.1,
+        "epss": null,
+        "kev": false,
+        "exploitPublic": true,
+        "assetId": "a07",
+        "status": "mitigado",
+        "remediation": "adcs_esc1",
+        "detectedAt": "2026-09-05",
+        "resolvedAt": "2026-09-15"
+      }
+    ],
+    "edges": [
+      {
+        "id": "e01",
+        "from": "a05",
+        "to": "a07",
+        "technique": "Inscripción de certificados desde puestos de usuario"
+      }
+    ]
+  },
+  "expected": {
+    "scored": [
+      {
+        "id": "H-001",
+        "score": 92.5,
+        "band": "critica",
+        "hopsToCrown": 2,
+        "onAttackPath": true,
+        "explanation": "Prioridad Crítica (92,5/100). CVSS 10,0; En el catálogo CISA KEV: explotación activa confirmada; Criticidad de negocio 4/5 (Portal web de clientes); Validado como explotable."
+      },
+      {
+        "id": "H-002",
+        "score": 90.7,
+        "band": "critica",
+        "hopsToCrown": 1,
+        "onAttackPath": true,
+        "explanation": "Prioridad Crítica (90,7/100). CVSS 9,8; En el catálogo CISA KEV: explotación activa confirmada; Criticidad de negocio 4/5 (Exchange OWA)."
+      },
+      {
+        "id": "H-013",
+        "score": 90.7,
+        "band": "critica",
+        "hopsToCrown": 1,
+        "onAttackPath": true,
+        "explanation": "Prioridad Crítica (90,7/100). CVSS 9,8; En el catálogo CISA KEV: explotación activa confirmada; Criticidad de negocio 4/5 (Exchange OWA)."
+      },
+      {
+        "id": "H-004",
+        "score": 86.9,
+        "band": "critica",
+        "hopsToCrown": 2,
+        "onAttackPath": true,
+        "explanation": "Prioridad Crítica (86,9/100). CVSS 9,8; En el catálogo CISA KEV: explotación activa confirmada; Criticidad de negocio 4/5 (Citrix NetScaler Gateway)."
+      },
+      {
+        "id": "H-003",
+        "score": 85.7,
+        "band": "critica",
+        "hopsToCrown": 2,
+        "onAttackPath": true,
+        "explanation": "Prioridad Crítica (85,7/100). CVSS 9,4; En el catálogo CISA KEV: explotación activa confirmada; Criticidad de negocio 4/5 (Citrix NetScaler Gateway)."
+      },
+      {
+        "id": "H-010",
+        "score": 76.4,
+        "band": "alta",
+        "hopsToCrown": 0,
+        "onAttackPath": true,
+        "explanation": "Prioridad Alta (76,4/100). CVSS 8,8; Criticidad de negocio 5/5 (ERP y base de datos financiera); Exploit público disponible."
+      },
+      {
+        "id": "H-014",
+        "score": 75.7,
+        "band": "alta",
+        "hopsToCrown": 1,
+        "onAttackPath": true,
+        "explanation": "Prioridad Alta (75,7/100). CVSS 9,8; En el catálogo CISA KEV: explotación activa confirmada; A 1 salto de una joya de la corona."
+      },
+      {
+        "id": "H-005",
+        "score": 74.3,
+        "band": "alta",
+        "hopsToCrown": 0,
+        "onAttackPath": true,
+        "explanation": "Prioridad Alta (74,3/100). CVSS 8,1; Criticidad de negocio 5/5 (Controlador de dominio DC01); Exploit público disponible."
+      },
+      {
+        "id": "H-018",
+        "score": 72.5,
+        "band": "alta",
+        "hopsToCrown": 0,
+        "onAttackPath": true,
+        "explanation": "Prioridad Alta (72,5/100). CVSS 7,5; Criticidad de negocio 5/5 (Controlador de dominio DC01); Exploit público disponible."
+      },
+      {
+        "id": "H-012",
+        "score": 70.4,
+        "band": "alta",
+        "hopsToCrown": 0,
+        "onAttackPath": true,
+        "explanation": "Prioridad Alta (70,4/100). CVSS 6,8; Criticidad de negocio 5/5 (Controlador de dominio DC01); Exploit público disponible."
+      },
+      {
+        "id": "H-007",
+        "score": 68.3,
+        "band": "alta",
+        "hopsToCrown": 1,
+        "onAttackPath": false,
+        "explanation": "Prioridad Alta (68,3/100). CVSS 9,0; Exploit público disponible; Criticidad de negocio 4/5 (Entidad de certificación PKI-CA01)."
+      },
+      {
+        "id": "H-016",
+        "score": 67.7,
+        "band": "alta",
+        "hopsToCrown": 1,
+        "onAttackPath": true,
+        "explanation": "Prioridad Alta (67,7/100). CVSS 8,8; En el catálogo CISA KEV: explotación activa confirmada; A 1 salto de una joya de la corona."
+      },
+      {
+        "id": "H-006",
+        "score": 62.7,
+        "band": "alta",
+        "hopsToCrown": 1,
+        "onAttackPath": true,
+        "explanation": "Prioridad Alta (62,7/100). CVSS 8,8; Exploit público disponible; A 1 salto de una joya de la corona."
+      },
+      {
+        "id": "H-008",
+        "score": 58.8,
+        "band": "media",
+        "hopsToCrown": 1,
+        "onAttackPath": true,
+        "explanation": "Prioridad Media (58,8/100). CVSS 7,5; Exploit público disponible; A 1 salto de una joya de la corona."
+      },
+      {
+        "id": "H-009",
+        "score": 54.7,
+        "band": "media",
+        "hopsToCrown": 1,
+        "onAttackPath": true,
+        "explanation": "Prioridad Media (54,7/100). CVSS 7,8; Exploit público disponible; A 1 salto de una joya de la corona."
+      },
+      {
+        "id": "H-020",
+        "score": 54.3,
+        "band": "media",
+        "hopsToCrown": null,
+        "onAttackPath": false,
+        "explanation": "Mitigado; puntuación de referencia (54,3/100). CVSS 8,1; Exploit público disponible; Criticidad de negocio 4/5 (Entidad de certificación PKI-CA01)."
+      },
+      {
+        "id": "H-019",
+        "score": 51.5,
+        "band": "media",
+        "hopsToCrown": 0,
+        "onAttackPath": true,
+        "explanation": "Prioridad Media (51,5/100). Criticidad de negocio 5/5 (ERP y base de datos financiera); CVSS 5,5; Afecta directamente a una joya de la corona."
+      },
+      {
+        "id": "H-011",
+        "score": 50.8,
+        "band": "media",
+        "hopsToCrown": 1,
+        "onAttackPath": true,
+        "explanation": "Prioridad Media (50,8/100). CVSS 6,5; Exploit público disponible; A 1 salto de una joya de la corona."
+      },
+      {
+        "id": "H-017",
+        "score": 48.4,
+        "band": "media",
+        "hopsToCrown": 2,
+        "onAttackPath": true,
+        "explanation": "Mitigado; puntuación de referencia (48,4/100). CVSS 5,3; Criticidad de negocio 4/5 (Portal web de clientes); Expuesto a Internet."
+      },
+      {
+        "id": "H-015",
+        "score": 15.1,
+        "band": "baja",
+        "hopsToCrown": 1,
+        "onAttackPath": true,
+        "explanation": "Prioridad Baja (15,1/100). CVSS 8,1; Exploit público disponible (EPSS 8,0 %); A 1 salto de una joya de la corona; Validado como no explotable (×0,25)."
+      }
+    ],
+    "paths": 7,
+    "chokePoints": [
+      {
+        "id": "a03",
+        "kind": "nodo",
+        "label": "Citrix NetScaler Gateway",
+        "paths": 4,
+        "share": 0.5714
+      },
+      {
+        "id": "a04",
+        "kind": "nodo",
+        "label": "Servidor de aplicaciones APP01",
+        "paths": 4,
+        "share": 0.5714
+      },
+      {
+        "id": "a05",
+        "kind": "nodo",
+        "label": "Estaciones de trabajo (VLAN 50)",
+        "paths": 4,
+        "share": 0.5714
+      },
+      {
+        "id": "a03->a05",
+        "kind": "arista",
+        "label": "Citrix NetScaler Gateway → Estaciones de trabajo (VLAN 50)",
+        "paths": 4,
+        "share": 0.5714
+      },
+      {
+        "id": "internet->a03",
+        "kind": "arista",
+        "label": "Internet → Citrix NetScaler Gateway",
+        "paths": 4,
+        "share": 0.5714
+      }
+    ],
+    "summary": {
+      "exposureIndex": 90.9,
+      "openFindings": 17,
+      "byBand": {
+        "critica": 5,
+        "alta": 8,
+        "media": 4,
+        "baja": 0
+      },
+      "kevOpen": 7,
+      "assetsAtRisk": 8,
+      "chokePoints": 3,
+      "attackPaths": 7,
+      "mttrDays": 10
+    }
+  }
+}

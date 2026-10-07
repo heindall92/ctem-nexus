@@ -1,0 +1,16 @@
+node_modules/
+frontend/dist/
+frontend/dist-single/
+backend/.venv/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+coverage/
+*.log
+.DS_Store
+Thumbs.db
+.env
+.env.*
+!.env.example
+*.zip
