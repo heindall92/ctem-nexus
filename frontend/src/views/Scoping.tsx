@@ -1,18 +1,24 @@
-import { Crown, Crosshair, Globe, Pencil, Plus, Sparkles, Trash2, TriangleAlert } from 'lucide-react';
+import { Crown, Crosshair, Globe, Pencil, Plus, Radar, Sparkles, Trash2, TriangleAlert, Users } from 'lucide-react';
 import { useState } from 'react';
+import { BloodHoundUploader } from '../components/BloodHoundUploader';
+import { NmapUploader } from '../components/NmapUploader';
 import { isIpOrCidr } from '../engine/io';
 import type { Asset, AssetType, NetworkRange } from '../engine/types';
-import { Drawer, TopBar } from '../components/Shell';
+import { Drawer, Modal, TopBar } from '../components/Shell';
 import { DemoBadge, Empty, Field, SectionTitle, Toggle } from '../components/ui';
 import { ASSET_TYPE_LABEL, ipv4InCidr } from '../lib/format';
+import { screen } from '../i18n';
 import { nextId, useStore } from '../store/store';
 
 export function Scoping() {
+  const c = screen[useStore((s) => s.lang)];
   const project = useStore((s) => s.project);
   const del = useStore((s) => s.deleteAsset);
   const loadDemo = useStore((s) => s.loadDemo);
   const notify = useStore((s) => s.notify);
   const [editing, setEditing] = useState<Asset | 'nuevo' | null>(null);
+  const [showNmap, setShowNmap] = useState(false);
+  const [showBloodhound, setShowBloodhound] = useState(false);
   const inScope = project.ranges.filter((r) => r.inScope);
   const outside = (a: Asset) => a.ip && inScope.length > 0 && inScope.every((r) => ipv4InCidr(a.ip, r.cidr) === false);
   const findingsPer = new Map<string, number>();
@@ -22,49 +28,61 @@ export function Scoping() {
   return (
     <>
       <TopBar
-        title="Alcance y activos"
-        subtitle={<><span>Activos críticos y rangos de red objetivo del programa</span>{project.demo && <DemoBadge />}</>}
-        actions={<button type="button" className="btn btn-primary" onClick={() => setEditing('nuevo')}><Plus />Añadir activo</button>}
+        title={c.scopeTitle}
+        subtitle={<><span>{c.scopeSub}</span>{project.demo && <DemoBadge />}</>}
       />
-      <div className="view-enter mx-auto flex max-w-[1240px] flex-col gap-5 px-8 py-7">
+      <div className="view-enter mx-auto flex max-w-[1240px] flex-col gap-5 px-4 pb-6 pt-2 sm:px-8">
+        {/* Cabecera de la vista con acciones principales */}
+        <div className="flex flex-wrap items-center justify-between gap-4 py-1">
+          <div>
+            <h2 className="text-lg sm:text-xl font-bold tracking-tight text-ink">{c.surfaceTitle}</h2>
+            <p className="text-xs text-ink-3">{c.surfaceLead}</p>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button type="button" className="btn" onClick={() => setShowNmap(true)}><Radar className="size-4" />{c.importNmap}</button>
+            <button type="button" className="btn" onClick={() => setShowBloodhound(true)}><Users className="size-4" />{c.importBh}</button>
+            <button type="button" className="btn btn-primary" onClick={() => setEditing('nuevo')}><Plus className="size-4" />{c.addAsset}</button>
+          </div>
+        </div>
         <section className="panel overflow-hidden">
           <SectionTitle
-            title="Activos"
-            detail={<>{project.assets.length} activos · <span className="text-ink-2">{crown} joyas de la corona</span> (criticidad 5, destino de las rutas de ataque)</>}
+            title={c.assetsTitle}
+            detail={c.assetsDetail(project.assets.length, crown)}
           />
           {project.assets.length === 0 ? (
-            <Empty icon={<Crosshair />} title="Sin activos" text="Registra los activos críticos: nombre, tipo, IP o CIDR, responsable y criticidad de negocio (1–5).">
-              <button type="button" className="btn btn-primary" onClick={() => setEditing('nuevo')}><Plus />Añadir activo</button>
-              <button type="button" className="btn" onClick={() => { loadDemo(); notify('Datos de ejemplo cargados.'); }}><Sparkles />Cargar datos de demo</button>
+            <Empty icon={<Crosshair />} title={c.noAssets} text={c.noAssetsText}>
+              <button type="button" className="btn btn-primary" onClick={() => setEditing('nuevo')}><Plus />{c.addAsset}</button>
+              <button type="button" className="btn" onClick={() => setShowNmap(true)}><Radar />{c.importNmapScan}</button>
+              <button type="button" className="btn" onClick={() => { loadDemo(); notify(c.demoLoadedShort); }}><Sparkles />{c.loadDemo}</button>
             </Empty>
           ) : (
             <div className="overflow-x-auto border-t border-hairline">
               <table className="table">
-                <thead><tr><th>Activo</th><th>Tipo</th><th>IP / CIDR</th><th>Responsable</th><th>Criticidad</th><th>Exposición</th><th>Etiquetas</th><th className="text-right">Abiertos</th><th><span className="sr-only">Acciones</span></th></tr></thead>
+                <thead><tr><th>{c.thAsset}</th><th>{c.thType}</th><th>{c.thIp}</th><th>{c.thOwner}</th><th>{c.thCrit}</th><th>{c.thExposure}</th><th>{c.thTags}</th><th className="text-right">{c.thOpen}</th><th><span className="sr-only">Acciones</span></th></tr></thead>
                 <tbody>
                   {project.assets.map((a) => (
                     <tr key={a.id}>
                       <td>
                         <div className="flex items-center gap-2 font-medium">
-                          {a.criticality === 5 && <Crown className="size-3.5 text-accent" aria-label="Joya de la corona" />}
+                          {a.criticality === 5 && <Crown className="size-3.5 text-accent" aria-label={c.crownJewel} />}
                           {a.name}
                         </div>
                         <div className="num text-xs text-ink-4">{a.id}</div>
                       </td>
-                      <td className="text-ink-2">{ASSET_TYPE_LABEL[a.type]}</td>
+                      <td className="text-ink-2">{c.assetTypes[a.type]}</td>
                       <td>
                         <span className="num text-ink-2">{a.ip || '—'}</span>
-                        {outside(a) && <span className="ml-2 inline-flex items-center gap-1 text-xs text-alta" title="No está dentro de ningún rango en alcance"><TriangleAlert className="size-3.5" />Fuera de alcance</span>}
+                        {outside(a) && <span className="ml-2 inline-flex items-center gap-1 text-xs text-alta" title={c.outOfScope}><TriangleAlert className="size-3.5" />{c.outOfScope}</span>}
                       </td>
                       <td className="text-ink-2">{a.owner || '—'}</td>
                       <td><Criticality value={a.criticality} /></td>
-                      <td>{a.internetExposed ? <span className="chip" style={{ color: 'var(--color-alta)' }}><Globe />Internet</span> : <span className="text-xs text-ink-3">Interna</span>}</td>
+                      <td>{a.internetExposed ? <span className="chip" style={{ color: 'var(--color-alta)' }}><Globe />{c.internet}</span> : <span className="text-xs text-ink-3">{c.internal}</span>}</td>
                       <td><div className="flex max-w-[12rem] flex-wrap gap-1">{a.tags.map((t) => <span key={t} className="chip">{t}</span>)}</div></td>
                       <td className="num text-right">{findingsPer.get(a.id) ?? 0}</td>
                       <td className="text-right">
                         <div className="flex justify-end gap-1">
                           <button type="button" className="btn btn-ghost btn-sm btn-icon" aria-label={`Editar ${a.name}`} onClick={() => setEditing(a)}><Pencil /></button>
-                          <button type="button" className="btn btn-ghost btn-sm btn-icon btn-danger" aria-label={`Eliminar ${a.name}`} onClick={() => { del(a.id); notify(`Activo «${a.name}» eliminado.`, 'info'); }}><Trash2 /></button>
+                          <button type="button" className="btn btn-ghost btn-sm btn-icon btn-danger" aria-label={`Eliminar ${a.name}`} onClick={() => { del(a.id); notify(c.assetRemoved(a.name), 'info'); }}><Trash2 /></button>
                         </div>
                       </td>
                     </tr>
@@ -79,6 +97,24 @@ export function Scoping() {
       <Drawer open={!!editing} onClose={() => setEditing(null)} title={<h2 className="title-md">{editing === 'nuevo' ? 'Nuevo activo' : 'Editar activo'}</h2>}>
         {editing && <AssetForm initial={editing === 'nuevo' ? null : editing} onDone={() => setEditing(null)} />}
       </Drawer>
+      <Modal
+        open={showNmap}
+        onClose={() => setShowNmap(false)}
+        title="Descubrimiento de activos con Nmap"
+        subtitle="Ingesta de escaneo de red XML (-sV -sC -O -oX)"
+        maxWidth={680}
+      >
+        <NmapUploader onDone={() => setShowNmap(false)} />
+      </Modal>
+      <Modal
+        open={showBloodhound}
+        onClose={() => setShowBloodhound(false)}
+        title="Ingesta de Active Directory con BloodHound"
+        subtitle="Mapeo de Controladores de Dominio, joyas de la corona y vectores de escalada"
+        maxWidth={740}
+      >
+        <BloodHoundUploader onDone={() => setShowBloodhound(false)} />
+      </Modal>
     </>
   );
 }
@@ -95,34 +131,35 @@ function Criticality({ value }: { value: number }) {
 }
 
 function Ranges() {
+  const c = screen[useStore((s) => s.lang)];
   const ranges = useStore((s) => s.project.ranges);
   const upsert = useStore((s) => s.upsertRange);
   const del = useStore((s) => s.deleteRange);
   const [cidr, setCidr] = useState('');
   const [label, setLabel] = useState('');
-  const err = cidr && !isIpOrCidr(cidr) ? 'CIDR no válido (p. ej. 10.0.0.0/24)' : null;
+  const err = cidr && !isIpOrCidr(cidr) ? c.invalidCidr : null;
   return (
     <section className="panel overflow-hidden">
-      <SectionTitle title="Rangos de red objetivo" detail="Los activos cuya IP no cae en ningún rango en alcance se marcan como «Fuera de alcance»." />
+      <SectionTitle title={c.rangesTitle} detail={c.rangesDetail} />
       <form
         className="flex flex-wrap items-start gap-2 border-t border-hairline px-5 py-3"
         onSubmit={(e) => { e.preventDefault(); if (!cidr || err) return; upsert({ id: nextId('r', ranges.map((r) => r.id), 2), cidr: cidr.trim(), label: label.trim() || cidr.trim(), inScope: true }); setCidr(''); setLabel(''); }}
       >
         <div className="w-48"><input className="field num" placeholder="10.20.0.0/16" value={cidr} aria-invalid={!!err} aria-label="CIDR" onChange={(e) => setCidr(e.target.value)} />{err && <div className="mt-1 text-xs text-critica">{err}</div>}</div>
-        <input className="field w-64" placeholder="Descripción" value={label} aria-label="Descripción del rango" onChange={(e) => setLabel(e.target.value)} />
-        <button type="submit" className="btn" disabled={!cidr || !!err}><Plus />Añadir rango</button>
+        <input className="field w-64" placeholder={c.rangeDesc} value={label} aria-label={c.rangeDesc} onChange={(e) => setLabel(e.target.value)} />
+        <button type="submit" className="btn" disabled={!cidr || !!err}><Plus />{c.addRange}</button>
       </form>
       <ul className="divide-hair border-t border-hairline">
         {ranges.map((r: NetworkRange) => (
           <li key={r.id} className="flex items-center gap-4 px-5 py-2.5">
             <span className="num w-44 text-ink">{r.cidr}</span>
             <span className={`flex-1 truncate ${r.inScope ? 'text-ink-2' : 'text-ink-4 line-through decoration-ink-4'}`}>{r.label}</span>
-            <span className="text-xs text-ink-3">{r.inScope ? 'En alcance' : 'Excluido'}</span>
+            <span className="text-xs text-ink-3">{r.inScope ? c.inScope : c.excluded}</span>
             <Toggle checked={r.inScope} onChange={(v) => upsert({ ...r, inScope: v })} label={`${r.cidr} en alcance`} />
             <button type="button" className="btn btn-ghost btn-sm btn-icon btn-danger" aria-label={`Eliminar ${r.cidr}`} onClick={() => del(r.id)}><Trash2 /></button>
           </li>
         ))}
-        {ranges.length === 0 && <li className="px-5 py-5 text-ink-3">Sin rangos definidos.</li>}
+        {ranges.length === 0 && <li className="px-5 py-5 text-ink-3">{c.noRanges}</li>}
       </ul>
     </section>
   );

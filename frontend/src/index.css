@@ -1,5 +1,7 @@
 @import 'tailwindcss';
 
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *, .dark, .dark *));
+
 /* ─────────────────────────────────────────────────────────────────────────────
    CTEM-Nexus · sistema visual
    Herramienta de seguridad en oscuro: casi negro frío, un único acento (verde azulado),
@@ -63,8 +65,84 @@
   color-scheme: dark;
   --sh-panel: 0 1px 2px rgb(0 0 0 / 0.4), 0 12px 32px rgb(0 0 0 / 0.28);
   --sh-overlay: 0 2px 8px rgb(0 0 0 / 0.45), 0 30px 80px rgb(0 0 0 / 0.55);
-  --glass: rgb(17 19 23 / 0.72);
+  --glass: rgb(17 19 23 / 0.75);
+  --glass-thick: rgb(17 19 23 / 0.95);
   --glass-edge: rgb(255 255 255 / 0.08);
+}
+
+[data-theme='light'], html.light {
+  color-scheme: light;
+  --color-ground: #f3f5f7;
+  --color-sidebar: #ffffff;
+  --color-surface: #ffffff;
+  --color-surface-2: #eef1f4;
+  --color-surface-3: #e2e6eb;
+  --color-hairline: rgb(0 0 0 / 0.07);
+  --color-hairline-strong: rgb(0 0 0 / 0.12);
+
+  --color-ink: #101418;
+  --color-ink-2: #2c3440;
+  --color-ink-3: #5c6773;
+  --color-ink-4: #8b949e;
+
+  /* Claro: arranca en azul eléctrico. Malva (orquídea) solo si se elige. */
+  --color-accent: #1f5eff;
+  --color-accent-strong: #0b46e0;
+  --color-accent-ink: #ffffff;
+
+  --glass: rgb(255 255 255 / 0.85);
+  --glass-thick: rgb(255 255 255 / 0.96);
+  --glass-edge: rgb(0 0 0 / 0.06);
+  --sh-panel: 0 1px 3px rgb(0 0 0 / 0.04), 0 10px 25px -5px rgb(0 0 0 / 0.05);
+  --sh-overlay: 0 4px 14px rgb(0 0 0 / 0.08), 0 25px 50px -10px rgb(0 0 0 / 0.14);
+}
+
+/* La pastilla activa vive en data-accent. El claro arranca en azul eléctrico. */
+[data-accent='rosa'] { --color-accent: #ff7ab8; --color-accent-strong: #ffc0de; --color-accent-ink: #3b0620; }
+[data-theme='light'][data-accent='rosa'], html.light[data-accent='rosa'] { --color-accent: #e11d74; --color-accent-strong: #be185d; --color-accent-ink: #ffffff; }
+[data-accent='solar'] { --color-accent: #ffb020; --color-accent-strong: #ffd27a; --color-accent-ink: #2a1600; }
+[data-theme='light'][data-accent='solar'], html.light[data-accent='solar'] { --color-accent: #d97706; --color-accent-strong: #b45309; --color-accent-ink: #ffffff; }
+[data-accent='glaciar'] { --color-accent: #5ee7f5; --color-accent-strong: #b6f6ff; --color-accent-ink: #042028; }
+[data-theme='light'][data-accent='glaciar'], html.light[data-accent='glaciar'] { --color-accent: #0e8fa8; --color-accent-strong: #0b7285; --color-accent-ink: #ffffff; }
+[data-accent='orquidea'] { --color-accent: #b79bff; --color-accent-strong: #ddd0ff; --color-accent-ink: #1a0838; }
+[data-theme='light'][data-accent='orquidea'], html.light[data-accent='orquidea'] { --color-accent: #6d4aff; --color-accent-strong: #5428e0; --color-accent-ink: #ffffff; }
+[data-accent='verde'] { --color-accent: #5aa86a; --color-accent-strong: #8fd4a0; --color-accent-ink: #06210f; }
+[data-theme='light'][data-accent='verde'], html.light[data-accent='verde'] { --color-accent: #1f7a3e; --color-accent-strong: #145c2e; --color-accent-ink: #ffffff; }
+[data-accent='azul'] { --color-accent: #4d86ff; --color-accent-strong: #7aa6ff; --color-accent-ink: #041226; }
+[data-theme='light'][data-accent='azul'], html.light[data-accent='azul'] { --color-accent: #1f5eff; --color-accent-strong: #0b46e0; --color-accent-ink: #ffffff; }
+[data-accent='rojo'] { --color-accent: #ff6b6b; --color-accent-strong: #ffb0b0; --color-accent-ink: #2a0808; }
+[data-theme='light'][data-accent='rojo'], html.light[data-accent='rojo'] { --color-accent: #dc2626; --color-accent-strong: #b91c1c; --color-accent-ink: #ffffff; }
+
+.theme-sw {
+  position: relative;
+  display: inline-flex;
+  width: 52px;
+  height: 28px;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 7px;
+  border-radius: 999px;
+  border: 1px solid var(--color-hairline);
+  background: var(--color-surface-2);
+  color: var(--color-ink-4);
+}
+.theme-sw .knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.theme-sw[aria-checked='true'] .knob { transform: translateX(24px); }
+@media (prefers-reduced-motion: reduce) {
+  .theme-sw .knob { transition: none; }
 }
 
 @layer base {
@@ -78,7 +156,7 @@
     font-feature-settings: 'ss01', 'cv11';
   }
   body { min-height: 100dvh; font-size: 0.875rem; line-height: 1.5; }
-  ::selection { background: rgb(61 220 196 / 0.28); color: #fff; }
+  ::selection { background: color-mix(in oklab, var(--color-accent) 28%, transparent); color: var(--color-ink); }
   :focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; border-radius: 6px; }
   * { scrollbar-width: thin; scrollbar-color: var(--color-surface-3) transparent; }
   ::-webkit-scrollbar { width: 10px; height: 10px; }
@@ -136,7 +214,7 @@
   }
   textarea.field { height: auto; padding: 0.5rem 0.75rem; line-height: 1.5; }
   .field::placeholder { color: var(--color-ink-4); }
-  .field:focus { outline: none; box-shadow: inset 0 0 0 1px var(--color-accent), 0 0 0 3px rgb(61 220 196 / 0.18); }
+  .field:focus { outline: none; box-shadow: inset 0 0 0 1px var(--color-accent), 0 0 0 3px color-mix(in oklab, var(--color-accent) 22%, transparent); }
   .field[aria-invalid='true'] { box-shadow: inset 0 0 0 1px var(--color-critica); }
   select.field { appearance: none; padding-right: 2rem; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23737b84' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.75rem center; }
 
@@ -161,9 +239,9 @@
 
   /* Material translúcido: solo donde hay capas superpuestas (barra superior, panel lateral, avisos) */
   .glass { background: var(--glass); backdrop-filter: saturate(160%) blur(20px); }
-  /* Superficies grandes = material más grueso (más opaco y más desenfoque) */
-  .glass-thick { background: rgb(17 19 23 / 0.95); backdrop-filter: saturate(160%) blur(28px); }
-  .glass-edge { box-shadow: inset 0 1px 0 var(--glass-edge), inset 0 0 0 1px rgb(255 255 255 / 0.05), var(--sh-overlay); }
+  /* Superficies grandes = material adaptado al tema actual */
+  .glass-thick { background: var(--glass-thick, var(--color-surface)); backdrop-filter: saturate(160%) blur(24px); }
+  .glass-edge { box-shadow: inset 0 1px 0 var(--glass-edge), inset 0 0 0 1px var(--color-hairline), var(--sh-overlay); }
 
   /* Entrada de vistas y avisos sin JS: @starting-style */
   .view-enter { opacity: 1; transform: translateY(0); transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out); }
@@ -182,6 +260,35 @@
 
   /* Grafo */
   .g-node, .g-edge { transition: opacity 180ms ease, stroke 180ms ease, fill 180ms ease; }
+
+  /* Rail: el ítem activo sigue al acento; al pasar el ratón hay un velo, no un bloque violeta. */
+  .nav-rail button { transition: background-color 140ms ease, color 140ms ease, transform 120ms var(--ease-out); }
+  .nav-rail button:active { transform: scale(0.97); }
+  .nav-rail button[aria-current='page'] {
+    background: color-mix(in oklab, var(--color-accent) 14%, transparent);
+    color: var(--color-accent);
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-accent) 32%, transparent);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .nav-rail button:hover:not([aria-current='page']) {
+      background: color-mix(in oklab, var(--color-accent) 8%, transparent);
+    }
+  }
+
+  /* Cartel de demo adaptativo */
+  .demo-banner-card {
+    background: #ffffff;
+    color: #0f172a;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.06);
+  }
+  [data-theme='dark'] .demo-banner-card,
+  html.dark .demo-banner-card {
+    background: #14171d;
+    color: #f8fafc;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.35);
+  }
 }
 
 /* Accesibilidad: movimiento reducido → fundidos, sin desplazamientos ni escalas */

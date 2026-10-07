@@ -1,17 +1,19 @@
 import { motion } from 'motion/react';
 import { useId, type ReactNode } from 'react';
-import { BAND_LABEL } from '../engine/constants';
 import type { Band } from '../engine/types';
+import { screen } from '../i18n';
 import { BAND_COLOR, n1 } from '../lib/format';
+import { useStore } from '../store/store';
 
 /** Muelle críticamente amortiguado (Apple: damping 1.0, response ≈ 0,3 s). Sin rebote: la UI no lo lanza el usuario. */
 export const SPRING = { type: 'spring', bounce: 0, duration: 0.3 } as const;
 
 export function BandBadge({ band, compact = false }: { band: Band; compact?: boolean }) {
+  const label = screen[useStore((s) => s.lang)].band[band];
   return (
     <span className="chip" style={{ color: BAND_COLOR[band], background: `color-mix(in oklab, ${BAND_COLOR[band]} 14%, transparent)` }}>
       <span aria-hidden className="size-1.5 rounded-full" style={{ background: BAND_COLOR[band] }} />
-      {compact ? BAND_LABEL[band].slice(0, 4) : BAND_LABEL[band]}
+      {compact ? label.slice(0, 4) : label}
     </span>
   );
 }
@@ -97,5 +99,5 @@ export function Empty({ icon, title, text, children }: { icon: ReactNode; title:
 }
 
 export function DemoBadge() {
-  return <span className="chip" style={{ color: 'var(--color-media)', background: 'color-mix(in oklab, var(--color-media) 12%, transparent)' }}>Datos de ejemplo</span>;
+  return <span className="chip" style={{ color: 'var(--color-media)', background: 'color-mix(in oklab, var(--color-media) 12%, transparent)' }}>{screen[useStore((s) => s.lang)].demoBadge}</span>;
 }

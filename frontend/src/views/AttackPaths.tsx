@@ -1,14 +1,17 @@
-import { Plus, Route, ShieldCheck, ShieldOff, Trash2, Undo2 } from 'lucide-react';
+import { Plus, Route, ShieldCheck, ShieldOff, Trash2, Undo2, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { AttackGraph } from '../components/AttackGraph';
-import { TopBar } from '../components/Shell';
+import { BloodHoundUploader } from '../components/BloodHoundUploader';
+import { Modal, TopBar } from '../components/Shell';
 import { BandBadge, DemoBadge, Empty, SectionTitle } from '../components/ui';
 import { useResult } from '../lib/analysis';
 import { BAND_COLOR, n1 } from '../lib/format';
+import { screen } from '../i18n';
 import { nextId, useStore } from '../store/store';
 import { StatusPill } from './Prioritization';
 
 export function AttackPaths() {
+  const c = screen[useStore((s) => s.lang)];
   const project = useStore((s) => s.project);
   const setStatus = useStore((s) => s.setStatus);
   const notify = useStore((s) => s.notify);
@@ -19,6 +22,7 @@ export function AttackPaths() {
   const g = result.graph;
   const [selPath, setSelPath] = useState<number | null>(null);
   const [focusNode, setFocusNode] = useState<string | null>(null);
+  const [showBloodhound, setShowBloodhound] = useState(false);
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [tech, setTech] = useState('');
@@ -43,8 +47,8 @@ export function AttackPaths() {
   if (project.assets.length === 0) {
     return (
       <>
-        <TopBar title="Rutas de ataque" subtitle="Validación: caminos desde Internet hasta las joyas de la corona" />
-        <div className="view-enter mx-auto max-w-[1240px] px-8 py-7"><div className="panel"><Empty icon={<Route />} title="Sin grafo" text="Define activos (al menos uno expuesto a Internet y una joya de la corona con criticidad 5) para calcular rutas."><button type="button" className="btn btn-primary" onClick={() => setView('alcance')}>Ir a Alcance</button></Empty></div></div>
+        <TopBar title={c.pathsTitle} subtitle={c.pathsSub} />
+        <div className="view-enter mx-auto max-w-[1240px] px-8 pb-8 pt-2"><div className="panel"><Empty icon={<Route />} title={c.noGraph} text={c.noGraphText}><button type="button" className="btn btn-primary" onClick={() => setView('alcance')}>{c.goScope}</button></Empty></div></div>
       </>
     );
   }
@@ -52,16 +56,21 @@ export function AttackPaths() {
   return (
     <>
       <TopBar
-        title="Rutas de ataque"
-        subtitle={<><span>{g.paths.length} rutas desde Internet hasta joyas de la corona · {g.chokePoints.filter((c) => c.kind === 'nodo').length} puntos de estrangulamiento</span>{project.demo && <DemoBadge />}</>}
+        title={c.pathsTitle}
+        subtitle={<><span>{c.pathsCount(g.paths.length)}</span>{project.demo && <DemoBadge />}</>}
       />
-      <div className="view-enter mx-auto flex max-w-[1240px] flex-col gap-5 px-8 py-7">
+      <div className="view-enter mx-auto flex max-w-[1240px] flex-col gap-5 px-4 pb-6 pt-2 sm:px-8">
         <div className="flex flex-col gap-5">
           <section className="panel overflow-hidden">
             <SectionTitle
               title="Grafo de ataque"
-              detail="Aristas derivadas de los hallazgos y de las aristas manuales (discontinuas). Pulsa un nodo o una ruta para resaltarla."
-              actions={(selPath !== null || focusNode) && <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setSelPath(null); setFocusNode(null); }}>Quitar resaltado</button>}
+              detail="Aristas derivadas de los hallazgos y de las aristas manuales. Pulsa un nodo o una ruta para resaltarla."
+              actions={
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button type="button" className="btn btn-sm" onClick={() => setShowBloodhound(true)}><Users className="size-3.5" />Importar BloodHound (AD)</button>
+                  {(selPath !== null || focusNode) && <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setSelPath(null); setFocusNode(null); }}>Quitar resaltado</button>}
+                </div>
+              }
             />
             <div className="border-t border-hairline bg-ground/40 px-4 py-5">
               <AttackGraph graph={g} highlight={highlight} focusNode={focusNode} onNode={(id) => { setFocusNode(id); setSelPath(null); }} />
@@ -176,6 +185,10 @@ export function AttackPaths() {
         </div>
         {toValidate.length > 0 && <p className="text-xs text-ink-4">Bandas: <BandBadge band="critica" /> ≥ 80 · <BandBadge band="alta" /> ≥ 60 · <BandBadge band="media" /> ≥ 40 · <BandBadge band="baja" /> &lt; 40</p>}
       </div>
+
+      <Modal open={showBloodhound} onClose={() => setShowBloodhound(false)} title="Ingesta de rutas de Active Directory (BloodHound)" maxWidth={680}>
+        <BloodHoundUploader onDone={() => setShowBloodhound(false)} />
+      </Modal>
     </>
   );
 }

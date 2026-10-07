@@ -6,9 +6,11 @@ import { Field, SectionTitle, Toggle } from '../components/ui';
 import { pingApi } from '../lib/analysis';
 import { download, readFile, stamp } from '../lib/download';
 import { storageBackend } from '../lib/storage';
+import { screen } from '../i18n';
 import { useStore } from '../store/store';
 
 export function Settings() {
+  const c = screen[useStore((s) => s.lang)];
   const project = useStore((s) => s.project);
   const settings = useStore((s) => s.settings);
   const setSettings = useStore((s) => s.setSettings);
@@ -25,8 +27,8 @@ export function Settings() {
 
   return (
     <>
-      <TopBar title="Ajustes y datos" subtitle="Todo se guarda en este navegador. Nada sale del equipo salvo que actives la API." />
-      <div className="view-enter mx-auto flex max-w-[860px] flex-col gap-5 px-8 py-7">
+      <TopBar title={c.settingsTitle} subtitle={c.settingsSub} />
+      <div className="view-enter mx-auto flex max-w-[860px] flex-col gap-5 px-4 pb-6 pt-2 sm:px-8">
         <section className="panel overflow-hidden">
           <SectionTitle title="Proyecto" />
           <div className="border-t border-hairline px-5 py-4">

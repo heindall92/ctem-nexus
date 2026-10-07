@@ -33,3 +33,6 @@ def health() -> Health:
 
 for module in (scoping, discovery, prioritization, validation, mobilization):
     app.include_router(module.router)
+
+# Alias de compatibilidad directa
+app.post("/api/discovery/nmap/upload", tags=["2 · Descubrimiento"], include_in_schema=False)(discovery.upload_nmap_scan)

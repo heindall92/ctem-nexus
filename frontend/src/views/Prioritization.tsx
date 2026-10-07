@@ -1,20 +1,23 @@
-import { FileSpreadsheet, Flame, Pencil, Plus, Radar, Search, Sparkles, Trash2, Upload, Zap } from 'lucide-react';
+import { FileSpreadsheet, Flame, Pencil, Plus, Radar, Search, Sparkles, Trash2, Upload, Users, Zap } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
-import { BAND_LABEL } from '../engine/constants';
+import { BloodHoundUploader } from '../components/BloodHoundUploader';
+import { NmapUploader } from '../components/NmapUploader';
 import { fmt } from '../engine/engine';
 import { CSV_TEMPLATE, importFindings } from '../engine/io';
 import { GUIDE_KEYS, GUIDES, guideFor } from '../engine/remediation';
 import type { Band, Finding, FindingKind, FindingStatus } from '../engine/types';
-import { Drawer, TopBar } from '../components/Shell';
+import { Drawer, Modal, TopBar } from '../components/Shell';
 import { BandBadge, DemoBadge, Empty, Field, Score, ScoreBar, Segmented } from '../components/ui';
 import { useResult } from '../lib/analysis';
 import { download, readFile } from '../lib/download';
 import { BAND_COLOR, KIND_LABEL, pct, STATUS_LABEL } from '../lib/format';
+import { screen } from '../i18n';
 import { nextId, useStore } from '../store/store';
 
 type BandFilter = 'todas' | Band;
 
 export function Prioritization() {
+  const c = screen[useStore((s) => s.lang)];
   const project = useStore((s) => s.project);
   const selected = useStore((s) => s.selectedFinding);
   const select = useStore((s) => s.selectFinding);
@@ -26,6 +29,8 @@ export function Prioritization() {
   const [band, setBand] = useState<BandFilter>('todas');
   const [showClosed, setShowClosed] = useState(true);
   const [editing, setEditing] = useState<Finding | 'nuevo' | null>(null);
+  const [showNmap, setShowNmap] = useState(false);
+  const [showBloodhound, setShowBloodhound] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const fById = useMemo(() => new Map(project.findings.map((f) => [f.id, f])), [project.findings]);
@@ -59,19 +64,30 @@ export function Prioritization() {
   return (
     <>
       <TopBar
-        title="Descubrimiento y priorización"
-        subtitle={<><span>Puntuación 0–100 por hallazgo con explicación de cada factor</span>{project.demo && <DemoBadge />}</>}
-        actions={<>
-          <input ref={fileRef} type="file" accept=".json,.csv,application/json,text/csv" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void onImport(f); e.target.value = ''; }} />
-          <button type="button" className="btn" onClick={() => fileRef.current?.click()}><Upload />Importar JSON/CSV</button>
-          <button type="button" className="btn btn-primary" onClick={() => setEditing('nuevo')} disabled={project.assets.length === 0}><Plus />Añadir hallazgo</button>
-        </>}
+        title={c.prioTitle}
+        subtitle={<><span>{c.prioSub}</span>{project.demo && <DemoBadge />}</>}
       />
-      <div className="view-enter mx-auto max-w-[1240px] px-8 py-7">
+      <div className="view-enter mx-auto max-w-[1240px] px-4 pb-6 pt-2 sm:px-8">
+        {/* Cabecera de la sección con acciones */}
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-4 py-1">
+          <div>
+            <h2 className="text-lg sm:text-xl font-bold tracking-tight text-ink">Catálogo de exposición y hallazgos</h2>
+            <p className="text-xs text-ink-3">Priorización multidimensional basada en explotabilidad activa (KEV), impacto y rutas de ataque</p>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <input ref={fileRef} type="file" accept=".json,.csv,application/json,text/csv" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void onImport(f); e.target.value = ''; }} />
+            <button type="button" className="btn" onClick={() => setShowNmap(true)}><Radar className="size-4" />Importar Nmap XML</button>
+            <button type="button" className="btn" onClick={() => setShowBloodhound(true)}><Users className="size-4" />Importar BloodHound</button>
+            <button type="button" className="btn" onClick={() => fileRef.current?.click()}><Upload className="size-4" />Importar JSON/CSV</button>
+            <button type="button" className="btn btn-primary" onClick={() => setEditing('nuevo')} disabled={project.assets.length === 0}><Plus className="size-4" />Añadir hallazgo</button>
+          </div>
+        </div>
         {project.findings.length === 0 ? (
           <div className="panel">
-            <Empty icon={<Radar />} title="Sin hallazgos" text="Importa la salida de tus escáneres en JSON o CSV, añade hallazgos a mano o carga el conjunto de ejemplo (Log4Shell, ProxyShell, Citrix Bleed y problemas de Directorio Activo).">
-              <button type="button" className="btn btn-primary" onClick={() => { loadDemo(); notify('Datos de ejemplo cargados.'); }}><Sparkles />Cargar datos de demo</button>
+            <Empty icon={<Radar />} title={c.noFindings} text={c.noFindingsText}>
+              <button type="button" className="btn btn-primary" onClick={() => setShowNmap(true)}><Radar />Importar escaneo Nmap</button>
+              <button type="button" className="btn" onClick={() => setShowBloodhound(true)}><Users />Importar BloodHound</button>
+              <button type="button" className="btn" onClick={() => { loadDemo(); notify('Datos de ejemplo cargados.'); }}><Sparkles />Cargar datos de demo</button>
               <button type="button" className="btn" onClick={() => download('plantilla-hallazgos.csv', CSV_TEMPLATE, 'text/csv;charset=utf-8')}><FileSpreadsheet />Descargar plantilla CSV</button>
             </Empty>
           </div>
@@ -84,7 +100,7 @@ export function Prioritization() {
               </div>
               <Segmented<BandFilter>
                 label="Filtrar por prioridad" value={band} onChange={setBand}
-                options={[{ value: 'todas', label: 'Todas' }, ...(['critica', 'alta', 'media', 'baja'] as Band[]).map((b) => ({ value: b, label: <span className="flex items-center gap-1.5"><span className="size-1.5 rounded-full" style={{ background: BAND_COLOR[b] }} />{BAND_LABEL[b]}</span> }))]}
+                options={[{ value: 'todas', label: c.allBands }, ...(['critica', 'alta', 'media', 'baja'] as Band[]).map((b) => ({ value: b, label: <span className="flex items-center gap-1.5"><span className="size-1.5 rounded-full" style={{ background: BAND_COLOR[b] }} />{c.band[b]}</span> }))]}
               />
               <label className="ml-auto flex items-center gap-2 text-xs text-ink-3">
                 <input type="checkbox" checked={showClosed} onChange={(e) => setShowClosed(e.target.checked)} className="accent-[var(--color-accent)]" />
@@ -160,6 +176,14 @@ export function Prioritization() {
       <Drawer open={!!editing} onClose={() => setEditing(null)} title={<h2 className="title-md">{editing === 'nuevo' ? 'Nuevo hallazgo' : 'Editar hallazgo'}</h2>} width={500}>
         {editing && <FindingForm initial={editing === 'nuevo' ? null : editing} onDone={() => setEditing(null)} />}
       </Drawer>
+
+      <Modal open={showNmap} onClose={() => setShowNmap(false)} title="Ingesta de escaneo Nmap (XML)" maxWidth={680}>
+        <NmapUploader onDone={() => setShowNmap(false)} />
+      </Modal>
+
+      <Modal open={showBloodhound} onClose={() => setShowBloodhound(false)} title="Ingesta de Active Directory (BloodHound)" maxWidth={680}>
+        <BloodHoundUploader onDone={() => setShowBloodhound(false)} />
+      </Modal>
     </>
   );
 }

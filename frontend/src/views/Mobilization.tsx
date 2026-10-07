@@ -1,6 +1,5 @@
 import { Check, ChevronDown, Copy, FileDown, FileSpreadsheet, FileText, ListChecks, Printer } from 'lucide-react';
 import { useState } from 'react';
-import { BAND_LABEL } from '../engine/constants';
 import { fmt } from '../engine/engine';
 import { buildTickets, reportMarkdown, ticketsCsv, ticketsMarkdown } from '../engine/io';
 import { TopBar } from '../components/Shell';
@@ -8,6 +7,7 @@ import { BandBadge, DemoBadge, Empty } from '../components/ui';
 import { useResult } from '../lib/analysis';
 import { download, stamp } from '../lib/download';
 import { BAND_COLOR, n1 } from '../lib/format';
+import { roleLabel, screen } from '../i18n';
 import { useStore } from '../store/store';
 
 const addDays = (iso: string | undefined, days: number) => {
@@ -16,7 +16,11 @@ const addDays = (iso: string | undefined, days: number) => {
 };
 
 export function Mobilization() {
+  const lang = useStore((s) => s.lang);
+  const c = screen[lang];
   const project = useStore((s) => s.project);
+  const profile = useStore((s) => s.settings.profile);
+  const author = [profile?.nombre, roleLabel(profile?.rol ?? '', lang), profile?.organizacion].map((part) => part?.trim()).filter(Boolean).join(' · ');
   const notify = useStore((s) => s.notify);
   const { result } = useResult();
   const s = result.summary;
@@ -28,16 +32,12 @@ export function Mobilization() {
   return (
     <>
       <TopBar
-        title="Movilización"
-        subtitle={<><span>Informe ejecutivo y tickets de remediación con responsable, pasos, verificación y SLA</span>{project.demo && <DemoBadge />}</>}
-        actions={<>
-          <button type="button" className="btn" onClick={() => window.print()}><Printer />Imprimir informe</button>
-          <button type="button" className="btn" onClick={() => { download(`informe-${slug}-${stamp()}.md`, reportMarkdown(project, project.findings, project.assets, result), 'text/markdown;charset=utf-8'); notify('Informe exportado en Markdown.'); }}><FileText />Informe .md</button>
-        </>}
+        title={c.mobTitle}
+        subtitle={<><span>{c.mobSub}</span>{project.demo && <DemoBadge />}</>}
       />
-      <div className="view-enter mx-auto flex max-w-[1240px] flex-col gap-5 px-8 py-7">
+      <div className="view-enter mx-auto flex max-w-[1240px] flex-col gap-5 px-4 pb-6 pt-2 sm:px-8">
         {project.findings.length === 0 ? (
-          <div className="panel"><Empty icon={<ListChecks />} title="Nada que movilizar" text="Cuando haya hallazgos priorizados, aquí tendrás el informe ejecutivo y los tickets de remediación." /></div>
+          <div className="panel"><Empty icon={<ListChecks />} title={c.nothingToMove} text={c.nothingToMoveText} /></div>
         ) : (
           <>
             {/* Informe ejecutivo (imprimible) */}
@@ -45,9 +45,13 @@ export function Mobilization() {
               <header className="flex flex-wrap items-end justify-between gap-3 px-6 pb-4 pt-5">
                 <div>
                   <h2 className="text-xl font-semibold tracking-[-0.02em]">Informe ejecutivo de exposición</h2>
-                  <p className="print-muted mt-1 text-[0.8125rem] text-ink-3">{project.name} · {new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })} · motor {result.engine === 'ts' ? 'local' : 'API'} v{result.version}</p>
+                  <p className="print-muted mt-1 text-[0.8125rem] text-ink-3">{project.name} · {new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })} · motor {result.engine === 'ts' ? 'local' : 'API'} v{result.version}{author ? ` · ${author}` : ''}</p>
                 </div>
-                {project.demo && <DemoBadge />}
+                <div className="flex items-center gap-2">
+                  <button type="button" className="btn no-print" onClick={() => window.print()}><Printer className="size-4" />Imprimir informe</button>
+                  <button type="button" className="btn no-print" onClick={() => { download(`informe-${slug}-${stamp()}.md`, reportMarkdown(project, project.findings, project.assets, result, new Date(), author), 'text/markdown;charset=utf-8'); notify('Informe exportado en Markdown.'); }}><FileText className="size-4" />Informe .md</button>
+                  {project.demo && <DemoBadge />}
+                </div>
               </header>
               <div className="grid grid-cols-2 border-y border-hairline sm:grid-cols-4">
                 {[
@@ -137,7 +141,7 @@ export function Mobilization() {
                           <div className="flex flex-col gap-3">
                             <dl className="grid grid-cols-2 gap-3 text-[0.8125rem]">
                               <div><dt className="label">Responsable</dt><dd>{t.owner}</dd></div>
-                              <div><dt className="label">Prioridad · SLA</dt><dd>{BAND_LABEL[t.scored.band]} · <span className="num">{t.scored.slaDays}</span> días</dd></div>
+                              <div><dt className="label">Prioridad · SLA</dt><dd>{c.band[t.scored.band]} · <span className="num">{t.scored.slaDays}</span> {c.daysShort}</dd></div>
                             </dl>
                             <div>
                               <div className="label mb-1.5 flex items-center justify-between font-medium">Verificación<CopyButton text={t.guide.verify} /></div>

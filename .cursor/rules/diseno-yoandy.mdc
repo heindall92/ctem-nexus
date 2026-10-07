@@ -1,0 +1,22 @@
+---
+description: Diseño de Yoandy Ramírez Delgado para todas las interfaces de este repositorio
+alwaysApply: true
+---
+
+# Diseño
+
+Autor del trabajo: Yoandy Ramírez Delgado (yoandyramirezdelgado@gmail.com). Texto visible en español. Iconos solo de Lucide (`lucide-react` / lucide.dev). Sin otras librerías de iconos, sin emoji como icono y sin SVG de marca propio cuando Lucide ya tiene el glifo (GitHub incluido).
+
+## Apple
+
+Seguir el criterio de la skill apple-design de Emil Kowalski: respuesta al pointer-down (escala ~0.97), muelles interrumpibles (amortiguación 1.0; rebote solo con inercia), el mismo camino de entrada y de salida, materiales translúcidos, y movimiento reducido como fundido.
+
+## Color
+
+El modo claro arranca en azul eléctrico, no en malva. El selector del lateral ofrece las siete pastillas de Rosetta (rosa, solar, glaciar, orquídea, verde bosque, azul eléctrico, rojo), persistidas en `data-accent`. El azul eléctrico es el valor por defecto: claro `#1f5eff`, oscuro `#4d86ff`. El verde bosque es claro `#1f7a3e` (tinta blanca) y oscuro `#5aa86a`. La pastilla del selector usa `#1f7a3e`.
+
+Los colores de severidad (crítica, alta, media, baja) no son acentos de marca.
+
+## Referencias
+
+Rosetta (`heindall92/rosetta_multinorma`) es la referencia visual. El ecosistema que debe aparecer en Acerca de y en el README: Compliance Studio, Rosetta, KAIROS, CTEM-Nexus, ENS AD Auditor, ARGOS y Norvik, todos bajo `heindall92`.

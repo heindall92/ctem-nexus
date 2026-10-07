@@ -243,14 +243,14 @@ export function ticketsMarkdown(findings: Finding[], assets: Asset[], result: En
   return out.join('\n');
 }
 
-export function reportMarkdown(project: { name: string; demo: boolean }, findings: Finding[], assets: Asset[], result: EngineResult, date = new Date()): string {
+export function reportMarkdown(project: { name: string; demo: boolean }, findings: Finding[], assets: Asset[], result: EngineResult, date = new Date(), author = ''): string {
   const s = result.summary;
   const fById = new Map(findings.map((f) => [f.id, f]));
   const aById = new Map(assets.map((a) => [a.id, a]));
   const top = result.scored.filter((x) => { const f = fById.get(x.id); return f && (f.status === 'abierto' || f.status === 'validado'); }).slice(0, 10);
   const out = [
     `# Informe ejecutivo de exposición · ${mdEsc(project.name)}`, '',
-    `Fecha: ${date.toISOString().slice(0, 10)} · Motor ${result.engine === 'ts' ? 'local' : 'API'} v${result.version}`, '',
+    `Fecha: ${date.toISOString().slice(0, 10)} · Motor ${result.engine === 'ts' ? 'local' : 'API'} v${result.version}${author ? ` · ${mdEsc(author)}` : ''}`, '',
   ];
   if (project.demo) out.push('> **Datos de ejemplo.** Este informe se ha generado con el conjunto de demostración de CTEM-Nexus.', '');
   out.push('## Indicadores', '',
