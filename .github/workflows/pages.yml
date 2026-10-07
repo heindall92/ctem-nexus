@@ -1,0 +1,45 @@
+name: Publicar en GitHub Pages
+
+# Cada push a la rama por defecto pasa las pruebas, reconstruye la interfaz y publica frontend/dist
+# (index.html multiarchivo + ctem-nexus.html autocontenido) en la rama gh-pages.
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    if: github.ref_name == github.event.repository.default_branch
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - name: Publicar dist/ en gh-pages
+        env:
+          SHA: ${{ github.sha }}
+        run: |
+          cd dist
+          touch .nojekyll
+          git init -q -b gh-pages
+          git config user.name "Yoandy Ramírez Delgado"
+          git config user.email "yoandyramirezdelgado@gmail.com"
+          git add -A
+          git commit -q -m "Publicar ${SHA}"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" gh-pages
