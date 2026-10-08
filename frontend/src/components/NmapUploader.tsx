@@ -2,7 +2,7 @@ import { AlertCircle, CheckCircle2, ChevronRight, Crown, FileCode, Globe, Radar,
 import { useState, type DragEvent } from 'react';
 import { parseNmapXml, type NmapParseResult } from '../engine/nmap';
 import { readFile } from '../lib/download';
-import { assetTypeLabel } from '../lib/format';
+import { assetTypeLabel, plural } from '../lib/format';
 import { useStore } from '../store/store';
 import { useL } from '../i18n';
 
@@ -108,7 +108,7 @@ export function NmapUploader({ onDone }: Props) {
       ranges: result.ranges,
     });
     notify(
-      L(`Ingestados ${result.assets.length} activos y ${result.findings.length} hallazgos desde Nmap.`, `Imported ${result.assets.length} assets and ${result.findings.length} findings from Nmap.`),
+      L(`Ingestados ${plural(result.assets.length, 'activo', 'activos')} y ${plural(result.findings.length, 'hallazgo', 'hallazgos')} desde Nmap.`, `Imported ${plural(result.assets.length, 'asset', 'assets')} and ${plural(result.findings.length, 'finding', 'findings')} from Nmap.`),
       'ok',
     );
     if (onDone) onDone();
@@ -201,13 +201,13 @@ export function NmapUploader({ onDone }: Props) {
             </div>
             <div className="flex items-center gap-2 text-xs">
               <span className="rounded-full bg-surface-3 px-2.5 py-1 text-ink font-mono">
-                {result.totalHosts} {L('activos', 'assets')}
+                {L(plural(result.totalHosts, 'activo', 'activos'), plural(result.totalHosts, 'asset', 'assets'))}
               </span>
               <span className="rounded-full bg-surface-3 px-2.5 py-1 text-ink font-mono">
-                {result.totalFindings} {L('hallazgos', 'findings')}
+                {L(plural(result.totalFindings, 'hallazgo', 'hallazgos'), plural(result.totalFindings, 'finding', 'findings'))}
               </span>
               <span className="rounded-full bg-surface-3 px-2.5 py-1 text-ink font-mono">
-                {result.ranges.length} {L('subredes', 'subnets')}
+                {L(plural(result.ranges.length, 'subred', 'subredes'), plural(result.ranges.length, 'subnet', 'subnets'))}
               </span>
             </div>
           </div>

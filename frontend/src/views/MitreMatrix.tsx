@@ -12,7 +12,7 @@ import type { Band } from '../engine/types';
 import { screen, useL } from '../i18n';
 import { useResult } from '../lib/analysis';
 import { download, stamp } from '../lib/download';
-import { BAND_COLOR, n1, statusLabel } from '../lib/format';
+import { BAND_COLOR, n1, plural, statusLabel } from '../lib/format';
 import { useStore } from '../store/store';
 
 type Filter = 'todas' | 'expuestas';
@@ -37,7 +37,7 @@ function Cell({ tech, exp, onOpen }: { tech: AttackTechnique; exp?: TechniqueExp
       type="button"
       onClick={onOpen}
       data-testid={`tecnica-${tech.id}`}
-      aria-label={L(`${tech.id} ${name}: ${exp.count} hallazgos, banda ${band}`, `${tech.id} ${name}: ${exp.count} findings, ${band} band`)}
+      aria-label={L(`${tech.id} ${name}: ${plural(exp.count, 'hallazgo', 'hallazgos')}, banda ${band}`, `${tech.id} ${name}: ${plural(exp.count, 'finding', 'findings')}, ${band} band`)}
       className="group relative w-full rounded-lg py-2 pl-3 pr-2.5 text-left transition-transform duration-150 ease-[var(--ease-out)] active:scale-[0.97]"
       style={{ background: tint(exp.band, 16), boxShadow: `inset 3px 0 0 ${BAND_COLOR[exp.band]}, inset 0 0 0 1px ${tint(exp.band, 34)}` }}
     >

@@ -137,7 +137,7 @@ export function ScanUploader({ onDone }: { onDone?: () => void }) {
           <div className="flex flex-wrap items-center gap-2">
             <CheckCircle2 className="size-4 text-ok" />
             <span className="font-semibold">{plan.tool}</span>
-            <span className="text-xs text-ink-3">· {parsed.file} · {parsed.parse.hosts.length} {L('hosts', 'hosts')} · {parsed.parse.items.length} {L('resultados', 'results')}{parsed.parse.skipped ? ` · ${parsed.parse.skipped} ${L('informativos omitidos', 'informational skipped')}` : ''}</span>
+            <span className="text-xs text-ink-3">· {parsed.file} · {plural(parsed.parse.hosts.length, 'host', 'hosts')} · {L(plural(parsed.parse.items.length, 'resultado', 'resultados'), plural(parsed.parse.items.length, 'result', 'results'))}{parsed.parse.skipped ? ` · ${L(plural(parsed.parse.skipped, 'informativo omitido', 'informativos omitidos'), `${parsed.parse.skipped} informational skipped`)}` : ''}</span>
           </div>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             <Stat value={plan.newFindings.length} label={L('hallazgos nuevos', 'new findings')} tone="accent" />

@@ -2,7 +2,7 @@ import { AlertCircle, CheckCircle2, ChevronRight, Crown, FileCode, Server, Shiel
 import { useState, type DragEvent } from 'react';
 import { parseBloodHoundJson, type BloodHoundParseResult } from '../engine/bloodhound';
 import { readFile } from '../lib/download';
-import { assetTypeLabel } from '../lib/format';
+import { assetTypeLabel, plural } from '../lib/format';
 import { useL } from '../i18n';
 import { useStore } from '../store/store';
 
@@ -112,7 +112,7 @@ export function BloodHoundUploader({ onDone }: Props) {
       edges: result.edges,
     });
     notify(
-      L(`Ingestados ${result.assets.length} objetos AD, ${result.findings.length} hallazgos y ${result.edges.length} aristas de ataque.`, `Imported ${result.assets.length} AD objects, ${result.findings.length} findings and ${result.edges.length} attack edges.`),
+      L(`Ingestados ${plural(result.assets.length, 'objeto AD', 'objetos AD')}, ${plural(result.findings.length, 'hallazgo', 'hallazgos')} y ${plural(result.edges.length, 'arista de ataque', 'aristas de ataque')}.`, `Imported ${plural(result.assets.length, 'AD object', 'AD objects')}, ${plural(result.findings.length, 'finding', 'findings')} and ${plural(result.edges.length, 'attack edge', 'attack edges')}.`),
       'ok',
     );
     if (onDone) onDone();
@@ -212,13 +212,13 @@ export function BloodHoundUploader({ onDone }: Props) {
                 {result.summary.domainControllers} DCs
               </span>
               <span className="rounded-full bg-surface-3 px-2.5 py-1 text-ink font-mono">
-                {result.summary.totalComputers} {L('equipos', 'computers')}
+                {L(plural(result.summary.totalComputers, 'equipo', 'equipos'), plural(result.summary.totalComputers, 'computer', 'computers'))}
               </span>
               <span className="rounded-full bg-surface-3 px-2.5 py-1 text-ink font-mono">
-                {result.summary.totalUsers} {L('usuarios', 'users')}
+                {L(plural(result.summary.totalUsers, 'usuario', 'usuarios'), plural(result.summary.totalUsers, 'user', 'users'))}
               </span>
               <span className="rounded-full bg-surface-3 px-2.5 py-1 text-ink font-mono">
-                {result.summary.edgesCreated} {L('aristas', 'edges')}
+                {L(plural(result.summary.edgesCreated, 'arista', 'aristas'), plural(result.summary.edgesCreated, 'edge', 'edges'))}
               </span>
             </div>
           </div>

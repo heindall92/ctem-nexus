@@ -5,7 +5,7 @@ import { PROFILE_IDS, PROFILES, type Weights } from '../engine/constants';
 import { prioritize } from '../engine/engine';
 import { SOURCE_LABEL } from '../engine/scanners';
 import type { ProfileId } from '../engine/types';
-import { n1 } from '../lib/format';
+import { n1, plural } from '../lib/format';
 import { parseProject } from '../engine/io';
 import { Modal, TopBar } from '../components/Shell';
 import { Field, PageHeader, ScoreBar, SectionTitle, Segmented, Toggle } from '../components/ui';
@@ -103,7 +103,7 @@ export function Settings() {
                   <li key={p} className="rounded-xl px-3 py-2.5 text-xs shadow-[inset_0_0_0_1px_var(--color-hairline)]" style={p === profile ? { boxShadow: 'inset 0 0 0 1.5px var(--color-accent)' } : undefined}>
                     <div className="font-medium text-ink">{PROFILE_LABEL[p]}</div>
                     <div className="mt-1 text-ink-3">{L('Índice', 'Index')} <span className="num text-ink">{n1(byProfile[p].summary.exposureIndex)}</span> · {L('críticos', 'critical')} <span className="num text-ink">{byProfile[p].scored.filter((x) => x.band === 'critica').length}</span></div>
-                    <div className="mt-0.5 text-ink-3">{p === profile ? L('En uso', 'In use') : L(`${bandShift(p)} hallazgos cambian de banda`, `${bandShift(p)} findings change band`)}</div>
+                    <div className="mt-0.5 text-ink-3">{p === profile ? L('En uso', 'In use') : (() => { const n = bandShift(p); return n === 0 ? L('Ningún hallazgo cambia de banda', 'No finding changes band') : n === 1 ? L('1 hallazgo cambia de banda', '1 finding changes band') : L(`${n} hallazgos cambian de banda`, `${n} findings change band`); })()}</div>
                   </li>
                 ))}
               </ul>
@@ -136,7 +136,7 @@ export function Settings() {
                     <span className="num text-ink-3">{im.at}</span>
                     <span className="font-medium text-ink">{im.tool || SOURCE_LABEL[im.source]}</span>
                     <span className="truncate text-ink-3">{im.file}</span>
-                    <span className="text-ink-2">· +{im.newFindings} {L('nuevos', 'new')} · {im.updated} {L('actualizados', 'updated')}{im.reopened ? ` · ${im.reopened} ${L('reabiertos', 'reopened')}` : ''}{im.newAssets ? ` · +${im.newAssets} ${L('activos', 'assets')}` : ''}</span>
+                    <span className="text-ink-2">· +{L(plural(im.newFindings, 'nuevo', 'nuevos'), `${im.newFindings} new`)} · {L(plural(im.updated, 'actualizado', 'actualizados'), `${im.updated} updated`)}{im.reopened ? ` · ${L(plural(im.reopened, 'reabierto', 'reabiertos'), `${im.reopened} reopened`)}` : ''}{im.newAssets ? ` · +${L(plural(im.newAssets, 'activo', 'activos'), plural(im.newAssets, 'asset', 'assets'))}` : ''}</span>
                   </li>
                 ))}
               </ul>
@@ -154,7 +154,7 @@ export function Settings() {
               try {
                 const p = parseProject(await readFile(file));
                 if (!p) { notify(L('El archivo no es un proyecto de CTEM-Nexus válido.', 'The file is not a valid CTEM-Nexus project.'), 'error'); return; }
-                replace(p); notify(L(`Proyecto «${p.name}» importado: ${p.assets.length} activos, ${p.findings.length} hallazgos.`, `Project “${p.name}” imported: ${p.assets.length} assets, ${p.findings.length} findings.`));
+                replace(p); notify(L(`Proyecto «${p.name}» importado: ${plural(p.assets.length, 'activo', 'activos')}, ${plural(p.findings.length, 'hallazgo', 'hallazgos')}.`, `Project “${p.name}” imported: ${plural(p.assets.length, 'asset', 'assets')}, ${plural(p.findings.length, 'finding', 'findings')}.`));
               } catch (err) { notify(err instanceof Error ? err.message : L('No se pudo leer el archivo.', 'The file could not be read.'), 'error'); }
             }} />
             <button type="button" className="btn" onClick={() => fileRef.current?.click()}><Upload />{L('Importar proyecto JSON', 'Import project JSON')}</button>

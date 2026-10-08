@@ -13,7 +13,7 @@ import { BandBadge, DemoBadge, Empty, PageHeader, Field, Score, ScoreBar, Segmen
 import { useResult } from '../lib/analysis';
 import { download, readFile } from '../lib/download';
 import { explanationIn, factorsIn } from '../engine/explain';
-import { BAND_COLOR, kindLabel, n1, pct, statusLabel } from '../lib/format';
+import { BAND_COLOR, kindLabel, n1, pct, statusLabel, plural } from '../lib/format';
 import { screen, useL } from '../i18n';
 import { nextId, useStore } from '../store/store';
 
@@ -58,7 +58,7 @@ export function Prioritization() {
       if (!findings.length) { notify(L('No se ha encontrado ningún hallazgo válido en el archivo.', 'No valid finding was found in the file.'), 'error'); return; }
       addFindings(findings);
       const orphan = findings.filter((f) => !aById.has(f.assetId)).length;
-      notify(L(`Importados ${findings.length} hallazgos${rejected ? `, ${rejected} filas descartadas` : ''}${orphan ? `; ${orphan} sin activo conocido` : ''}.`, `Imported ${findings.length} findings${rejected ? `, ${rejected} rows discarded` : ''}${orphan ? `; ${orphan} without a known asset` : ''}.`), rejected || orphan ? 'info' : 'ok');
+      notify(L(`Importados ${plural(findings.length, 'hallazgo', 'hallazgos')}${rejected ? `, ${plural(rejected, 'fila descartada', 'filas descartadas')}` : ''}${orphan ? `; ${orphan} sin activo conocido` : ''}.`, `Imported ${plural(findings.length, 'finding', 'findings')}${rejected ? `, ${plural(rejected, 'row discarded', 'rows discarded')}` : ''}${orphan ? `; ${orphan} without a known asset` : ''}.`), rejected || orphan ? 'info' : 'ok');
     } catch (e) {
       notify(e instanceof Error ? e.message : L('No se pudo leer el archivo.', 'The file could not be read.'), 'error');
     }
@@ -185,7 +185,7 @@ export function Prioritization() {
                 </tbody>
               </table>
             </div>
-            <div className="border-t border-hairline px-4 py-2.5 text-xs text-ink-3">{L(`${rows.length} de ${project.findings.length} hallazgos · ordenados por puntuación`, `${rows.length} of ${project.findings.length} findings · sorted by score`)}</div>
+            <div className="border-t border-hairline px-4 py-2.5 text-xs text-ink-3">{L(`${rows.length} de ${plural(project.findings.length, 'hallazgo', 'hallazgos')} · ordenados por puntuación`, `${rows.length} of ${plural(project.findings.length, 'finding', 'findings')} · sorted by score`)}</div>
           </section>
         )}
       </div>

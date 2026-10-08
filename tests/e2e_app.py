@@ -229,7 +229,7 @@ def escritorio(b, tmp):
     nav(page, "Mapa ATT&CK")
     check("la matriz ATT&CK muestra las 11 tácticas", page.get_by_test_id("matriz-attack").locator("section").count() == 11)
     celda = page.get_by_test_id("matriz-attack").get_by_test_id("tecnica-T1190")
-    anunciados = int(re.search(r": (\d+) hallazgos", celda.get_attribute("aria-label")).group(1))
+    anunciados = int(re.search(r": (\d+) hallazgos?", celda.get_attribute("aria-label")).group(1))
     celda.click()
     ficha = page.get_by_test_id("ficha-tecnica")
     check("la ficha de T1190 lista los hallazgos que anuncia su celda, Log4Shell incluido", ficha.locator("li").count() == anunciados >= 2 and "Log4Shell" in ficha.inner_text(), anunciados)
@@ -311,7 +311,9 @@ def escritorio(b, tmp):
     perfil.get_by_role("button", name="Banca y finanzas").click()
     check("el perfil de banca se guarda en el proyecto y cambia los pesos", J(f"{S}.project.profile") == "banca" and perfil.get_by_text("Amenaza dirigida").count() == 1)
     check("Ajustes enseña los catálogos en uso y el registro de importaciones", page.get_by_test_id("inteligencia").get_by_text(re.compile("versión 2026.10.07")).count() == 1 and page.get_by_test_id("registro-importaciones").locator("li").count() >= 1)
-    perfil.get_by_role("button", name="General").click()
+    for prf in ("OT / industrial", "Banca y finanzas", "General"):
+        perfil.get_by_role("button", name=prf).click()
+        check(f"perfil {prf}: sin «1 hallazgos» ni «1 activos» (concordancia)", re.search(r"\b1 (hallazgos|activos)\b", page.locator("main").inner_text()) is None)
 
     # ¿Y si…?: borrador sin tocar el proyecto, plan voraz y grupo que solo corta junto
     J(f"{S}.loadDemo()")

@@ -2,6 +2,12 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico. La hoja de ruta está en [ROADMAP.md](ROADMAP.md).
 
+## [0.5.1] - 2026-10-08
+
+### Corregido
+- **Concordancia con «1»**: «1 hallazgos cambian de banda» en los perfiles de Ajustes, «+1 activos» en el registro de importaciones y otros contadores (avisos de importación de Nmap, BloodHound, CSV y proyecto, chips de los importadores, plan de importación, simulación y etiquetas accesibles del mapa ATT&CK). Todos usan ahora singular y plural, en español y en inglés.
+- Prueba e2e nueva: con cada perfil, ninguna vista muestra «1 hallazgos» ni «1 activos». e2e 127/127.
+
 ## [0.5.0] - 2026-10-08
 
 Fase 3 de la hoja de ruta: más formatos de entrada, inteligencia sin conexión, riesgo aceptado, mapa ATT&CK, simulación y seguimiento del ciclo.

@@ -11,7 +11,7 @@ import { fixPlan, simulate } from '../engine/simulate';
 import { useL } from '../i18n';
 import { useResult } from '../lib/analysis';
 import { download, stamp } from '../lib/download';
-import { BAND_COLOR, n1 } from '../lib/format';
+import { BAND_COLOR, n1, plural } from '../lib/format';
 import { useStore } from '../store/store';
 
 function Delta({ label, before, after, decimals = false, testId }: { label: string; before: number; after: number; decimals?: boolean; testId?: string }) {
@@ -57,7 +57,7 @@ export function Simulation() {
   const applyPlan = (n: number) => {
     const ids = plan.steps.slice(0, n).flatMap((s) => s.ids);
     setFixed(ids);
-    notify(L(`Simulando los ${n} primeros pasos del plan (${ids.length} hallazgos).`, `Simulating the first ${n} plan steps (${ids.length} findings).`), 'info');
+    notify((n === 1 ? L(`Simulando el primer paso del plan (${plural(ids.length, 'hallazgo', 'hallazgos')}).`, `Simulating the first plan step (${plural(ids.length, 'finding', 'findings')}).`) : L(`Simulando los ${n} primeros pasos del plan (${plural(ids.length, 'hallazgo', 'hallazgos')}).`, `Simulating the first ${n} plan steps (${plural(ids.length, 'finding', 'findings')}).`)), 'info');
   };
   const exportPlan = () => {
     const lines = [
