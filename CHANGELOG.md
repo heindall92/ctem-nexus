@@ -2,6 +2,36 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico. La hoja de ruta está en [ROADMAP.md](ROADMAP.md).
 
+## [0.5.0] - 2026-10-08
+
+Fase 3 de la hoja de ruta: más formatos de entrada, inteligencia sin conexión, riesgo aceptado, mapa ATT&CK, simulación y seguimiento del ciclo.
+
+### Añadido
+- **Importador unificado** («Importar escáner»): Nessus (`.nessus`), OpenVAS/Greenbone (XML), Nuclei (JSONL/JSON), Trivy (JSON) y SARIF 2.1.0, con detección automática del formato. Enseña el plan antes de aplicar: hallazgos nuevos, actualizados, mitigados que reaparecen (se reabren como regresión), activos nuevos y reconocidos y duplicados fundidos. Permite asignar todo a un activo existente (útil con Trivy y SARIF) y remite Nmap, BloodHound y proyectos a su importador.
+- **Deduplicación entre fuentes**: un hallazgo se reconoce por activo y CVE (también los relacionados) o, sin CVE, por título o guía específica. Se suman fuentes y evidencias, se toman el CVSS y el EPSS más altos y se respetan el estado y la remediación del analista. Importar dos veces no duplica.
+- **CISA KEV y FIRST EPSS por fichero** (también `.csv.gz`): KEV solo añade marcas y EPSS toma el valor más alto entre los CVE del hallazgo. La versión del catálogo queda en el proyecto, en Ajustes y en el informe. La app nunca los descarga.
+- **Riesgo aceptado** con responsable, motivo, caducidad (1 a 365 días) y control compensatorio, obligatorio en crítica y alta. Renovar y retirar conservan el estado original; al cargar el proyecto, las aceptaciones vencidas vuelven solas a su estado y se avisa. Inicio avisa de las que caducan en 14 días.
+- **Perfiles de ponderación** General, OT/industrial y Banca, con sus pesos y su efecto en el proyecto (índice, críticos, hallazgos que cambian de banda). Paridad TS ↔ Python en los tres. La fórmula de la ayuda sigue al perfil activo.
+- **Mapa ATT&CK**: catálogo de 50 técnicas Enterprise v14 en 11 tácticas. Las técnicas se infieren de la guía, el título (inglés y español, con límites de palabra) y el CVE, o las fija el analista en el hallazgo. Cada celda toma el color de la peor banda de los hallazgos vivos que la habilitan; ficha con esos hallazgos, chips en la ficha del hallazgo, búsqueda por ID con Ctrl + K y capa para ATT&CK Navigator 4.5. En el móvil, lista por táctica.
+- **«¿Y si…?»**: simulación sin tocar el proyecto (índice, críticos, KEV, rutas y activos antes y después), plan voraz que rompe más rutas por hallazgo y propone juntos los que solo cortan su arista a la vez, escalera de rutas rotas por paso, grafo resultante y plan en Markdown.
+- **Cumplimiento de SLA** global, por prioridad y por responsable del activo, con antigüedad de lo abierto.
+- **Ciclos**: instantánea de cierre (índice, abiertos por banda, KEV, rutas, aceptados, vencidos, MTTR) y tendencia frente a hoy.
+- **Informe para la dirección en una página** tras la portada: perfil y catálogos usados, cinco acciones del plan, tendencia y riesgos aceptados (también en el Markdown).
+- Exportación de tickets a **Jira** (CSV del asistente de importación) y **GitHub Issues** (JSON para la API, sin pasar textos por la shell).
+- Ficheros de ejemplo ficticios en `shared/samples/` para cada importador y catálogo.
+
+### Cambiado
+- El proyecto guarda perfil, catálogos, registro de importaciones e instantáneas; todo se valida y sanea al importar.
+- Barra inferior del móvil con etiquetas cortas; «Más» se resalta cuando la vista activa está dentro.
+- Al cambiar de idioma se descartan los avisos pendientes en el idioma anterior.
+- En la ficha, «Técnica que habilita» pasa a «Movimiento que habilita» para no confundirse con ATT&CK; el buscador muestra el nombre del activo.
+
+### Seguridad
+- XML sin DTD ni entidades, JSON sin claves de prototipo, límite de tamaño y de elementos en todos los importadores. Trivy registra los secretos por regla, fichero y línea, nunca por su valor. Fórmulas neutralizadas también en el CSV de Jira.
+
+### Pruebas
+- Vitest 115, Pytest 22, e2e 124/124 (cada importador con su fichero de ejemplo) y axe-core 0 infracciones en 188 estados.
+
 ## [0.4.2] - 2026-10-08
 
 ### Corregido

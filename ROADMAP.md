@@ -101,25 +101,27 @@ Referencias: **Rosetta** (la herramienta del ecosistema con mejor acogida), la g
 
 ### Descubrimiento: más formatos de entrada (todo en local, parseo seguro y sin DTD)
 
-- [ ] **Nessus** (`.nessus` XML), **OpenVAS/Greenbone** (XML), **Nuclei** (JSONL) y **Trivy / SARIF** (contenedores y código).
-- [ ] Deduplicación por activo + CVE/título, con fusión de evidencias e indicación de la fuente.
-- [ ] **Señales de inteligencia por fichero:** importar el catálogo CISA KEV (JSON público) y un CSV de EPSS (FIRST) para recalcular KEV/EPSS sin conexión desde la app. Se muestra la fecha del catálogo usado en el informe.
+- [x] **Nessus** (`.nessus` XML), **OpenVAS/Greenbone** (XML), **Nuclei** (JSONL) y **Trivy / SARIF** (contenedores y código).
+- [x] Deduplicación por activo + CVE/título, con fusión de evidencias e indicación de la fuente.
+- [x] **Señales de inteligencia por fichero:** importar el catálogo CISA KEV (JSON público) y un CSV de EPSS (FIRST) para recalcular KEV/EPSS sin conexión desde la app. Se muestra la fecha del catálogo usado en el informe.
 
 ### Priorización y validación
 
-- [ ] **Excepciones y aceptación del riesgo:** el hallazgo pasa a «riesgo aceptado» con responsable, motivo, fecha de caducidad y control compensatorio. Al caducar vuelve a abierto. La excepción aparece en el informe.
-- [ ] **Mapa MITRE ATT&CK:** técnica (Txxxx) en cada arista o hallazgo, matriz de cobertura y exportación a ATT&CK Navigator (capa JSON).
-- [ ] **Simulación «¿y si…?»:** marcar hallazgos como corregidos en un borrador y ver al momento cuántas rutas se rompen y cómo baja el índice, con un orden de corrección óptimo (voraz sobre puntos de estrangulamiento).
-- [ ] **Ponderación configurable** (perfiles: por defecto, industrial/OT, banca) con prueba de paridad TS ↔ Python para cada perfil.
+- [x] **Excepciones y aceptación del riesgo:** el hallazgo pasa a «riesgo aceptado» con responsable, motivo, fecha de caducidad y control compensatorio. Al caducar vuelve a abierto. La excepción aparece en el informe.
+- [x] **Mapa MITRE ATT&CK:** técnica (Txxxx) en cada arista o hallazgo, matriz de cobertura y exportación a ATT&CK Navigator (capa JSON).
+- [x] **Simulación «¿y si…?»:** marcar hallazgos como corregidos en un borrador y ver al momento cuántas rutas se rompen y cómo baja el índice, con un orden de corrección óptimo (voraz sobre puntos de estrangulamiento).
+- [x] **Ponderación configurable** (perfiles: por defecto, industrial/OT, banca) con prueba de paridad TS ↔ Python para cada perfil.
 
 ### Movilización y seguimiento
 
-- [ ] **Instantáneas e histórico:** guardar el estado del ciclo (fecha, índice, abiertos por banda, MTTR) y ver tendencias entre ciclos.
-- [ ] **Cumplimiento de SLA:** % dentro de plazo por banda y por responsable, envejecimiento de hallazgos y tickets vencidos.
-- [ ] Exportación de tickets a **Jira CSV** y **GitHub Issues** (Markdown por ticket), y CSV genérico ya existente.
-- [ ] Informe para la dirección en una página (resumen, tendencia, 5 acciones) y anexo técnico.
+- [x] **Instantáneas e histórico:** guardar el estado del ciclo (fecha, índice, abiertos por banda, MTTR) y ver tendencias entre ciclos.
+- [x] **Cumplimiento de SLA:** % dentro de plazo por banda y por responsable, envejecimiento de hallazgos y tickets vencidos.
+- [x] Exportación de tickets a **Jira CSV** y **GitHub Issues** (Markdown por ticket), y CSV genérico ya existente.
+- [x] Informe para la dirección en una página (resumen, tendencia, 5 acciones) y anexo técnico.
 
 **Aceptación:** cada importador tiene un fichero de ejemplo en `shared/samples/` con su prueba unitaria y su paso e2e, y cada cambio de fórmula pasa `npm run golden` y `pytest`.
+
+**Estado: cerrada en 0.5.0.** Vitest 115, Pytest 22, e2e 124/124 y axe-core 0 infracciones en 188 estados. Además de lo previsto: perfil y catálogos en el informe, aviso de aceptaciones por caducar, búsqueda de técnicas con Ctrl + K y plan voraz que agrupa los hallazgos que solo cortan juntos su arista.
 
 ---
 

@@ -14,6 +14,9 @@ fs.mkdirSync(outStackDir, { recursive: true });
 
 const requestedIcons = [
   'route',
+  'grid-3x3',
+  'flask-conical',
+  'file-search',
   'brain-circuit',
   'list-checks',
   'camera',

@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <b>Plataforma de gestión continua de la exposición a amenazas: define el alcance, ingesta escaneos de red Nmap y vulnerabilidades, prioriza con cálculo explicable (CVSS · EPSS · KEV), calcula rutas de ataque hacia las joyas de la corona y moviliza la remediación con planes ejecutivos y técnicos.</b>
+  <b>Plataforma de gestión continua de la exposición a amenazas: define el alcance, importa Nessus, OpenVAS, Nuclei, Trivy, SARIF, Nmap y BloodHound sin duplicar, prioriza con cálculo explicable (CVSS · EPSS · KEV) y perfiles para OT y banca, calcula rutas de ataque y su mapa MITRE ATT&CK, simula el plan de corrección y moviliza la remediación con SLA, tickets para Jira y GitHub e informes para la dirección.</b>
 </p>
 
 <p align="center">
@@ -14,12 +14,13 @@
   <a href="LICENSE"><img alt="Licencia GPLv2" src="https://img.shields.io/badge/LICENCIA-GPLv2-4169A1?style=flat"/></a>
   <img alt="Gartner CTEM" src="https://img.shields.io/badge/Gartner-CTEM%205%20fases-E07B39?style=flat"/>
   <img alt="CISA KEV + EPSS" src="https://img.shields.io/badge/se%C3%B1ales-CVSS%20%C2%B7%20EPSS%20%C2%B7%20KEV-D9534F?style=flat"/>
-  <img alt="Ingesta Nmap + BloodHound" src="https://img.shields.io/badge/ingesta-Nmap%20XML%20%C2%B7%20BloodHound%20AD%20%C2%B7%20CSV-3DDCC4?style=flat"/>
+  <img alt="MITRE ATT&CK" src="https://img.shields.io/badge/MITRE-ATT%26CK%20%C2%B7%20Navigator-C2410C?style=flat"/>
+  <img alt="Ingesta de escáneres" src="https://img.shields.io/badge/ingesta-Nessus%20%C2%B7%20OpenVAS%20%C2%B7%20Nuclei%20%C2%B7%20Trivy%20%C2%B7%20SARIF%20%C2%B7%20Nmap%20%C2%B7%20BloodHound-3DDCC4?style=flat"/>
   <img alt="React 19 + TypeScript" src="https://img.shields.io/badge/React%2019-TypeScript-3178C6?style=flat&logo=typescript&logoColor=white"/>
   <img alt="Tailwind CSS 4" src="https://img.shields.io/badge/Tailwind%20CSS-4-06B6D4?style=flat&logo=tailwindcss&logoColor=white"/>
   <img alt="FastAPI opcional" src="https://img.shields.io/badge/API-FastAPI%20(opcional)-009688?style=flat&logo=fastapi&logoColor=white"/>
   <img alt="Un solo HTML" src="https://img.shields.io/badge/un%20solo-HTML%20sin%20servidor-2E8B57?style=flat"/>
-  <img alt="Pruebas 100% OK" src="https://img.shields.io/badge/pruebas-Vitest%2052%20%C2%B7%20Pytest%2019%20%C2%B7%20e2e%2082-2E8B57?style=flat"/>
+  <img alt="Pruebas 100% OK" src="https://img.shields.io/badge/pruebas-Vitest%20115%20%C2%B7%20Pytest%2022%20%C2%B7%20e2e%20124-2E8B57?style=flat"/>
   <img alt="Iconos Lucide" src="https://img.shields.io/badge/iconos-Lucide-F56565?style=flat&logo=lucide&logoColor=white"/>
 </p>
 
@@ -91,7 +92,7 @@ pesadas de auditoría.
       <td valign="top"><code>├─</code> <img src="docs/assets/icons/check-check.svg" width="16" height="16" alt="" valign="middle"/> <code>pruebas_calidad:</code><br><br>
         <img src="docs/assets/stack/vitest.svg" height="48" alt="Vitest">
         <img src="docs/assets/stack/pytest.svg" height="48" alt="Pytest"><br>
-        <sub><code>Vitest 52 pruebas · Pytest 19 pruebas · e2e 82 · axe-core 0 infracciones · Paridad exacta TS ↔ Python (golden-demo)</code></sub>
+        <sub><code>Vitest 115 pruebas · Pytest 22 pruebas · e2e 124 · axe-core 0 infracciones en 188 estados · Paridad exacta TS ↔ Python (golden-demo, 3 perfiles)</code></sub>
       </td>
       <td valign="top"><code>╰─</code> <img src="docs/assets/icons/shield-check.svg" width="16" height="16" alt="" valign="middle"/> <code>seguridad_privacidad:</code><br><br>
         <img src="docs/assets/stack/csp.svg" height="48" alt="CSP estricta"><br>
@@ -101,7 +102,7 @@ pesadas de auditoría.
   </tbody>
   <tfoot>
     <tr>
-      <td colspan="2"><code>version: 0.4.2&nbsp;&nbsp;·&nbsp;&nbsp;motor: TS + FastAPI&nbsp;&nbsp;·&nbsp;&nbsp;Gartner CTEM&nbsp;&nbsp;·&nbsp;&nbsp;pruebas: Vitest 52 · Pytest 19 · e2e 82&nbsp;&nbsp;·&nbsp;&nbsp;licencia: GPLv2</code></td>
+      <td colspan="2"><code>version: 0.5.0&nbsp;&nbsp;·&nbsp;&nbsp;motor: TS + FastAPI&nbsp;&nbsp;·&nbsp;&nbsp;Gartner CTEM · MITRE ATT&amp;CK&nbsp;&nbsp;·&nbsp;&nbsp;pruebas: Vitest 115 · Pytest 22 · e2e 124&nbsp;&nbsp;·&nbsp;&nbsp;licencia: GPLv2</code></td>
     </tr>
   </tfoot>
 </table>
@@ -116,6 +117,7 @@ pesadas de auditoría.
 - [Ciclo CTEM y mapa mental](#ciclo-ctem-y-mapa-mental)
 - [Vistas](#vistas)
 - [Capturas](#capturas)
+- [Importar escáneres e inteligencia](#importar-escáneres-e-inteligencia)
 - [Ingesta activa con Nmap](#ingesta-activa-con-nmap)
 - [Arranque rápido](#arranque-rápido)
 - [Arquitectura](#arquitectura)
@@ -135,10 +137,10 @@ pesadas de auditoría.
 CTEM-Nexus organiza el flujo de seguridad en las 5 etapas del ciclo continuo de Gartner:
 
 1. **Alcance (*Scoping*):** Registra los activos críticos (nombre, tipo de infraestructura, IP/CIDR, responsable de área, criticidad 1–5, exposición a Internet y etiquetas) y los rangos de red autorizados. Los activos con criticidad 5 son designados como **joyas de la corona**.
-2. **Descubrimiento (*Discovery*):** Ingesta reportes reales de escaneo **Nmap (XML)**, exportación **BloodHound AD**, archivos CSV o JSON estructurados, da de alta hallazgos manuales o carga el conjunto de datos de demostración para pruebas y capacitación.
-3. **Priorización (*Prioritization*):** El motor correlaciona y ordena cada hallazgo con una puntuación explicable de 0 a 100. Abre cualquier elemento para inspeccionar el desglose de factores, la justificación textual y la guía de remediación paso a paso.
-4. **Validación (*Validation*):** En el panel de *Rutas de ataque*, analiza el grafo interactivo, identifica los caminos de intrusión desde el exterior hasta las joyas de la corona y localiza los **puntos de estrangulamiento**. Marca cada hallazgo como **validado** (+5 puntos) o **no explotable** (reduce su riesgo a un 25 % y desconecta la arista).
-5. **Movilización (*Mobilization*):** Genera informes ejecutivos en Markdown imprimibles para la dirección y exporta paquetes de tickets de ingeniería (en CSV o Markdown) con comandos de verificación y SLAs por banda de riesgo.
+2. **Descubrimiento (*Discovery*):** Importa **Nessus, OpenVAS/Greenbone, Nuclei, Trivy y SARIF** (con vista previa de lo que se crea, se actualiza o se reabre y sin duplicar entre fuentes), **Nmap (XML)**, **BloodHound AD**, CSV o JSON, y aplica los catálogos **CISA KEV** y **FIRST EPSS** que descargas tú (versión registrada en el proyecto).
+3. **Priorización (*Prioritization*):** El motor ordena cada hallazgo con una puntuación explicable de 0 a 100 según el **perfil** elegido (general, OT/industrial o banca). Abre cualquier elemento para ver el desglose, la guía paso a paso y sus técnicas ATT&CK, o **acepta el riesgo** con responsable, caducidad y control compensatorio.
+4. **Validación (*Validation*):** En el panel de *Rutas de ataque*, analiza el grafo interactivo, identifica los caminos de intrusión desde el exterior hasta las joyas de la corona y localiza los **puntos de estrangulamiento**. Marca cada hallazgo como **validado** (+5 puntos) o **no explotable** (reduce su riesgo a un 25 % y desconecta la arista). El **Mapa ATT&CK** resume qué técnicas quedan al alcance de un atacante y exporta una capa para ATT&CK Navigator.
+5. **Movilización (*Mobilization*):** Simula en **«¿Y si…?»** qué rutas rompe cada corrección y obtén el orden óptimo; mide el **cumplimiento de SLA** por prioridad y responsable, cierra **ciclos** para ver la tendencia y genera el informe para la dirección (cinco acciones, tendencia y riesgos aceptados) y los tickets en CSV, Markdown, **Jira** o **GitHub Issues**.
 
 ## <img src="docs/assets/icons/brain-circuit.svg" width="20" height="20" valign="middle"/> Ciclo CTEM y mapa mental
 
@@ -151,27 +153,34 @@ mindmap
       Joyas de la corona
       Rangos de red autorizados
     2 Descubrimiento
-      Ingesta Nmap XML
-      Importacion CSV y JSON
-      Extraccion automatica CVEs
-      Servicios inseguros Telnet SMB
+      Nessus OpenVAS Nuclei
+      Trivy y SARIF
+      Nmap XML y BloodHound
+      Catalogos KEV y EPSS
+      Deduplicacion entre fuentes
     3 Priorizacion
       CVSS 30 pts
       CISA KEV y EPSS 25 pts
       Criticidad de negocio 20 pts
       Exposicion a Internet 10 pts
       Proximidad a joyas 15 pts
+      Perfiles OT y banca
+      Riesgo aceptado con caducidad
     4 Validacion
       Grafo de ataque SVG
       Rutas hacia joyas
       Puntos de estrangulamiento
       Validado mas 5
       No explotable por 0.25
+      Mapa MITRE ATTCK
     5 Movilizacion
+      Simulacion y plan optimo
+      Cumplimiento de SLA
+      Ciclos y tendencia
       Informe ejecutivo
       Guias tecnicas de remediacion
       Comandos de verificacion
-      Tickets CSV y Markdown
+      Tickets CSV Jira y GitHub
       SLA por banda de riesgo
 ```
 
@@ -181,10 +190,12 @@ mindmap
 |---|---|---|
 | <img src="docs/assets/icons/orbit.svg" width="18"/> | **Panel** | **Franjas de exposición por activo** (cada hallazgo situado por su puntuación sobre las bandas), índice de exposición, **tres acciones para hoy** ordenadas por las rutas que rompen, indicadores clave, ciclo CTEM y riesgos principales. |
 | <img src="docs/assets/icons/crosshair.svg" width="18"/> | **Alcance y activos** | Inventario de activos críticos, asignación de responsabilidades, rangos de subred y botón de ingesta de escaneos Nmap XML para alta automatizada de infraestructura. |
-| <img src="docs/assets/icons/flame.svg" width="18"/> | **Descubrimiento y priorización** | Tabla dinámica con filtrado por severidad, búsqueda, importación (Nmap XML / CSV / JSON) y cajón lateral con desglose exhaustivo de puntuación y SLA. |
+| <img src="docs/assets/icons/flame.svg" width="18"/> | **Descubrimiento y priorización** | Tabla con filtrado por severidad y búsqueda; **importador de escáneres** (Nessus, OpenVAS, Nuclei, Trivy, SARIF, KEV, EPSS) con plan previo; Nmap, BloodHound, CSV y JSON; ficha con desglose, técnicas ATT&CK, guía con casillas y **aceptación de riesgo**. |
 | <img src="docs/assets/icons/waypoints.svg" width="18"/> | **Rutas de ataque** | Grafo de ataque con zoom, desplazamiento y modo «solo esta ruta», puntos de estrangulamiento, rutas enumeradas y validación de explotabilidad. |
-| <img src="docs/assets/icons/file-text.svg" width="18"/> | **Movilización** | Informe ejecutivo con portada para imprimir o guardar en PDF ([ejemplo](docs/informe-ejemplo.pdf)), tickets con responsable, pasos con casillas, comando de verificación y fecha límite, y exportación en CSV y Markdown. |
-| <img src="docs/assets/icons/settings.svg" width="18"/> | **Ajustes y datos** | Configuración del proyecto, selección del motor de cálculo (local en navegador o API FastAPI), exportación/importación completa en JSON y borrado seguro de datos. |
+| <img src="docs/assets/icons/grid-3x3.svg" width="18"/> | **Mapa ATT&CK** | Matriz de 11 tácticas y 50 técnicas: cada celda toma el color de la peor banda de los hallazgos vivos que la habilitan; ficha con esos hallazgos, búsqueda por ID (Ctrl + K) y capa para ATT&CK Navigator. En el móvil, lista por táctica. |
+| <img src="docs/assets/icons/flask-conical.svg" width="18"/> | **¿Y si…?** | Marca hallazgos como corregidos sin tocar el proyecto y ve el antes y el después (índice, críticos, KEV, rutas, activos). Plan voraz que rompe más rutas por hallazgo y propone juntos los que solo cortan su arista a la vez. |
+| <img src="docs/assets/icons/file-text.svg" width="18"/> | **Movilización** | Informe ejecutivo con portada para imprimir o guardar en PDF ([ejemplo](docs/informe-ejemplo.pdf)), con cinco acciones, tendencia y riesgos aceptados; cumplimiento de SLA por prioridad y responsable; ciclos con tendencia; tickets con pasos, verificación y fecha límite en CSV, Markdown, Jira y GitHub Issues. |
+| <img src="docs/assets/icons/settings.svg" width="18"/> | **Ajustes y datos** | Perfil de ponderación con su efecto en el proyecto, catálogos KEV/EPSS en uso y registro de importaciones, motor de cálculo (local o API FastAPI), exportación/importación completa en JSON y borrado seguro de datos. |
 
 ## <img src="docs/assets/icons/camera.svg" width="20" height="20" valign="middle"/> Capturas
 
@@ -198,6 +209,8 @@ mindmap
 | **Detalle analítico y desglose de factores** | **Grafo de rutas y puntos de estrangulamiento** |
 | ![Movilización en oscuro](docs/screenshots/05-movilizacion.png) | ![Alcance en oscuro](docs/screenshots/06-alcance.png) |
 | **Movilización, informes ejecutivos y tickets** | **Alcance, activos críticos y subredes** |
+| ![Mapa ATT&CK en oscuro](docs/screenshots/07-mapa-attack.png) | ![Simulación en oscuro](docs/screenshots/08-simulacion.png) |
+| **Mapa ATT&CK de exposición** | **¿Y si…? con el plan simulado** |
 
 ### Escritorio · modo claro
 
@@ -209,6 +222,8 @@ mindmap
 | **Detalle analítico y desglose de factores** | **Grafo de rutas y puntos de estrangulamiento** |
 | ![Movilización en claro](docs/screenshots/claro-05-movilizacion.png) | ![Alcance en claro](docs/screenshots/claro-06-alcance.png) |
 | **Movilización, informes ejecutivos y tickets** | **Alcance, activos críticos y subredes** |
+| ![Mapa ATT&CK en claro](docs/screenshots/claro-07-mapa-attack.png) | ![Simulación en claro](docs/screenshots/claro-08-simulacion.png) |
+| **Mapa ATT&CK de exposición** | **¿Y si…? con el plan simulado** |
 
 ### Móvil · modo oscuro
 
@@ -220,6 +235,8 @@ mindmap
 | **Detalle de un hallazgo** | **Rutas de ataque** |
 | <img src="docs/screenshots/movil-05-movilizacion.png" alt="Movilización en el móvil, modo oscuro" width="280"/> | <img src="docs/screenshots/movil-06-alcance.png" alt="Alcance en el móvil, modo oscuro" width="280"/> |
 | **Movilización** | **Alcance y activos** |
+| <img src="docs/screenshots/movil-07-mapa-attack.png" alt="Mapa ATT&CK en el móvil, modo oscuro" width="280"/> | <img src="docs/screenshots/movil-08-simulacion.png" alt="Simulación en el móvil, modo oscuro" width="280"/> |
+| **Mapa ATT&CK** | **¿Y si…?** |
 
 ### Móvil · modo claro
 
@@ -231,6 +248,30 @@ mindmap
 | **Detalle de un hallazgo** | **Rutas de ataque** |
 | <img src="docs/screenshots/movil-claro-05-movilizacion.png" alt="Movilización en el móvil, modo claro" width="280"/> | <img src="docs/screenshots/movil-claro-06-alcance.png" alt="Alcance en el móvil, modo claro" width="280"/> |
 | **Movilización** | **Alcance y activos** |
+| <img src="docs/screenshots/movil-claro-07-mapa-attack.png" alt="Mapa ATT&CK en el móvil, modo claro" width="280"/> | <img src="docs/screenshots/movil-claro-08-simulacion.png" alt="Simulación en el móvil, modo claro" width="280"/> |
+| **Mapa ATT&CK** | **¿Y si…?** |
+
+## <img src="docs/assets/icons/file-search.svg" width="20" height="20" valign="middle"/> Importar escáneres e inteligencia
+
+**Priorización › Importar escáner** detecta el formato solo y enseña el plan antes de aplicar nada: hallazgos nuevos, los que ya existían y se actualizan, los mitigados que reaparecen (se reabren como regresión), activos nuevos y duplicados fundidos.
+
+| Fuente | Formato | Qué se aprovecha |
+|---|---|---|
+| Nessus | `.nessus` (XML v2) | Hosts, CVE, CVSS v3, exploit disponible, marca KEV y EPSS si vienen |
+| OpenVAS / Greenbone | Informe XML | Resultados con QoD, CVE de los NVT; descarta «Log» y duplicados del informe anidado |
+| Nuclei | `-jsonl` o `-json-export` | Plantilla, CVE, CVSS, EPSS y etiquetas `kev` |
+| Trivy | `--format json` | Vulnerabilidades por paquete, configuración y secretos (**nunca** guarda el valor del secreto) |
+| SARIF 2.1.0 | Semgrep, CodeQL… | Regla, `security-severity`, fichero y línea; el repositorio pasa a ser un activo |
+| CISA KEV | `known_exploited_vulnerabilities.json` | Marca KEV (solo añade, nunca quita la del analista) |
+| FIRST EPSS | `epss_scores-AAAA-MM-DD.csv(.gz)` | EPSS más alto entre los CVE del hallazgo |
+
+```bash
+nuclei -l objetivos.txt -jsonl -o nuclei.jsonl
+trivy image --format json -o trivy.json registro/app:1.0
+semgrep --sarif -o semgrep.sarif
+```
+
+Un hallazgo existente se reconoce por activo y CVE (también los relacionados) o, sin CVE, por título o guía específica: importar dos veces el mismo fichero no duplica nada. XML sin DTD ni entidades, JSON sin claves de prototipo y 60 MB como máximo por fichero.
 
 ## <img src="docs/assets/icons/radar.svg" width="20" height="20" valign="middle"/> Ingesta activa con Nmap
 
@@ -330,10 +371,10 @@ Detalles completos y ejemplo resuelto en [`docs/SCORING.md`](docs/SCORING.md).
 
 ## <img src="docs/assets/icons/shield-check.svg" width="20" height="20" valign="middle"/> Calidad y pruebas
 
-- **Motor TypeScript:** 52 pruebas con Vitest (fórmulas, clasificaciones, grafo, rutas, estrangulamientos, parseador Nmap XML, BloodHound, importaciones CSV/JSON, fichero dorado, rechazo de XML con entidades, plazos de SLA, impacto de cada corrección sobre las rutas, progreso de remediación, ficheros de ejemplo, explicaciones, guías y exportaciones en inglés, paridad de los diccionarios ES/EN y coherencia del repositorio).
-- **Motor Python y API:** 19 pruebas con Pytest (endpoints de FastAPI, carga multipart de Nmap, rechazo de XML con entidades, neutralización de fórmulas CSV y paridad con `shared/golden-demo.json`).
-- **Navegador (e2e):** 82 comprobaciones con Playwright sobre el HTML autocontenido (`tests/e2e_app.py`): CSP, red bloqueada, navegación, ingesta de Nmap real y con entidades, BloodHound, rutas que se cortan al validar, SLA vencidos, exportar y reimportar, diálogos con Escape y foco, fórmula de la ayuda igual a la del motor, franjas de exposición y tres acciones para hoy, zoom y «solo esta ruta» en el grafo, pasos con casillas, informe impreso en PDF, tema, inglés completo en 14 pantallas y móvil con tarjetas y sin texto recortado en ninguna vista.
-- **Accesibilidad:** axe-core (WCAG 2.2 A/AA) en 144 estados (36 por combinación: vistas, diálogos, menús, formularios, resultados de ingesta, ayuda y búsqueda, en claro y oscuro, a 1440 y 390 px), más un barrido de contraste propio para lo que axe deja sin decidir: **0 infracciones** (`tests/a11y_app.py`), incluido el tamaño mínimo de 24 × 24 px de los objetivos táctiles. Ambas suites se ejecutan en la CI.
+- **Motor TypeScript:** 115 pruebas con Vitest (importadores de Nessus, OpenVAS, Nuclei, Trivy y SARIF con casos hostiles, deduplicación entre fuentes, KEV y EPSS, perfiles, aceptación de riesgo y caducidad, inferencia ATT&CK sin falsos positivos y capa de Navigator, simulación y plan voraz, cumplimiento de SLA, instantáneas, exportaciones a Jira y GitHub y, de antes, (fórmulas, clasificaciones, grafo, rutas, estrangulamientos, parseador Nmap XML, BloodHound, importaciones CSV/JSON, fichero dorado, rechazo de XML con entidades, plazos de SLA, impacto de cada corrección sobre las rutas, progreso de remediación, ficheros de ejemplo, explicaciones, guías y exportaciones en inglés, paridad de los diccionarios ES/EN y coherencia del repositorio).
+- **Motor Python y API:** 22 pruebas con Pytest (endpoints de FastAPI, carga multipart de Nmap, rechazo de XML con entidades, neutralización de fórmulas CSV, los tres perfiles de ponderación, riesgo aceptado y paridad con `shared/golden-demo.json`).
+- **Navegador (e2e):** 124 comprobaciones con Playwright sobre el HTML autocontenido (`tests/e2e_app.py`): CSP, red bloqueada, navegación, ingesta de Nmap real y con entidades, BloodHound, rutas que se cortan al validar, SLA vencidos, exportar y reimportar, diálogos con Escape y foco, fórmula de la ayuda igual a la del motor, franjas de exposición y tres acciones para hoy, zoom y «solo esta ruta» en el grafo, pasos con casillas, informe impreso en PDF, importación de Nessus y KEV con plan previo, aceptación de riesgo con sus reglas y su caducidad, perfiles, mapa ATT&CK con capa de Navigator validada, simulación que no altera el proyecto, ciclos, CSV de Jira y JSON de GitHub validados, tema, inglés completo en 17 pantallas y móvil con tarjetas y sin texto recortado en ninguna vista.
+- **Accesibilidad:** axe-core (WCAG 2.2 A/AA) en 188 estados (47 por combinación: vistas, diálogos, menús, formularios, resultados de ingesta, ayuda y búsqueda, en claro y oscuro, a 1440 y 390 px), más un barrido de contraste propio para lo que axe deja sin decidir: **0 infracciones** (`tests/a11y_app.py`), incluido el tamaño mínimo de 24 × 24 px de los objetivos táctiles. Ambas suites se ejecutan en la CI.
 - **Lighthouse** (servido con gzip, como en GitHub Pages): rendimiento 97 · accesibilidad 100 · buenas prácticas 100 · SEO 100.
 - **Compilación e integridad:** TypeScript en modo estricto (`tsc -b`). La CSP del archivo único prohíbe scripts externos y evalúa hashes criptográficos.
 
@@ -342,14 +383,15 @@ Detalles completos y ejemplo resuelto en [`docs/SCORING.md`](docs/SCORING.md).
 - **Cero dependencias externas en tiempo de ejecución:** Fuentes autoalojadas e incrustadas en base64; sin CDNs externos, sin Google Analytics y sin telemetría.
 - **Política de Seguridad de Contenido (CSP) estricta:** `default-src 'none'`, estilos y scripts autorizados exclusivamente por hash SHA-256, y conexiones limitadas a `localhost` para la API opcional.
 - **Protección contra inyección de fórmulas CSV:** Toda celda que comience por caracteres peligrosos (`=`, `+`, `-`, `@`, `\t`, `\r`) es neutralizada con apóstrofe inicial en la interfaz y en el backend.
-- **Análisis defensivo:** Sanitización de claves prohibidas (`__proto__`, `constructor`, `prototype`) al leer proyectos y exportaciones de BloodHound, y rechazo de XML con entidades o DTD (XXE, «billion laughs») con un máximo de 20 MB por fichero. Política completa en [SECURITY.md](SECURITY.md).
+- **Análisis defensivo:** Sanitización de claves prohibidas (`__proto__`, `constructor`, `prototype`) al leer proyectos y exportaciones de BloodHound, y rechazo de XML con entidades o DTD (XXE, «billion laughs») con un tamaño máximo por fichero. Los secretos que detecta Trivy se registran por regla, fichero y línea, nunca por su valor. Política completa en [SECURITY.md](SECURITY.md).
 
 ## <img src="docs/assets/icons/list-checks.svg" width="20" height="20" valign="middle"/> Limitaciones conocidas
 
 - Interfaz, ayuda, informes, tickets y guías de remediación en español e inglés. Los datos del proyecto (incluido el caso de ejemplo, en español) se muestran tal cual se registraron.
 - Hay siete acentos: rosa, solar, glaciar, orquídea (malva), verde bosque, azul eléctrico y rojo. El modo claro arranca en azul eléctrico; orquídea se aplica al elegirla.
 - La barra lateral es de escritorio. En pantallas estrechas la navegación pasa a la barra inferior.
-- La ingesta de Nmap y BloodHound interpreta el fichero en el navegador. No ejecuta el escáner ni consulta el directorio.
+- Los importadores interpretan el fichero en el navegador. No ejecutan el escáner, no consultan el directorio ni descargan catálogos: KEV y EPSS los aportas tú.
+- Las técnicas ATT&CK se infieren por heurística (guía, título y CVE) sobre un catálogo de 50 técnicas Enterprise v14; el analista puede fijarlas a mano en cada hallazgo.
 - El motor de puntuación no cambia con el tema ni con el idioma. La fórmula publicada en este README es la del código.
 
 ## <img src="docs/assets/icons/folder-tree.svg" width="20" height="20" valign="middle"/> Estructura del proyecto
@@ -359,9 +401,9 @@ ctem-nexus/
 ├── ctem-nexus.html            # Aplicación autocontenida (abrir con doble clic)
 ├── frontend/
 │   ├── src/
-│   │   ├── engine/            # Motor TS sin DOM (scoring, grafo, nmap.ts, tests)
+│   │   ├── engine/            # Motor TS sin DOM: scoring, grafo, importadores, ATT&CK, simulación, SLA, tests
 │   │   ├── components/        # Shell, AttackGraph, NmapUploader, UI
-│   │   ├── views/             # Panel, Alcance, Priorización, Rutas, Movilización, Ajustes
+│   │   ├── views/             # Panel, Alcance, Priorización, Rutas, Mapa ATT&CK, ¿Y si…?, Movilización, Ajustes
 │   │   ├── store/             # Estado reactivo con persistencia local (Zustand)
 │   │   └── index.css          # Tokens de diseño, estética oscura y estilos de impresión
 │   ├── scripts/               # Generación de iconos y postbuild (CSP)
@@ -385,7 +427,7 @@ ctem-nexus/
 
 ## <img src="docs/assets/icons/route.svg" width="20" height="20" valign="middle"/> Hoja de ruta
 
-El plan hasta la 1.0.0 está en [ROADMAP.md](ROADMAP.md): accesibilidad AA verificada con axe, rediseño, nuevos importadores (Nessus, OpenVAS, Nuclei, SARIF), excepciones de riesgo, histórico de ciclos, ATT&CK e integración por fichero con el resto del ecosistema. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md) y la guía para colaborar en [CONTRIBUTING.md](CONTRIBUTING.md).
+El plan hasta la 1.0.0 está en [ROADMAP.md](ROADMAP.md). Las fases 0 a 3 están cerradas (higiene, accesibilidad AA, diseño propio, importadores, ATT&CK, simulación, SLA e histórico); queda la integración por fichero con el resto del ecosistema y la 1.0. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md) y la guía para colaborar en [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Licencia
 

@@ -120,7 +120,7 @@ export function Mobilization() {
                   </div>
                 ))}
               </div>
-              <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+              <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] print:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
                 <section className="px-6 py-4">
                   <h3 className="title-md mb-2">{c.topRisks}</h3>
                   {/* Móvil: tarjetas (la tabla de cinco columnas no cabe en 390 px). */}
@@ -145,7 +145,7 @@ export function Mobilization() {
                     <thead><tr><th className="!px-0">#</th><th>{L('Hallazgo', 'Finding')}</th><th>{c.thAsset}</th><th>{L('Prioridad', 'Priority')}</th><th className="text-right">SLA</th></tr></thead>
                     <tbody>
                       {top.map((t, i) => (
-                        <tr key={t.finding.id}>
+                        <tr key={t.finding.id} className={i >= 5 ? 'print:hidden' : undefined}>
                           <td className="num !px-0 text-ink-3">{i + 1}</td>
                           <td className="max-w-[18rem]"><div className="truncate font-medium">{t.finding.title}</div><div className="num print-muted text-xs text-ink-3">{t.finding.cve ?? t.finding.id}</div></td>
                           <td className="max-w-[12rem] truncate text-ink-2">{t.asset?.name ?? t.finding.assetId}</td>
@@ -157,11 +157,11 @@ export function Mobilization() {
                   </table>
                   </div>
                 </section>
-                <section className="border-t border-hairline px-6 py-4 lg:border-l lg:border-t-0">
+                <section className="border-t border-hairline px-6 py-4 lg:border-l lg:border-t-0 print:border-l print:border-t-0">
                   <h3 className="title-md mb-2">{c.chokes}</h3>
                   <ul className="flex flex-col gap-2.5 text-[0.8125rem]">
-                    {result.graph.chokePoints.slice(0, 6).map((c) => (
-                      <li key={c.id} className="flex gap-3">
+                    {result.graph.chokePoints.slice(0, 6).map((c, i) => (
+                      <li key={c.id} className={`flex gap-3 ${i >= 3 ? 'print:hidden' : ''}`}>
                         <span className="num w-10 shrink-0 font-semibold text-alta">{Math.round(c.share * 100)} %</span>
                         <span><span className="font-medium">{c.label}</span><span className="print-muted block text-xs text-ink-3">{c.kind === 'nodo' ? L(`Nodo en ${c.paths} de ${s.attackPaths} rutas`, `Node on ${c.paths} of ${s.attackPaths} paths`) : L(`Arista en ${c.paths} de ${s.attackPaths} rutas`, `Edge on ${c.paths} of ${s.attackPaths} paths`)}</span></span>
                       </li>
@@ -175,7 +175,7 @@ export function Mobilization() {
                   </p>
                 </section>
               </div>
-              <div className="grid grid-cols-1 border-t border-hairline lg:grid-cols-3">
+              <div className="grid grid-cols-1 border-t border-hairline lg:grid-cols-3 print:grid-cols-3">
                 <section className="px-6 py-4" data-testid="cinco-acciones">
                   <h3 className="title-md mb-2">{L('Cinco acciones', 'Five actions')}</h3>
                   <ol className="flex flex-col gap-2 text-[0.8125rem]">
@@ -191,7 +191,7 @@ export function Mobilization() {
                     {plan.steps.length === 0 && <li className="text-ink-3">{L('Nada abierto que corregir.', 'Nothing open to fix.')}</li>}
                   </ol>
                 </section>
-                <section className="border-t border-hairline px-6 py-4 lg:border-l lg:border-t-0" data-testid="informe-tendencia">
+                <section className="border-t border-hairline px-6 py-4 lg:border-l lg:border-t-0 print:border-l print:border-t-0" data-testid="informe-tendencia">
                   <h3 className="title-md mb-2">{L('Tendencia', 'Trend')}</h3>
                   {prev ? (
                     <>
@@ -210,7 +210,7 @@ export function Mobilization() {
                     </>
                   ) : <p className="print-muted text-[0.8125rem] text-ink-3">{L('Cierra un ciclo para comparar el próximo informe con este.', 'Close a cycle to compare the next report with this one.')}</p>}
                 </section>
-                <section className="border-t border-hairline px-6 py-4 lg:border-l lg:border-t-0" data-testid="informe-aceptados">
+                <section className="border-t border-hairline px-6 py-4 lg:border-l lg:border-t-0 print:border-l print:border-t-0" data-testid="informe-aceptados">
                   <h3 className="title-md mb-2">{L('Riesgos aceptados', 'Accepted risks')}</h3>
                   <ul className="flex flex-col gap-2 text-[0.8125rem]">
                     {accepted.map((f) => (

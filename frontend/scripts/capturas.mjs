@@ -48,6 +48,8 @@ const shots = [
   ['04-rutas-de-ataque.png', 'Rutas de ataque'],
   ['05-movilizacion.png', 'Movilización'],
   ['06-alcance.png', 'Alcance y activos'],
+  ['07-mapa-attack.png', 'Mapa ATT&CK'],
+  ['08-simulacion.png', 'simulacion'],
 ];
 
 const browser = await chromium.launch({ executablePath: findChrome() });
@@ -79,6 +81,9 @@ async function runSet({ width, height, theme, prefix, mobile }) {
       // En móvil la tabla pasa a tarjetas: se pulsa la primera fila o tarjeta visible.
       await page.locator('tbody tr:visible, [data-testid=tarjetas-hallazgos] button:visible').first().click();
       await page.getByRole('dialog').waitFor();
+    } else if (target === 'simulacion') {
+      await go('¿Y si…?');
+      await page.getByRole('button', { name: 'Simular el plan' }).click();
     } else if (target) {
       await go(target);
     }

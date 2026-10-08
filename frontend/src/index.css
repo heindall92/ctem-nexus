@@ -383,6 +383,13 @@
   .print-area td, .print-area th { padding: 5px 6px !important; }
   .print-area .truncate { overflow: visible; white-space: normal; text-overflow: clip; }
   .print-area [class*='max-w-'] { max-width: none !important; }
-  main { overflow: visible !important; height: auto !important; }
+  /* Informe de una página: tipografía y aire de documento A4. */
+  .print-area section:not(.print-cover) { padding-top: 2.5mm !important; padding-bottom: 2.5mm !important; }
+  .print-area .title-md { font-size: 12.5px !important; margin-bottom: 1.5mm !important; }
+  .print-area li, .print-area p, .print-area dd, .print-area dt { font-size: 10.5px !important; line-height: 1.35 !important; }
+  .print-area td, .print-area th { font-size: 10.5px !important; padding: 3px 5px !important; }
+  .print-area .display-num { font-size: 20px !important; }
+  main { overflow: visible !important; height: auto !important; padding-bottom: 0 !important; }
+  main > div, main > div > div { padding-bottom: 0 !important; margin-bottom: 0 !important; }
   .h-dvh { height: auto !important; overflow: visible !important; }
 }

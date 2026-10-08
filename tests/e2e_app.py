@@ -271,6 +271,17 @@ def escritorio(b, tmp):
     expect(page.get_by_test_id("plan-inteligencia")).to_be_visible()
     page.get_by_role("button", name="Aplicar inteligencia").click()
     check("el catálogo KEV aplicado queda versionado en el proyecto", J(f"{S}.project.intel.kev.version") == "2026.10.07")
+    # Cada importador con su fichero de ejemplo: plan previo con el nombre de la herramienta, sin aplicar
+    page.get_by_role("button", name="Importar escáner").first.click()
+    imp = page.get_by_test_id("importador-escaner")
+    for fichero, herramienta in [("openvas-ejemplo.xml", "OpenVAS / Greenbone"), ("nuclei-ejemplo.jsonl", "Nuclei"), ("trivy-ejemplo.json", "Trivy"), ("sarif-ejemplo.sarif", "Semgrep")]:
+        imp.locator('input[type="file"]').set_input_files(str(ROOT / "shared" / "samples" / fichero))
+        expect(page.get_by_test_id("plan-importacion")).to_contain_text(herramienta)
+        check(f"{fichero}: plan previo de {herramienta} sin tocar el proyecto", J(f"{S}.project.imports.length") == 1)
+    imp.locator('input[type="file"]').set_input_files(str(ROOT / "shared" / "samples" / "epss-ejemplo.csv"))
+    expect(page.get_by_test_id("plan-inteligencia")).to_contain_text("FIRST EPSS")
+    page.get_by_role("button", name="Aplicar inteligencia").click()
+    check("el CSV de EPSS se aplica y queda versionado", J(f"{S}.project.intel.epss.count") == 11)
 
     # Riesgo aceptado: reglas de gobierno, ficha, retirada y caducidad al cargar
     J(f"{S}.selectFinding('H-014')")
