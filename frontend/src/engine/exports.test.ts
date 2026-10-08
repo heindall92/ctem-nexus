@@ -5,8 +5,8 @@ import { prioritize } from './engine';
 import { reportMarkdown, ticketsCsv, ticketsMarkdown } from './io';
 
 const r = prioritize({ assets: DEMO_ASSETS, findings: DEMO_FINDINGS, edges: DEMO_EDGES });
-// Quita los datos del caso (nombres, títulos, responsables): son del usuario y van en su idioma.
-const sinDatos = (t: string) => [...DEMO_ASSETS.flatMap((a) => [a.name, a.owner]), ...DEMO_FINDINGS.map((f) => f.title), 'Ejemplo'].sort((a, b) => b.length - a.length).reduce((acc, d) => acc.split(d).join(' '), t);
+// Quita los datos del caso (nombres, títulos, responsables y aceptaciones de riesgo): son del usuario y van en su idioma.
+const sinDatos = (t: string) => [...DEMO_ASSETS.flatMap((a) => [a.name, a.owner]), ...DEMO_FINDINGS.flatMap((f) => [f.title, f.exception?.owner ?? '', f.exception?.compensating ?? '']).filter(Boolean), 'Ejemplo'].sort((a, b) => b.length - a.length).reduce((acc, d) => acc.split(d).join(' '), t);
 
 describe('exportaciones ES/EN', () => {
   it('el informe en inglés usa títulos, bandas y cifras en inglés', () => {
