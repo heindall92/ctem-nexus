@@ -27,7 +27,7 @@ import {
   User,
   X,
 } from 'lucide-react';
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { ACCENT_SWATCHES, chrome, roleLabel, screen } from '../i18n';
 import { useResult } from '../lib/analysis';
@@ -45,15 +45,21 @@ const NAV: Array<{ view: View; icon: ReactNode }> = [
 
 function initials(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (!parts.length) return '·';
   return parts.slice(0, 2).map((w) => w[0]?.toUpperCase() ?? '').join('');
+}
+
+/** Iniciales del perfil o, si aún no hay nombre, el icono de usuario (nunca un «·» suelto). */
+function Avatar({ name, icon = 'size-4' }: { name: string; icon?: string }) {
+  const ini = initials(name);
+  return ini ? <>{ini}</> : <User className={icon} aria-hidden />;
 }
 
 function LangSwitch() {
   const lang = useStore((s) => s.lang);
   const setLang = useStore((s) => s.setLang);
-  const on = 'rounded-full bg-accent/15 px-2 py-1 text-accent';
-  const off = 'rounded-full px-1.5 py-1 text-ink-3 hover:text-ink';
+  // Activa: superficie elevada y texto de máximo contraste (el acento sobre su propio tinte no llega a 4,5:1).
+  const on = 'rounded-full bg-surface px-2 py-1 text-ink shadow-sm ring-1 ring-hairline-strong';
+  const off = 'rounded-full px-1.5 py-1 text-ink-2 hover:text-ink';
   return (
     <div className="flex h-8 items-center rounded-full bg-surface-2 p-0.5 text-[11px] font-semibold" role="group" aria-label={lang === 'en' ? 'Language' : 'Idioma'}>
       <button type="button" aria-pressed={lang === 'es'} onClick={() => setLang('es')} className={lang === 'es' ? on : off}>ES</button>
@@ -99,13 +105,12 @@ export function Sidebar() {
   const collapsed = useStore((s) => s.sidebarCollapsed);
   const toggleSidebar = useStore((s) => s.toggleSidebar);
   const project = useStore((s) => s.project);
-  const setSearchOpen = useStore((s) => s.setSearchOpen);
-  const setHelpOpen = useStore((s) => s.setHelpOpen);
   const profile = useStore((s) => s.settings.profile);
   const lang = useStore((s) => s.lang);
   const accent = useStore((s) => s.accent);
   const setAccent = useStore((s) => s.setAccent);
   const t = chrome[lang];
+  const c = screen[lang];
 
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [accentOpen, setAccentOpen] = useState(false);
@@ -119,8 +124,10 @@ export function Sidebar() {
     const close = (e: MouseEvent) => {
       if (accentRef.current && !accentRef.current.contains(e.target as Node)) setAccentOpen(false);
     };
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') setAccentOpen(false); };
     window.addEventListener('mousedown', close);
-    return () => window.removeEventListener('mousedown', close);
+    window.addEventListener('keydown', esc);
+    return () => { window.removeEventListener('mousedown', close); window.removeEventListener('keydown', esc); };
   }, [accentOpen]);
 
   const badges: Partial<Record<View, number>> = {
@@ -165,7 +172,7 @@ export function Sidebar() {
             collapsed ? (
               <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-critica ring-2 ring-surface" title={`${badges[n.view]} alertas críticas`} />
             ) : (
-              <span className="flex size-5 items-center justify-center rounded-full bg-critica text-[11px] font-bold text-white shadow-sm">
+              <span className="flex size-5 items-center justify-center rounded-full bg-critica text-[11px] font-bold text-[var(--color-on-critica)] shadow-sm">
                 {badges[n.view]}
               </span>
             )
@@ -213,7 +220,7 @@ export function Sidebar() {
             <Logo />
             <div className="leading-tight">
               <div className="text-[0.9375rem] font-bold tracking-tight text-ink">CTEM-Nexus</div>
-              <div className="text-[0.625rem] tracking-wider text-ink-3 font-mono uppercase">{t.map}</div>
+              <div className="text-[0.6875rem] tracking-wider text-ink-3 font-mono uppercase">{t.map}</div>
             </div>
           </div>
           <button
@@ -249,7 +256,7 @@ export function Sidebar() {
       )}
 
       {/* 3. Navegación principal */}
-      <nav aria-label="Secciones" className={`nav-rail isolate flex-1 overflow-y-auto w-full px-0.5 ${collapsed ? 'py-2 flex flex-col items-center' : 'py-1'}`}>
+      <nav aria-label={lang === 'en' ? 'Sections' : 'Secciones'} className={`nav-rail isolate flex-1 overflow-y-auto w-full px-0.5 ${collapsed ? 'py-2 flex flex-col items-center' : 'py-1'}`}>
         <ul className={`flex flex-col gap-1.5 w-full ${collapsed ? 'items-center' : ''}`}>{NAV.map(item)}</ul>
         <div className={`my-2.5 h-px bg-hairline ${collapsed ? 'w-8 mx-auto' : 'w-full'}`} />
         <ul className={`w-full ${collapsed ? 'flex justify-center' : ''}`}>{item({ view: 'ajustes', icon: <SettingsIcon /> })}</ul>
@@ -257,35 +264,8 @@ export function Sidebar() {
 
       {/* 4. Bloque inferior del sidebar */}
       <div className={`mt-auto w-full border-t border-hairline pt-3 ${collapsed ? 'flex flex-col items-center gap-2' : ''}`}>
-        {!collapsed && (
-          <button
-            type="button"
-            onClick={() => setSearchOpen(true)}
-            className="mb-2 flex h-9 w-full items-center gap-2 rounded-full border border-hairline bg-surface px-3 text-xs text-ink-3 active:scale-[0.98]"
-            title="Ctrl K"
-          >
-            <Search className="size-3.5 shrink-0 text-ink-4" />
-            <span className="flex-1 truncate text-left">{t.search}</span>
-            <kbd className="kbd text-[10px]">Ctrl K</kbd>
-          </button>
-        )}
-        <div className={`flex items-center ${collapsed ? 'flex-col gap-2' : 'mb-2 gap-1.5'}`}>
-          {!collapsed && <LangSwitch />}
-          {!collapsed && <ThemeSwitch />}
-          <button
-            type="button"
-            onClick={() => setHelpOpen(true)}
-            className="flex size-8 items-center justify-center rounded-full text-ink-3 hover:bg-surface-2 hover:text-ink active:scale-[0.97]"
-            title={t.help}
-            aria-label={t.help}
-          >
-            <HelpCircle className="size-4" />
-          </button>
-          {collapsed && (
-            <button type="button" onClick={() => setSearchOpen(true)} className="flex size-8 items-center justify-center rounded-full text-ink-3 hover:bg-surface-2" aria-label={t.search}>
-              <Search className="size-4" />
-            </button>
-          )}
+        <div className={`flex items-center ${collapsed ? 'flex-col gap-2' : 'mb-2 gap-1.5 px-1'}`}>
+          {!collapsed && <span className="flex-1 text-[11px] font-medium text-ink-3">{t.accentColor}</span>}
           <div ref={accentRef} className="relative">
             <button
               type="button"
@@ -299,7 +279,7 @@ export function Sidebar() {
             </button>
             {accentOpen && (
               <div className="absolute bottom-0 left-full z-30 ml-3 w-[232px] rounded-2xl border border-hairline bg-surface p-3 shadow-xl">
-                <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-3">{t.accentColor}</div>
+                <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-3">{t.accentColor}</div>
                 <div className="flex flex-wrap gap-2.5" role="group" aria-label={t.accentColor}>
                   {ACCENT_SWATCHES.map((sw) => (
                     <button
@@ -324,19 +304,20 @@ export function Sidebar() {
             onClick={() => setUserMenuOpen(!userMenuOpen)}
             aria-expanded={userMenuOpen}
             aria-haspopup="menu"
+            aria-label={`${c.account}: ${nombre || t.noName}`}
             className={`flex w-full items-center gap-2.5 rounded-2xl p-1.5 text-left active:scale-[0.98] ${
               userMenuOpen ? 'bg-accent/10' : 'hover:bg-surface-2'
             } ${collapsed ? 'justify-center' : ''}`}
             title={nombre || t.noName}
           >
             <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-bold text-[var(--color-accent-ink)]">
-              {initials(nombre)}
+              <Avatar name={nombre} />
             </span>
             {!collapsed && (
               <>
                 <span className="min-w-0 flex-1 leading-tight">
                   <span className="block truncate text-xs font-semibold text-ink">{nombre || t.noName}</span>
-                  <span className="block truncate text-[10px] text-ink-3">{roleLabel(rol, lang) || t.noRole}</span>
+                  <span className="block truncate text-[11px] text-ink-3">{roleLabel(rol, lang) || t.noRole}</span>
                 </span>
                 <MoreHorizontal className="size-4 shrink-0 text-ink-3" />
               </>
@@ -416,7 +397,7 @@ export function DemoBanner() {
               setDismissed(true);
               document.getElementById('contenido')?.scrollTo({ top: 0 });
             }}
-            className="flex size-6 items-center justify-center rounded-full text-ink-4 hover:bg-surface-2 hover:text-ink transition ml-1"
+            className="flex size-6 items-center justify-center rounded-full text-ink-3 hover:bg-surface-2 hover:text-ink transition ml-1"
             title={c.hideNotice}
             aria-label={c.hideNotice}
           >
@@ -456,14 +437,19 @@ function ProfileDialog({ onClose }: { onClose: () => void }) {
   };
   const who = [profile.nombre.trim(), roleLabel(profile.rol, lang), profile.organizacion.trim()].filter(Boolean).join(' · ');
   const roles = Object.keys(c.roles) as Array<keyof typeof c.roles>;
+  useEffect(() => {
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', esc);
+    return () => window.removeEventListener('keydown', esc);
+  }, [onClose]);
   if (typeof document === 'undefined') return null;
   return createPortal(
-    <div className="fixed inset-0 z-[80] overflow-y-auto bg-ground p-4 sm:p-8">
+    <div className="fixed inset-0 z-[80] overflow-y-auto bg-ground p-4 sm:p-8" role="dialog" aria-modal="true" aria-labelledby="perfil-titulo">
       <button type="button" className="absolute inset-0" aria-label={c.close} onClick={onClose} />
       <div className="relative mx-auto w-full max-w-[920px]">
         <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-ink-3">{c.account}</p>
         <div className="mt-1 flex items-start justify-between gap-3">
-          <h2 className="text-3xl font-bold tracking-tight text-ink">{c.yourProfile}</h2>
+          <h2 id="perfil-titulo" className="text-3xl font-bold tracking-tight text-ink">{c.yourProfile}</h2>
           <button type="button" onClick={onClose} className="flex size-9 items-center justify-center rounded-full text-ink-3 hover:bg-surface-2" aria-label={c.close}>
             <X className="size-4" />
           </button>
@@ -471,7 +457,7 @@ function ProfileDialog({ onClose }: { onClose: () => void }) {
         <p className="mt-1 max-w-[52ch] text-sm text-ink-3">{c.profileLead}</p>
         <div className="mt-6 grid items-start gap-4 lg:grid-cols-[260px_minmax(0,1fr)]">
           <section className="panel flex flex-col items-center px-5 py-6 text-center">
-            <span className="flex size-24 items-center justify-center rounded-full bg-accent text-2xl font-bold text-[var(--color-accent-ink)]">{initials(profile.nombre)}</span>
+            <span className="flex size-24 items-center justify-center rounded-full bg-accent text-2xl font-bold text-[var(--color-accent-ink)]"><Avatar name={profile.nombre} icon="size-10" /></span>
             <p className="mt-4 text-base font-bold text-ink">{profile.nombre.trim() || t.noName}</p>
             <p className="text-sm text-ink-3">{roleLabel(profile.rol, lang) || t.noRole}</p>
             <div className="mt-5 flex flex-wrap justify-center gap-2" role="group" aria-label={t.accentColor}>
@@ -594,6 +580,31 @@ function UserMenu({
   }, [open, anchorRef, placement]);
 
   useEffect(() => {
+    if (!open) return;
+    const esc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { onClose(); anchorRef.current?.focus(); }
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        const items = [...(menuRef.current?.querySelectorAll<HTMLElement>('[role=menuitem]') ?? [])];
+        const i = items.indexOf(document.activeElement as HTMLElement);
+        items[(i + (e.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length]?.focus();
+        e.preventDefault();
+      }
+    };
+    window.addEventListener('keydown', esc);
+    return () => window.removeEventListener('keydown', esc);
+  }, [open, onClose, anchorRef]);
+
+  // Al abrir, el foco pasa a la primera opción en cuanto el menú está posicionado (antes es invisible).
+  const focused = useRef(false);
+  useEffect(() => {
+    if (!open) { focused.current = false; return; }
+    if (coords && !focused.current) {
+      focused.current = true;
+      requestAnimationFrame(() => menuRef.current?.querySelector<HTMLElement>('[role=menuitem]')?.focus());
+    }
+  }, [open, coords]);
+
+  useEffect(() => {
     const clickAway = (e: MouseEvent) => {
       if (
         menuRef.current &&
@@ -628,10 +639,11 @@ function UserMenu({
       }}
       className="w-60 rounded-2xl border border-hairline bg-surface p-2 shadow-2xl select-none"
       role="menu"
+      aria-label={t.profile}
     >
       <div className="flex items-center gap-3 px-2 py-2">
         <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-bold text-[var(--color-accent-ink)]">
-          {initials(nombre)}
+          <Avatar name={nombre} icon="size-5" />
         </span>
         <span className="min-w-0">
           <span className="block truncate text-sm font-semibold text-ink">{nombre || t.noName}</span>
@@ -697,9 +709,9 @@ export function TopBar({ title, subtitle, actions }: { title: string; subtitle?:
             className="hidden h-8 items-center gap-2 rounded-full border border-hairline bg-surface px-3 text-xs text-ink-3 active:scale-[0.98] md:flex"
             title="Ctrl K"
           >
-            <Search className="size-3.5 shrink-0 text-ink-4" />
+            <Search className="size-3.5 shrink-0 text-ink-3" />
             <span>{t.search}</span>
-            <kbd className="kbd text-[10px]">Ctrl K</kbd>
+            <kbd className="kbd text-[11px]">Ctrl K</kbd>
           </button>
           <button
             type="button"
@@ -721,16 +733,18 @@ export function TopBar({ title, subtitle, actions }: { title: string; subtitle?:
           >
             <HelpCircle className="size-4" />
           </button>
-          <div className="relative">
+          <div className="relative md:hidden">
             <button
               ref={userBtnRef}
               type="button"
               onClick={() => setUserMenuOpen(!userMenuOpen)}
-              className="flex size-7 items-center justify-center rounded-full bg-accent text-[11px] font-bold text-[var(--color-accent-ink)] active:scale-95 transition md:size-8 md:text-xs"
+              aria-expanded={userMenuOpen}
+              aria-haspopup="menu"
+              className="flex size-8 items-center justify-center rounded-full bg-accent text-xs font-bold text-[var(--color-accent-ink)] active:scale-95 transition"
               title={nombre || t.noName}
-              aria-label={t.profile}
+              aria-label={`${screen[lang].account}: ${nombre || t.noName}`}
             >
-              {initials(nombre)}
+              <Avatar name={nombre} />
             </button>
             <UserMenu open={userMenuOpen} onClose={() => setUserMenuOpen(false)} anchorRef={userBtnRef} placement="bottom-end" onProfile={() => { setUserMenuOpen(false); setProfileOpen(true); }} />
           </div>
@@ -760,7 +774,7 @@ export function MobileTabBar() {
     setView(next);
   };
   return (
-    <nav className="no-print fixed inset-x-0 bottom-0 z-40 border-t border-hairline bg-surface/95 backdrop-blur-xl md:hidden" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }} aria-label={t.more}>
+    <nav className="no-print fixed inset-x-0 bottom-0 z-40 border-t border-hairline bg-surface/95 backdrop-blur-xl md:hidden" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }} aria-label={lang === 'en' ? 'Sections' : 'Secciones'}>
       {more && (
         <div className="absolute inset-x-3 bottom-full mb-2 flex flex-col gap-1 rounded-2xl border border-hairline bg-surface p-2 shadow-xl">
           <button type="button" onClick={() => go('alcance')} className="flex h-11 items-center gap-2 rounded-xl px-3 text-sm text-ink active:scale-[0.97]">
@@ -779,7 +793,7 @@ export function MobileTabBar() {
           const active = view === n.view;
           return (
             <li key={n.view}>
-              <button type="button" onClick={() => go(n.view)} aria-current={active ? 'page' : undefined} className={`flex h-14 w-full flex-col items-center justify-center gap-0.5 text-[10px] active:scale-[0.97] ${active ? 'text-accent' : 'text-ink-3'}`}>
+              <button type="button" onClick={() => go(n.view)} aria-current={active ? 'page' : undefined} className={`flex h-14 w-full flex-col items-center justify-center gap-0.5 text-[11px] active:scale-[0.97] ${active ? 'text-accent' : 'text-ink-3'}`}>
                 <span className="[&_svg]:size-5">{n.icon}</span>
                 <span className="max-w-full truncate px-1">{t[n.view]}</span>
               </button>
@@ -787,7 +801,7 @@ export function MobileTabBar() {
           );
         })}
         <li>
-          <button type="button" onClick={() => setMore((v) => !v)} aria-expanded={more} className={`flex h-14 w-full flex-col items-center justify-center gap-0.5 text-[10px] active:scale-[0.97] ${more ? 'text-accent' : 'text-ink-3'}`}>
+          <button type="button" onClick={() => setMore((v) => !v)} aria-expanded={more} className={`flex h-14 w-full flex-col items-center justify-center gap-0.5 text-[11px] active:scale-[0.97] ${more ? 'text-accent' : 'text-ink-3'}`}>
             <MoreHorizontal className="size-5" />
             <span>{t.more}</span>
           </button>
@@ -863,8 +877,12 @@ export function Drawer({
 }) {
   const reduce = useReducedMotion();
   const ref = useRef<HTMLElement>(null);
+  const titleId = useId();
   useEffect(() => {
-    if (open) requestAnimationFrame(() => ref.current?.focus({ preventScroll: true }));
+    if (!open) return;
+    const prev = document.activeElement as HTMLElement | null;
+    requestAnimationFrame(() => ref.current?.focus({ preventScroll: true }));
+    return () => prev?.focus?.({ preventScroll: true });
   }, [open]);
   const hidden = reduce ? { opacity: 0 } : { opacity: 0, x: 36 };
 
@@ -889,7 +907,7 @@ export function Drawer({
             key="drawer"
             role="dialog"
             aria-modal="true"
-            aria-label={typeof title === 'string' ? title : 'Detalle'}
+            aria-labelledby={titleId}
             initial={hidden}
             animate={{ opacity: 1, x: 0 }}
             exit={{ ...hidden, transition: { duration: 0.18, ease: [0.32, 0.72, 0, 1] } }}
@@ -903,7 +921,7 @@ export function Drawer({
             style={{ width }}
           >
             <div className="flex items-start gap-3 border-b border-hairline px-6 py-4.5">
-              <div className="min-w-0 flex-1">{title}</div>
+              <div id={titleId} className="min-w-0 flex-1">{title}</div>
               <button
                 type="button"
                 className="btn btn-ghost btn-sm btn-icon -mr-1 rounded-full text-ink-3 hover:text-ink"
@@ -913,7 +931,8 @@ export function Drawer({
                 <X className="size-4" />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto px-6 py-5">{children}</div>
+            {/* Enfocable para poder desplazarlo con el teclado (WCAG 2.1.1). */}
+            <div className="flex-1 overflow-y-auto px-6 py-5" tabIndex={0}>{children}</div>
             {footer && <div className="border-t border-hairline px-6 py-3.5">{footer}</div>}
           </motion.aside>
         </div>
@@ -941,6 +960,16 @@ export function Modal({
 }) {
   const reduce = useReducedMotion();
   const hidden = reduce ? { opacity: 0 } : { opacity: 0, scale: 0.95, y: 12 };
+  const titleId = useId();
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.activeElement as HTMLElement | null;
+    requestAnimationFrame(() => ref.current?.focus({ preventScroll: true }));
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', esc);
+    return () => { window.removeEventListener('keydown', esc); prev?.focus?.({ preventScroll: true }); };
+  }, [open, onClose]);
 
   if (typeof document === 'undefined') return null;
 
@@ -960,18 +989,21 @@ export function Modal({
 
           {/* Caja modal centrada */}
           <motion.div
+            ref={ref}
+            tabIndex={-1}
             role="dialog"
             aria-modal="true"
+            aria-labelledby={titleId}
             initial={hidden}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ ...hidden, transition: { duration: 0.16 } }}
             transition={SPRING}
-            className="glass-thick glass-edge relative z-10 flex max-h-[90vh] w-full flex-col overflow-hidden rounded-[24px] border border-hairline bg-surface shadow-2xl"
+            className="glass-thick glass-edge relative z-10 flex max-h-[90vh] w-full flex-col overflow-hidden rounded-[24px] border border-hairline bg-surface shadow-2xl outline-none"
             style={{ maxWidth }}
           >
             <div className="flex items-center justify-between border-b border-hairline px-6 py-4.5">
               <div className="min-w-0 flex-1">
-                <div className="text-base font-semibold text-ink">{title}</div>
+                <h2 id={titleId} className="text-base font-semibold text-ink">{title}</h2>
                 {subtitle && <div className="text-xs text-ink-3 mt-0.5">{subtitle}</div>}
               </div>
               <button
@@ -983,7 +1015,7 @@ export function Modal({
                 <X className="size-4" />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto px-6 py-6">{children}</div>
+            <div className="flex-1 overflow-y-auto px-6 py-6" tabIndex={0}>{children}</div>
           </motion.div>
         </div>
       )}

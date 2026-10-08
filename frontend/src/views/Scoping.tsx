@@ -67,7 +67,7 @@ export function Scoping() {
                           {a.criticality === 5 && <Crown className="size-3.5 text-accent" aria-label={c.crownJewel} />}
                           {a.name}
                         </div>
-                        <div className="num text-xs text-ink-4">{a.id}</div>
+                        <div className="num text-xs text-ink-3">{a.id}</div>
                       </td>
                       <td className="text-ink-2">{c.assetTypes[a.type]}</td>
                       <td>
@@ -153,7 +153,7 @@ function Ranges() {
         {ranges.map((r: NetworkRange) => (
           <li key={r.id} className="flex items-center gap-4 px-5 py-2.5">
             <span className="num w-44 text-ink">{r.cidr}</span>
-            <span className={`flex-1 truncate ${r.inScope ? 'text-ink-2' : 'text-ink-4 line-through decoration-ink-4'}`}>{r.label}</span>
+            <span className={`flex-1 truncate ${r.inScope ? 'text-ink-2' : 'text-ink-3 line-through decoration-ink-4'}`}>{r.label}</span>
             <span className="text-xs text-ink-3">{r.inScope ? c.inScope : c.excluded}</span>
             <Toggle checked={r.inScope} onChange={(v) => upsert({ ...r, inScope: v })} label={`${r.cidr} en alcance`} />
             <button type="button" className="btn btn-ghost btn-sm btn-icon btn-danger" aria-label={`Eliminar ${r.cidr}`} onClick={() => del(r.id)}><Trash2 /></button>

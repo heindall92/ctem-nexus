@@ -67,9 +67,9 @@ async function runSet({ width, height, theme, prefix, mobile }) {
   const desktopNav = (name) => page.getByRole('navigation', { name: 'Secciones' }).getByRole('button', { name });
   const go = async (name) => {
     if (!mobile) { await desktopNav(name).click(); return; }
-    const tab = page.getByRole('navigation', { name: 'Más' }).getByRole('button', { name, exact: true });
+    const tab = page.getByRole('navigation', { name: 'Secciones' }).getByRole('button', { name, exact: true });
     if (await tab.count()) { await tab.click(); return; }
-    await page.getByRole('navigation', { name: 'Más' }).getByRole('button', { name: 'Más', exact: true }).click();
+    await page.getByRole('navigation', { name: 'Secciones' }).getByRole('button', { name: 'Más', exact: true }).click();
     await page.getByRole('button', { name, exact: true }).click();
   };
 

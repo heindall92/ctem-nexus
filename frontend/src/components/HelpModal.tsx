@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'motion/react';
-import { BookOpen, Bug, Calculator, FileCode, FolderGit2, HelpCircle, Keyboard, Layers, Mail, ShieldCheck, Terminal, X } from 'lucide-react';
-import { useState } from 'react';
+import { BookOpen, Bug, ExternalLink, Calculator, FileCode, FolderGit2, HelpCircle, Keyboard, Layers, Mail, ShieldCheck, Terminal, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ECOSYSTEM, screen } from '../i18n';
 import { useStore } from '../store/store';
@@ -13,6 +13,15 @@ export function HelpModal() {
   const setOpen = useStore((s) => s.setHelpOpen);
   const c = screen[useStore((s) => s.lang)];
   const [tab, setTab] = useState<Tab>('ciclo');
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.activeElement as HTMLElement | null;
+    requestAnimationFrame(() => box.current?.focus({ preventScroll: true }));
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    window.addEventListener('keydown', esc);
+    return () => { window.removeEventListener('keydown', esc); prev?.focus?.({ preventScroll: true }); };
+  }, [open, setOpen]);
 
   if (typeof document === 'undefined') return null;
 
@@ -32,11 +41,16 @@ export function HelpModal() {
 
           {/* Tarjeta modal flotante con bordes redondeados y vidrio */}
           <motion.div
+            ref={box}
+            tabIndex={-1}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="ayuda-titulo"
             initial={{ opacity: 0, scale: 0.95, y: 14 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 14 }}
             transition={SPRING}
-            className="glass-thick glass-edge relative z-10 flex h-full max-h-[85vh] w-full max-w-[980px] flex-col overflow-hidden rounded-[24px] border border-hairline bg-surface shadow-2xl"
+            className="glass-thick glass-edge relative z-10 flex h-full max-h-[85vh] w-full max-w-[980px] flex-col overflow-hidden rounded-[24px] border border-hairline bg-surface shadow-2xl outline-none"
           >
             {/* Cabecera */}
             <div className="flex items-center justify-between border-b border-hairline px-6 py-4">
@@ -45,7 +59,7 @@ export function HelpModal() {
                   <HelpCircle className="size-5" />
                 </div>
                 <div>
-                  <h2 className="text-base font-semibold text-ink">{c.helpTitle}</h2>
+                  <h2 id="ayuda-titulo" className="text-base font-semibold text-ink">{c.helpTitle}</h2>
                   <p className="text-xs text-ink-3">{c.helpSub}</p>
                 </div>
               </div>
@@ -61,7 +75,7 @@ export function HelpModal() {
 
             {/* Pestañas de navegación estilo píldora Apple */}
             <div className="flex border-b border-hairline bg-surface-2/40 px-6 py-2 overflow-x-auto">
-              <div className="flex gap-1.5 text-xs font-medium">
+              <div className="flex gap-1.5 text-xs font-medium" role="tablist" aria-label={c.helpTitle}>
                 {[
                   { id: 'ciclo' as const, label: c.helpTabs.ciclo, icon: <Layers className="size-3.5" /> },
                   { id: 'calculo' as const, label: c.helpTabs.calculo, icon: <Calculator className="size-3.5" /> },
@@ -75,8 +89,20 @@ export function HelpModal() {
                     <button
                       key={t.id}
                       type="button"
+                      role="tab"
+                      id={`ayuda-tab-${t.id}`}
+                      aria-selected={active}
+                      aria-controls="ayuda-panel"
+                      tabIndex={active ? 0 : -1}
+                      onKeyDown={(e) => {
+                        if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+                        const ids: Tab[] = ['ciclo', 'calculo', 'ingesta', 'atajos', 'glosario', 'acerca'];
+                        const next = ids[(ids.indexOf(t.id) + (e.key === 'ArrowRight' ? 1 : ids.length - 1)) % ids.length];
+                        setTab(next);
+                        document.getElementById(`ayuda-tab-${next}`)?.focus();
+                      }}
                       onClick={() => setTab(t.id as Tab)}
-                      className={`relative flex items-center gap-2 rounded-full px-3.5 py-1.5 transition-[color,transform] active:scale-[0.97] ${active ? 'bg-surface text-ink shadow-sm' : 'text-ink-3 hover:text-ink-2'}`}
+                      className={`relative flex shrink-0 items-center gap-2 rounded-full px-3.5 py-1.5 transition-[color,transform] active:scale-[0.97] ${active ? 'bg-surface text-ink shadow-sm' : 'text-ink-2 hover:text-ink'}`}
                     >
                       {t.icon}
                       <span>{t.label}</span>
@@ -87,7 +113,7 @@ export function HelpModal() {
             </div>
 
             {/* Contenido scrolleable con pestañas */}
-            <div className="flex-1 overflow-y-auto px-6 py-6 text-sm leading-relaxed text-ink-2">
+            <div id="ayuda-panel" role="tabpanel" aria-labelledby={`ayuda-tab-${tab}`} tabIndex={0} className="flex-1 overflow-y-auto px-6 py-6 text-sm leading-relaxed text-ink-2">
               {tab === 'ciclo' && (
                 <div className="space-y-6">
                   <div className="rounded-2xl border border-hairline bg-surface-2/30 p-4">
@@ -232,7 +258,7 @@ export function HelpModal() {
                     </div>
                     <div className="flex items-center justify-between rounded-xl border border-hairline bg-surface p-3">
                       <span className="text-xs text-ink-2">Exportar proyecto JSON</span>
-                      <span className="text-xs font-mono text-ink-4">Ajustes &gt; Exportar</span>
+                      <span className="text-xs font-mono text-ink-3">Ajustes &gt; Exportar</span>
                     </div>
                     <div className="flex items-center justify-between rounded-xl border border-hairline bg-surface p-3">
                       <span className="text-xs text-ink-2">Imprimir / Guardar en PDF</span>
@@ -300,12 +326,19 @@ export function HelpModal() {
                         <li key={tool.code} className={`flex flex-col rounded-2xl border bg-surface p-4 ${tool.here ? 'border-accent/50' : 'border-hairline'}`}>
                           <div className="flex items-start justify-between gap-2">
                             <div className="font-semibold text-ink">{tool.name}</div>
-                            {tool.here && <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-semibold text-accent">Estás aquí</span>}
+                            {tool.here && <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[11px] font-semibold text-ink">Estás aquí</span>}
                           </div>
                           <p className="mt-2 flex-1 text-xs text-ink-3">{tool.note}</p>
-                          <a href={tool.code} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex h-8 w-fit items-center gap-1.5 rounded-full border border-hairline px-3 text-xs font-semibold text-ink hover:bg-surface-2 active:scale-[0.97]">
-                            <FolderGit2 className="size-3.5" /> Código
-                          </a>
+                          <div className="mt-4 flex flex-wrap gap-2">
+                            {tool.web && !tool.here && (
+                              <a href={tool.web} target="_blank" rel="noopener noreferrer" aria-label={`Abrir ${tool.name}`} className="inline-flex h-8 items-center gap-1.5 rounded-full bg-accent px-3 text-xs font-semibold text-[var(--color-accent-ink)] active:scale-[0.97]">
+                                <ExternalLink className="size-3.5" /> Abrir
+                              </a>
+                            )}
+                            <a href={tool.code} target="_blank" rel="noopener noreferrer" aria-label={`Código de ${tool.name}`} className="inline-flex h-8 items-center gap-1.5 rounded-full border border-hairline px-3 text-xs font-semibold text-ink hover:bg-surface-2 active:scale-[0.97]">
+                              <FolderGit2 className="size-3.5" /> Código
+                            </a>
+                          </div>
                         </li>
                       ))}
                     </ul>
@@ -333,7 +366,7 @@ export function HelpModal() {
             </div>
 
             {/* Pie */}
-            <div className="flex items-center justify-between border-t border-hairline bg-surface-2/40 px-6 py-3 text-xs text-ink-4">
+            <div className="flex items-center justify-between border-t border-hairline bg-surface-2/40 px-6 py-3 text-xs text-ink-3">
               <span>CTEM-Nexus · Yoandy Ramírez Delgado</span>
               <button
                 type="button"

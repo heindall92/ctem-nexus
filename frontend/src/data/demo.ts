@@ -24,6 +24,10 @@ export const DEMO_RANGES: NetworkRange[] = [
 
 const d = (s: string) => s;
 
+/** «Hoy» del caso de ejemplo. Al cargar la demo, todas las fechas se desplazan para que este día sea el actual:
+ * así el ejemplo no envejece (unos tickets vencidos, otros a punto y otros en plazo) y el MTTR no cambia. */
+export const DEMO_ANCHOR = '2026-09-16';
+
 export const DEMO_FINDINGS: Finding[] = [
   { id: 'H-001', title: 'Log4Shell en Apache Log4j 2', kind: 'cve', cve: 'CVE-2021-44228', cvss: 10, epss: 0.944, kev: true, exploitPublic: true, assetId: 'a01', status: 'validado', remediation: 'log4shell', detectedAt: d('2026-09-02'), technique: 'RCE en el portal y pivote a la red de aplicaciones', leadsTo: ['a04'], description: 'JNDI lookup en cabeceras HTTP registradas por la aplicación.' },
   { id: 'H-002', title: 'ProxyShell en Microsoft Exchange', kind: 'cve', cve: 'CVE-2021-34473', cvss: 9.8, epss: 0.943, kev: true, exploitPublic: true, assetId: 'a02', status: 'abierto', remediation: 'proxyshell', detectedAt: d('2026-09-02'), technique: 'Abuso de permisos de Exchange en AD (WriteDACL → DCSync)', leadsTo: ['a06'] },

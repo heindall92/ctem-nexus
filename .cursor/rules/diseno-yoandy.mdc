@@ -13,7 +13,7 @@ Seguir el criterio de la skill apple-design de Emil Kowalski: respuesta al point
 
 ## Color
 
-El modo claro arranca en azul eléctrico, no en malva. El selector del lateral ofrece las siete pastillas de Rosetta (rosa, solar, glaciar, orquídea, verde bosque, azul eléctrico, rojo), persistidas en `data-accent`. El azul eléctrico es el valor por defecto: claro `#1f5eff`, oscuro `#4d86ff`. El verde bosque es claro `#1f7a3e` (tinta blanca) y oscuro `#5aa86a`. La pastilla del selector usa `#1f7a3e`.
+El modo claro arranca en azul eléctrico, no en malva. El selector del lateral ofrece las siete pastillas de Rosetta (rosa, solar, glaciar, orquídea, verde bosque, azul eléctrico, rojo), persistidas en `data-accent`. El azul eléctrico es el valor por defecto: claro `#1a4fe0`, oscuro `#6b9bff` (ajustados en la 0.3.0 para llegar a 4,5:1 también sobre sus tintes; antes `#1f5eff` y `#4d86ff`). El verde bosque es claro `#1a6b36` (tinta blanca) y oscuro `#5aa86a`. Cualquier color nuevo se valida con `tests/a11y_app.py`. La pastilla del selector usa `#1f7a3e`.
 
 Los colores de severidad (crítica, alta, media, baja) no son acentos de marca.
 

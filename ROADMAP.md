@@ -53,22 +53,22 @@ Tareas:
 
 | # | Problema | Dónde | Corrección |
 |---|---|---|---|
-| 1 | Contraste < 4,5:1 en texto de 10–11 px (`text-[0.625rem]`, `.chip`, `.kbd`, cabeceras de tabla con `ink-3`) | Todas las vistas | Subir `ink-3` en los dos temas hasta ≥ 4,5:1 sobre `surface` y `surface-2`, y fijar el texto mínimo en 11 px |
-| 2 | La píldora activa ES/EN (`text-accent` sobre `bg-accent/15`) no llega a 4,5:1 con varios acentos | Barra superior (móvil) | Usar `accent-strong` en oscuro / texto `ink` con un anillo de acento |
-| 3 | `nested-interactive`: un botón dentro de una fila o tarjeta clicable | Rutas de ataque (`.h-auto`) | Separar la acción de selección de los botones internos |
-| 4 | Búsqueda, idioma, tema y ayuda repetidos en la barra superior **y** en el pie de la barra lateral | Escritorio | Una sola ubicación por control: barra superior para búsqueda e idioma, menú de usuario para el resto |
-| 5 | Sin nombre de perfil, el avatar muestra «·» y el pie dice «Sin nombre / Sin rol» | Barra lateral | Avatar con el icono `User` de Lucide y la invitación «Configura tu perfil» |
-| 6 | «94,4 %» se parte en dos líneas | Tabla de priorización | `white-space: nowrap` y cifras tabulares en las columnas numéricas |
-| 7 | Etiquetas del grafo truncadas («Servidor de aplicaciones…») | Rutas de ataque | Etiqueta en dos líneas con `<title>` completo y nombre corto opcional (`shortName`) en el activo |
-| 8 | Las fechas de vencimiento ya pasadas se muestran como cualquier otra («vence 2026-09-05» el 8 de octubre) | Movilización | Estado **vencido** / **vence en N días** con color de banda, y contador en el panel |
-| 9 | Demo con fechas fijas: el ejemplo «envejece» y todo aparece vencido | `data/demo.ts` | Fechas relativas a hoy al cargar la demo |
+| ✅ 1 | Contraste < 4,5:1 en texto de 10–11 px (`text-[0.625rem]`, `.chip`, `.kbd`, cabeceras de tabla con `ink-3`) | Todas las vistas | Subir `ink-3` en los dos temas hasta ≥ 4,5:1 sobre `surface` y `surface-2`, y fijar el texto mínimo en 11 px |
+| ✅ 2 | La píldora activa ES/EN (`text-accent` sobre `bg-accent/15`) no llega a 4,5:1 con varios acentos | Barra superior (móvil) | Usar `accent-strong` en oscuro / texto `ink` con un anillo de acento |
+| ✅ 3 | `nested-interactive`: un botón dentro de una fila o tarjeta clicable | Rutas de ataque (`.h-auto`) | Separar la acción de selección de los botones internos |
+| ✅ 4 | Búsqueda, idioma, tema y ayuda repetidos en la barra superior **y** en el pie de la barra lateral | Escritorio | Una sola ubicación por control: barra superior para búsqueda e idioma, menú de usuario para el resto |
+| ✅ 5 | Sin nombre de perfil, el avatar muestra «·» y el pie dice «Sin nombre / Sin rol» | Barra lateral | Avatar con el icono `User` de Lucide y la invitación «Configura tu perfil» |
+| ✅ 6 | «94,4 %» se parte en dos líneas | Tabla de priorización | `white-space: nowrap` y cifras tabulares en las columnas numéricas |
+| ✅ 7 | Etiquetas del grafo truncadas («Servidor de aplicaciones…») | Rutas de ataque | Etiqueta en dos líneas con `<title>` completo y nombre corto opcional (`shortName`) en el activo |
+| ✅ 8 | Las fechas de vencimiento ya pasadas se muestran como cualquier otra («vence 2026-09-05» el 8 de octubre) | Movilización | Estado **vencido** / **vence en N días** con color de banda, y contador en el panel |
+| ✅ 9 | Demo con fechas fijas: el ejemplo «envejece» y todo aparece vencido | `data/demo.ts` | Fechas relativas a hoy al cargar la demo |
 | 10 | Traducción al inglés parcial (el README lo reconoce) | Vistas, informes, guías | Extraer todos los textos a `i18n.ts` y añadir una prueba que falle si una clave existe en `es` y no en `en` |
-| 11 | El enlace de ARGOS en «Acerca de» tiene una descripción genérica | `i18n.ts` (`ECOSYSTEM`) | Descripción real y un enlace a la web publicada de cada herramienta, no solo al código |
+| ✅ 11 | El enlace de ARGOS en «Acerca de» tiene una descripción genérica | `i18n.ts` (`ECOSYSTEM`) | Descripción real y un enlace a la web publicada de cada herramienta, no solo al código |
 
 Pruebas que se añaden en esta fase:
 
-- [ ] **e2e con Playwright** (Python, como en ARGOS): carga la demo, recorre las 6 vistas, abre un hallazgo, valida y marca no explotable, importa un Nmap y un BloodHound de ejemplo, exporta el proyecto y lo reimporta, y comprueba que no hay peticiones a terceros ni errores de consola.
-- [ ] **axe-core WCAG 2.2 AA** en claro y oscuro, a 1440 y 390 px, en cada vista: 0 infracciones como criterio de bloqueo en la CI.
+- [x] **e2e con Playwright** (Python, como en ARGOS): carga la demo, recorre las 6 vistas, abre un hallazgo, valida y marca no explotable, importa un Nmap y un BloodHound de ejemplo, exporta el proyecto y lo reimporta, y comprueba que no hay peticiones a terceros ni errores de consola.
+- [x] **axe-core WCAG 2.2 AA** en claro y oscuro, a 1440 y 390 px, en cada vista: 0 infracciones como criterio de bloqueo en la CI.
 - [ ] Prueba de estructura de i18n (claves `es` = claves `en`).
 
 **Aceptación:** axe da 0 infracciones en las 24 combinaciones (6 vistas × 2 temas × 2 anchos) y el e2e está en verde en la CI.

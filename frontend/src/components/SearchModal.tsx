@@ -13,7 +13,8 @@ export function SearchModal() {
   const setView = useStore((s) => s.setView);
   const selectFinding = useStore((s) => s.selectFinding);
   const setHelpOpen = useStore((s) => s.setHelpOpen);
-  const c = screen[useStore((s) => s.lang)];
+  const lang = useStore((s) => s.lang);
+  const c = screen[lang];
   const project = useStore((s) => s.project);
   const { result } = useResult();
 
@@ -93,6 +94,9 @@ export function SearchModal() {
 
           {/* Caja de diálogo modal Spotlight */}
           <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-label={c.searchPlaceholder}
             initial={{ opacity: 0, scale: 0.96, y: -10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: -10 }}
@@ -108,12 +112,14 @@ export function SearchModal() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={c.searchPlaceholder}
+                aria-label={c.searchPlaceholder}
                 className="w-full bg-transparent text-[0.9375rem] text-ink placeholder:text-ink-4 focus:outline-none"
               />
               {query && (
                 <button
                   type="button"
                   onClick={() => setQuery('')}
+                  aria-label={lang === 'en' ? 'Clear search' : 'Borrar búsqueda'}
                   className="rounded-full p-1 text-ink-3 hover:bg-surface-3 hover:text-ink"
                 >
                   <X className="size-4" />
@@ -126,7 +132,7 @@ export function SearchModal() {
             <div className="max-h-[60vh] overflow-y-auto p-2">
               {!query ? (
                 <div className="px-3 py-4 text-xs text-ink-3">
-                  <div className="mb-2 font-medium uppercase tracking-wider text-ink-4">{c.searchHint}</div>
+                  <div className="mb-2 font-medium uppercase tracking-wider text-ink-3">{c.searchHint}</div>
                   <div className="grid grid-cols-2 gap-1.5">
                     <button
                       type="button"
@@ -174,7 +180,7 @@ export function SearchModal() {
                 <div className="space-y-4 p-1">
                   {results.findings.length > 0 && (
                     <div>
-                      <div className="px-3 pb-1 text-[0.6875rem] font-semibold uppercase tracking-wider text-ink-4">{c.searchFindings(results.findings.length)}</div>
+                      <div className="px-3 pb-1 text-[0.6875rem] font-semibold uppercase tracking-wider text-ink-3">{c.searchFindings(results.findings.length)}</div>
                       <div className="space-y-0.5">
                         {results.findings.map((f) => {
                           const sf = scoredMap.get(f.id);
@@ -196,7 +202,7 @@ export function SearchModal() {
                                   {f.technique && <span> · MITRE: {f.technique}</span>}
                                 </div>
                               </div>
-                              <ArrowRight className="size-3.5 text-ink-4 opacity-0 transition group-hover:opacity-100" />
+                              <ArrowRight className="size-3.5 text-ink-3 opacity-0 transition group-hover:opacity-100" />
                             </button>
                           );
                         })}
@@ -206,7 +212,7 @@ export function SearchModal() {
 
                   {results.assets.length > 0 && (
                     <div>
-                      <div className="px-3 pb-1 text-[0.6875rem] font-semibold uppercase tracking-wider text-ink-4">{c.searchAssets(results.assets.length)}</div>
+                      <div className="px-3 pb-1 text-[0.6875rem] font-semibold uppercase tracking-wider text-ink-3">{c.searchAssets(results.assets.length)}</div>
                       <div className="space-y-0.5">
                         {results.assets.map((a) => (
                           <button
@@ -219,9 +225,9 @@ export function SearchModal() {
                               <Crosshair className="size-3.5 text-ink-3" />
                               <span className="font-medium text-ink group-hover:text-accent">{a.name}</span>
                               {a.ip && <span className="font-mono text-ink-3">{a.ip}</span>}
-                              <span className="chip text-[0.625rem]">{a.type}</span>
+                              <span className="chip text-[0.6875rem]">{a.type}</span>
                             </div>
-                            <ArrowRight className="size-3.5 text-ink-4 opacity-0 transition group-hover:opacity-100" />
+                            <ArrowRight className="size-3.5 text-ink-3 opacity-0 transition group-hover:opacity-100" />
                           </button>
                         ))}
                       </div>
@@ -230,14 +236,14 @@ export function SearchModal() {
                 </div>
               ) : (
                 <div className="px-4 py-8 text-center text-xs text-ink-3">
-                  <ShieldAlert className="mx-auto mb-2 size-6 text-ink-4" />
+                  <ShieldAlert className="mx-auto mb-2 size-6 text-ink-3" />
                   {c.noMatches(query)}
                 </div>
               )}
             </div>
 
             {/* Pie de modal */}
-            <div className="flex items-center justify-between border-t border-hairline bg-surface-2/50 px-4 py-2 text-[0.6875rem] text-ink-4">
+            <div className="flex items-center justify-between border-t border-hairline bg-surface-2/50 px-4 py-2 text-[0.6875rem] text-ink-3">
               <span>{c.searchFoot}</span>
               <span className="font-medium text-ink-3">CTEM-Nexus · Local-First</span>
             </div>

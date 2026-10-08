@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE nmaprun>
+<?xml-stylesheet href="file:///usr/bin/../share/nmap/nmap.xsl" type="text/xsl"?>
+<!-- Escaneo FICTICIO para probar CTEM-Nexus. Direcciones de documentación (RFC 5737) y privadas (RFC 1918). -->
+<nmaprun scanner="nmap" args="nmap -sV -sC -oX nmap-ejemplo.xml 198.51.100.0/24 10.20.0.0/24" start="1791446400" version="7.95" xmloutputversion="1.05">
+  <host>
+    <status state="up" reason="syn-ack"/>
+    <address addr="198.51.100.25" addrtype="ipv4"/>
+    <hostnames><hostname name="vpn.ejemplo-ficticio.test" type="PTR"/></hostnames>
+    <ports>
+      <port protocol="tcp" portid="443"><state state="open"/><service name="https" product="Citrix Gateway"/>
+        <script id="vulners" output="CVE-2023-4966 9.4 https://vulners.com/cve/CVE-2023-4966"/></port>
+    </ports>
+  </host>
+  <host>
+    <status state="up" reason="syn-ack"/>
+    <address addr="10.20.0.10" addrtype="ipv4"/>
+    <hostnames><hostname name="dc01.ejemplo-ficticio.test" type="PTR"/></hostnames>
+    <ports>
+      <port protocol="tcp" portid="88"><state state="open"/><service name="kerberos-sec"/></port>
+      <port protocol="tcp" portid="389"><state state="open"/><service name="ldap"/></port>
+      <port protocol="tcp" portid="445"><state state="open"/><service name="microsoft-ds"/></port>
+    </ports>
+  </host>
+  <host>
+    <status state="up" reason="syn-ack"/>
+    <address addr="10.20.0.30" addrtype="ipv4"/>
+    <hostnames><hostname name="sql01.ejemplo-ficticio.test" type="PTR"/></hostnames>
+    <ports>
+      <port protocol="tcp" portid="1433"><state state="open"/><service name="ms-sql-s" product="Microsoft SQL Server 2019"/></port>
+      <port protocol="tcp" portid="23"><state state="open"/><service name="telnet"/></port>
+    </ports>
+  </host>
+  <host>
+    <status state="down" reason="no-response"/>
+    <address addr="10.20.0.99" addrtype="ipv4"/>
+  </host>
+</nmaprun>

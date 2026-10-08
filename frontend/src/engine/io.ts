@@ -2,6 +2,7 @@
 import { BAND_LABEL } from './constants';
 import { fmt } from './engine';
 import { guideFor } from './remediation';
+import { slaInfo } from './sla';
 import type { Asset, AssetType, EngineResult, Finding, FindingKind, FindingStatus, ManualEdge, NetworkRange } from './types';
 
 export interface Project {
@@ -237,7 +238,7 @@ export function ticketsMarkdown(findings: Finding[], assets: Asset[], result: En
     out.push(`## [${BAND_LABEL[t.scored.band]}] ${mdEsc(t.finding.id)} · ${mdEsc(t.finding.title)}`, '');
     out.push(`- **Activo:** ${mdEsc(t.asset?.name ?? t.finding.assetId)}`);
     if (t.finding.cve) out.push(`- **CVE:** ${t.finding.cve}`);
-    out.push(`- **Responsable:** ${mdEsc(t.owner)}`, `- **Puntuación:** ${fmt(t.scored.score)}/100 · **SLA:** ${t.scored.slaDays} días`, `- **Motivo:** ${mdEsc(t.scored.explanation)}`, '');
+    out.push(`- **Responsable:** ${mdEsc(t.owner)}`, `- **Puntuación:** ${fmt(t.scored.score)}/100 · **SLA:** ${t.scored.slaDays} días · **Vence:** ${slaInfo(t.finding.detectedAt, t.scored.slaDays).due}`, `- **Motivo:** ${mdEsc(t.scored.explanation)}`, '');
     out.push(`### ${mdEsc(t.guide.title)}`, '', ...t.guide.steps.map((s, i) => `${i + 1}. ${mdEsc(s)}`), '', '**Verificación:**', '', '```', t.guide.verify, '```', '');
   }
   return out.join('\n');

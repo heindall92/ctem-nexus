@@ -1,5 +1,6 @@
 import { ArrowRight, ChevronRight, Crosshair, FileJson, ListChecks, Radar, Route, Sparkles } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { slaInfo } from '../engine/sla';
 import type { Band } from '../engine/types';
 import { TopBar } from '../components/Shell';
 import { BandBadge, DemoBadge, Empty } from '../components/ui';
@@ -26,6 +27,10 @@ export function Dashboard() {
   const fById = new Map(findings.map((f) => [f.id, f]));
   const aById = new Map(assets.map((a) => [a.id, a]));
   const crown = assets.filter((a) => a.criticality === 5).length;
+  const overdue = result.scored.filter((x) => {
+    const f = fById.get(x.id);
+    return f && (f.status === 'abierto' || f.status === 'validado') && slaInfo(f.detectedAt, x.slaDays).state === 'vencido';
+  }).length;
 
   if (assets.length === 0 && findings.length === 0) {
     return (
@@ -98,7 +103,7 @@ export function Dashboard() {
             </div>
           </div>
           <div className="grid grid-cols-2 border-t border-hairline sm:grid-cols-3 lg:border-l lg:border-t-0">
-            <Kpi label={c.openFindings} value={s.openFindings} note={c.registered(findings.length)} />
+            <Kpi label={c.openFindings} value={s.openFindings} note={overdue ? c.overdueNote(overdue) : c.registered(findings.length)} tone={overdue ? 'var(--color-critica)' : undefined} />
             <Kpi label={c.kev} value={s.kevOpen} note={c.kevNote} tone={s.kevOpen ? 'var(--color-critica)' : undefined} />
             <Kpi label={c.assetsAtRisk} value={s.assetsAtRisk} note={c.ofAssets(assets.length)} />
             <Kpi label={c.paths} value={s.attackPaths} note={c.pathsNote} />
@@ -123,7 +128,7 @@ export function Dashboard() {
                   <div>
                     <div className="text-[0.8125rem] font-semibold">{st.name}</div>
                     <div className="text-xs text-ink-3">{st.detail}</div>
-                    <div className="mt-1 text-[0.6875rem] font-medium" style={{ color: st.state === 'hecho' ? 'var(--color-accent)' : st.state === 'en_curso' ? 'var(--color-media)' : 'var(--color-ink-4)' }}>{stageLabel[st.state]}</div>
+                    <div className="mt-1 text-[0.6875rem] font-medium" style={{ color: st.state === 'hecho' ? 'var(--color-accent)' : st.state === 'en_curso' ? 'var(--color-media)' : 'var(--color-ink-3)' }}>{stageLabel[st.state]}</div>
                   </div>
                 </button>
               </li>
@@ -192,7 +197,7 @@ function Kpi({ label, value, unit, note, tone }: { label: string; value: number 
 }
 
 function StageDot({ state, index }: { state: StageState; index: number }) {
-  const color = state === 'hecho' ? 'var(--color-accent)' : state === 'en_curso' ? 'var(--color-media)' : 'var(--color-ink-4)';
+  const color = state === 'hecho' ? 'var(--color-accent)' : state === 'en_curso' ? 'var(--color-media)' : 'var(--color-ink-3)';
   return (
     <span className="num relative z-[1] grid size-[1.375rem] place-items-center rounded-full bg-surface text-[0.6875rem] font-semibold" style={{ color, boxShadow: `inset 0 0 0 1.5px ${color}` }}>
       {index}
@@ -210,7 +215,7 @@ function ModuleRow({ icon, title, metric, status, statusLabel, onClick }: { icon
           <span className="block truncate text-xs text-ink-3">{metric}</span>
         </span>
         <span className="text-[0.6875rem] font-medium" style={{ color: status === 'hecho' ? 'var(--color-accent)' : status === 'en_curso' ? 'var(--color-media)' : 'var(--color-ink-3)' }}>{statusLabel}</span>
-        <ChevronRight className="size-4 text-ink-4" />
+        <ChevronRight className="size-4 text-ink-3" />
       </button>
     </li>
   );

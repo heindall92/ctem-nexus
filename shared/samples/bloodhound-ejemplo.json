@@ -1,0 +1,11 @@
+{
+  "_aviso": "Exportación FICTICIA de SharpHound para probar CTEM-Nexus. Dominio y SID inventados.",
+  "data": [
+    { "ObjectIdentifier": "S-1-5-21-1111111111-2222222222-3333333333-1001", "Properties": { "name": "DC01.EJEMPLO-FICTICIO.TEST", "operatingsystem": "Windows Server 2022 Datacenter", "highvalue": true, "PrimaryGroupSID": "S-1-5-21-1111111111-2222222222-3333333333-516" } },
+    { "ObjectIdentifier": "S-1-5-21-1111111111-2222222222-3333333333-1002", "Properties": { "name": "APP02.EJEMPLO-FICTICIO.TEST", "operatingsystem": "Windows Server 2019 Standard", "unconstraineddelegation": true } },
+    { "ObjectIdentifier": "S-1-5-21-1111111111-2222222222-3333333333-1003", "Properties": { "name": "PC-CONTA-07.EJEMPLO-FICTICIO.TEST", "operatingsystem": "Windows 11 Enterprise" } },
+    { "ObjectIdentifier": "S-1-5-21-1111111111-2222222222-3333333333-1100", "Properties": { "name": "SVC_BACKUP@EJEMPLO-FICTICIO.TEST", "hasspn": true, "enabled": true } },
+    { "ObjectIdentifier": "S-1-5-21-1111111111-2222222222-3333333333-1101", "Properties": { "name": "BECARIO.RRHH@EJEMPLO-FICTICIO.TEST", "dontreqpreauth": true, "enabled": true } }
+  ],
+  "meta": { "type": "computers_and_users", "count": 5, "version": 5 }
+}

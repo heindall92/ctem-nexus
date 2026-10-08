@@ -1,7 +1,8 @@
-import { Check, ChevronDown, Copy, FileDown, FileSpreadsheet, FileText, ListChecks, Printer } from 'lucide-react';
+import { AlarmClock, Check, ChevronDown, Copy, FileDown, FileSpreadsheet, FileText, ListChecks, Printer } from 'lucide-react';
 import { useState } from 'react';
 import { fmt } from '../engine/engine';
 import { buildTickets, reportMarkdown, ticketsCsv, ticketsMarkdown } from '../engine/io';
+import { slaInfo, type SlaState } from '../engine/sla';
 import { TopBar } from '../components/Shell';
 import { BandBadge, DemoBadge, Empty } from '../components/ui';
 import { useResult } from '../lib/analysis';
@@ -10,10 +11,19 @@ import { BAND_COLOR, n1 } from '../lib/format';
 import { roleLabel, screen } from '../i18n';
 import { useStore } from '../store/store';
 
-const addDays = (iso: string | undefined, days: number) => {
-  const base = iso ? new Date(`${iso}T00:00:00Z`) : new Date();
-  return new Date(base.getTime() + days * 86_400_000).toISOString().slice(0, 10);
-};
+const SLA_TONE: Record<SlaState, string> = { vencido: 'var(--color-critica)', hoy: 'var(--color-critica)', proximo: 'var(--color-alta)', en_plazo: 'var(--color-ink-2)' };
+
+/** Fecha límite con su estado: vencido, vence hoy, a punto (≤ 3 días) o en plazo. */
+function SlaChip({ detectedAt, slaDays }: { detectedAt?: string; slaDays: number }) {
+  const { due, daysLeft, state } = slaInfo(detectedAt, slaDays);
+  const text = state === 'vencido' ? `vencido hace ${-daysLeft} d` : state === 'hoy' ? 'vence hoy' : state === 'proximo' ? `vence en ${daysLeft} d` : `vence ${due}`;
+  return (
+    <span className="num inline-flex items-center gap-1 text-xs font-medium" style={{ color: SLA_TONE[state] }} title={`Fecha límite: ${due}`}>
+      {state !== 'en_plazo' && <AlarmClock className="size-3.5" aria-hidden />}
+      {text}
+    </span>
+  );
+}
 
 export function Mobilization() {
   const lang = useStore((s) => s.lang);
@@ -27,6 +37,7 @@ export function Mobilization() {
   const tickets = buildTickets(project.findings, project.assets, result);
   const [open, setOpen] = useState<string | null>(tickets[0]?.finding.id ?? null);
   const top = tickets.slice(0, 8);
+  const overdue = tickets.filter((t) => slaInfo(t.finding.detectedAt, t.scored.slaDays).state === 'vencido').length;
   const slug = project.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'proyecto';
 
   return (
@@ -110,7 +121,7 @@ export function Mobilization() {
               <div className="flex flex-wrap items-end justify-between gap-3 px-5 pb-3 pt-4">
                 <div>
                   <h2 className="title-md">Guías de remediación</h2>
-                  <p className="mt-0.5 text-[0.8125rem] text-ink-3">{tickets.length} tickets abiertos · SLA por banda: Crítica 3 d · Alta 14 d · Media 30 d · Baja 90 d</p>
+                  <p className="mt-0.5 text-[0.8125rem] text-ink-3">{tickets.length} tickets abiertos{overdue > 0 && <> · <span className="font-medium text-critica">{overdue} fuera de plazo</span></>} · SLA por banda: Crítica 3 d · Alta 14 d · Media 30 d · Baja 90 d</p>
                 </div>
                 <div className="flex gap-2">
                   <button type="button" className="btn" onClick={() => { download(`tickets-${slug}-${stamp()}.csv`, ticketsCsv(project.findings, project.assets, result), 'text/csv;charset=utf-8'); notify('Tickets exportados en CSV (fórmulas neutralizadas).'); }}><FileSpreadsheet />Tickets CSV</button>
@@ -129,14 +140,14 @@ export function Mobilization() {
                           <span className="block truncate text-xs text-ink-3"><span className="num">{t.finding.id}</span> · {t.finding.title} · {t.asset?.name ?? t.finding.assetId}</span>
                         </span>
                         <span className="hidden text-xs text-ink-3 md:block">{t.owner}</span>
-                        <span className="num text-xs text-ink-2">vence {addDays(t.finding.detectedAt, t.scored.slaDays)}</span>
-                        <ChevronDown className={`size-4 text-ink-4 transition-transform duration-200 ease-[var(--ease-out)] ${isOpen ? 'rotate-180' : ''}`} />
+                        <SlaChip detectedAt={t.finding.detectedAt} slaDays={t.scored.slaDays} />
+                        <ChevronDown className={`size-4 text-ink-3 transition-transform duration-200 ease-[var(--ease-out)] ${isOpen ? 'rotate-180' : ''}`} />
                       </button>
                       {isOpen && (
                         <div className="view-enter grid grid-cols-1 gap-5 px-5 pb-5 pl-[4.75rem] lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
                           <div>
                             <div className="label mb-2 font-medium">Pasos</div>
-                            <ol className="list-decimal space-y-1.5 pl-5 text-[0.8125rem] text-ink-2 marker:text-ink-4">{t.guide.steps.map((st) => <li key={st}>{st}</li>)}</ol>
+                            <ol className="list-decimal space-y-1.5 pl-5 text-[0.8125rem] text-ink-2 marker:text-ink-3">{t.guide.steps.map((st) => <li key={st}>{st}</li>)}</ol>
                           </div>
                           <div className="flex flex-col gap-3">
                             <dl className="grid grid-cols-2 gap-3 text-[0.8125rem]">
@@ -157,7 +168,7 @@ export function Mobilization() {
                 {tickets.length === 0 && <li className="px-5 py-6 text-ink-3">No hay hallazgos abiertos: todos están mitigados o descartados.</li>}
               </ul>
             </section>
-            <p className="no-print text-xs text-ink-4">Puntuaciones con una cifra decimal (p. ej. <span className="num">{fmt(92.5)}</span>). La exportación CSV antepone un apóstrofo a las celdas que empiezan por = + − @ para evitar la inyección de fórmulas.</p>
+            <p className="no-print text-xs text-ink-3">Puntuaciones con una cifra decimal (p. ej. <span className="num">{fmt(92.5)}</span>). La exportación CSV antepone un apóstrofo a las celdas que empiezan por = + − @ para evitar la inyección de fórmulas.</p>
           </>
         )}
       </div>

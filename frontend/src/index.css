@@ -38,17 +38,18 @@
 
   --color-ink: #eef1f3;
   --color-ink-2: #a3aab2;
-  --color-ink-3: #737b84;
-  --color-ink-4: #4c535b;
+  --color-ink-3: #8f97a0; /* ≥ 4,5:1 también sobre surface-3 y fondos tintados (WCAG 2.2 AA) */
+  --color-ink-4: #646c75;
 
   --color-accent: #3ddcc4;
   --color-accent-strong: #5ff0d9;
   --color-accent-ink: #04201c;
 
   --color-critica: #ff5d5d;
+  --color-on-critica: #2a0606; /* texto sobre fondo crítico (≥ 4,5:1) */
   --color-alta: #ff9f43;
   --color-media: #e3c45a;
-  --color-baja: #7f8b97;
+  --color-baja: #8f9aa6;
   --color-ok: #4ad38a;
 
   --radius-chip: 6px;
@@ -85,9 +86,17 @@
   --color-ink-3: #5c6773;
   --color-ink-4: #8b949e;
 
+  /* Bandas en claro: los tonos del oscuro no llegan a 4,5:1 sobre blanco. */
+  --color-critica: #b3141a;
+  --color-on-critica: #ffffff;
+  --color-alta: #9c3d08;
+  --color-media: #7a5600;
+  --color-baja: #5c6773;
+  --color-ok: #146c38;
+
   /* Claro: arranca en azul eléctrico. Malva (orquídea) solo si se elige. */
-  --color-accent: #1f5eff;
-  --color-accent-strong: #0b46e0;
+  --color-accent: #1a4fe0;
+  --color-accent-strong: #123db8;
   --color-accent-ink: #ffffff;
 
   --glass: rgb(255 255 255 / 0.85);
@@ -99,19 +108,19 @@
 
 /* La pastilla activa vive en data-accent. El claro arranca en azul eléctrico. */
 [data-accent='rosa'] { --color-accent: #ff7ab8; --color-accent-strong: #ffc0de; --color-accent-ink: #3b0620; }
-[data-theme='light'][data-accent='rosa'], html.light[data-accent='rosa'] { --color-accent: #e11d74; --color-accent-strong: #be185d; --color-accent-ink: #ffffff; }
+[data-theme='light'][data-accent='rosa'], html.light[data-accent='rosa'] { --color-accent: #b8155a; --color-accent-strong: #9a0f4a; --color-accent-ink: #ffffff; }
 [data-accent='solar'] { --color-accent: #ffb020; --color-accent-strong: #ffd27a; --color-accent-ink: #2a1600; }
-[data-theme='light'][data-accent='solar'], html.light[data-accent='solar'] { --color-accent: #d97706; --color-accent-strong: #b45309; --color-accent-ink: #ffffff; }
+[data-theme='light'][data-accent='solar'], html.light[data-accent='solar'] { --color-accent: #8a4a00; --color-accent-strong: #703c00; --color-accent-ink: #ffffff; }
 [data-accent='glaciar'] { --color-accent: #5ee7f5; --color-accent-strong: #b6f6ff; --color-accent-ink: #042028; }
-[data-theme='light'][data-accent='glaciar'], html.light[data-accent='glaciar'] { --color-accent: #0e8fa8; --color-accent-strong: #0b7285; --color-accent-ink: #ffffff; }
+[data-theme='light'][data-accent='glaciar'], html.light[data-accent='glaciar'] { --color-accent: #0a6a7d; --color-accent-strong: #085968; --color-accent-ink: #ffffff; }
 [data-accent='orquidea'] { --color-accent: #b79bff; --color-accent-strong: #ddd0ff; --color-accent-ink: #1a0838; }
-[data-theme='light'][data-accent='orquidea'], html.light[data-accent='orquidea'] { --color-accent: #6d4aff; --color-accent-strong: #5428e0; --color-accent-ink: #ffffff; }
+[data-theme='light'][data-accent='orquidea'], html.light[data-accent='orquidea'] { --color-accent: #5b35f0; --color-accent-strong: #4a22d6; --color-accent-ink: #ffffff; }
 [data-accent='verde'] { --color-accent: #5aa86a; --color-accent-strong: #8fd4a0; --color-accent-ink: #06210f; }
-[data-theme='light'][data-accent='verde'], html.light[data-accent='verde'] { --color-accent: #1f7a3e; --color-accent-strong: #145c2e; --color-accent-ink: #ffffff; }
-[data-accent='azul'] { --color-accent: #4d86ff; --color-accent-strong: #7aa6ff; --color-accent-ink: #041226; }
-[data-theme='light'][data-accent='azul'], html.light[data-accent='azul'] { --color-accent: #1f5eff; --color-accent-strong: #0b46e0; --color-accent-ink: #ffffff; }
+[data-theme='light'][data-accent='verde'], html.light[data-accent='verde'] { --color-accent: #1a6b36; --color-accent-strong: #12552a; --color-accent-ink: #ffffff; }
+[data-accent='azul'] { --color-accent: #6b9bff; --color-accent-strong: #9dbdff; --color-accent-ink: #041226; }
+[data-theme='light'][data-accent='azul'], html.light[data-accent='azul'] { --color-accent: #1a4fe0; --color-accent-strong: #123db8; --color-accent-ink: #ffffff; }
 [data-accent='rojo'] { --color-accent: #ff6b6b; --color-accent-strong: #ffb0b0; --color-accent-ink: #2a0808; }
-[data-theme='light'][data-accent='rojo'], html.light[data-accent='rojo'] { --color-accent: #dc2626; --color-accent-strong: #b91c1c; --color-accent-ink: #ffffff; }
+[data-theme='light'][data-accent='rojo'], html.light[data-accent='rojo'] { --color-accent: #b3141a; --color-accent-strong: #930f14; --color-accent-ink: #ffffff; }
 
 .theme-sw {
   position: relative;
@@ -125,7 +134,7 @@
   border-radius: 999px;
   border: 1px solid var(--color-hairline);
   background: var(--color-surface-2);
-  color: var(--color-ink-4);
+  color: var(--color-ink-3);
 }
 .theme-sw .knob {
   position: absolute;
@@ -169,7 +178,7 @@
 
 @layer components {
   /* Cifras siempre tabulares */
-  .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+  .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; white-space: nowrap; }
   .tnum { font-variant-numeric: tabular-nums; }
   /* Cifras grandes: sans con numerales tabulares y tracking negativo (la mono se reserva para IDs y tablas) */
   .display-num { font-family: var(--font-sans); font-variant-numeric: tabular-nums; font-weight: 600; letter-spacing: -0.035em; }
@@ -227,7 +236,7 @@
   .table td { padding: 0.625rem 0.75rem; border-bottom: 1px solid var(--color-hairline); vertical-align: middle; }
   .table tr:last-child td { border-bottom: 0; }
   .row-interactive { cursor: pointer; transition: background-color 120ms ease; }
-  .row-interactive[aria-selected='true'] { background: rgb(61 220 196 / 0.06); }
+  .row-interactive[aria-selected='true'] { background: color-mix(in oklab, var(--color-accent) 8%, transparent); }
   @media (hover: hover) and (pointer: fine) { .row-interactive:hover { background: rgb(255 255 255 / 0.025); } }
 
   /* Control segmentado */
@@ -256,7 +265,7 @@
   .bar-fill { position: absolute; inset: 0; transform-origin: left center; border-radius: inherit; transition: transform 260ms var(--ease-out); }
 
   .kbd { font-family: var(--font-mono); font-size: 0.6875rem; padding: 0 0.3rem; border-radius: 4px; background: rgb(255 255 255 / 0.06); color: var(--color-ink-3); }
-  .code { font-family: var(--font-mono); font-size: 0.75rem; line-height: 1.55; background: var(--color-ground); border-radius: 10px; padding: 0.625rem 0.75rem; box-shadow: inset 0 0 0 1px var(--color-hairline); color: #cfe9e4; white-space: pre-wrap; word-break: break-word; }
+  .code { font-family: var(--font-mono); font-size: 0.75rem; line-height: 1.55; background: var(--color-ground); border-radius: 10px; padding: 0.625rem 0.75rem; box-shadow: inset 0 0 0 1px var(--color-hairline); color: var(--color-ink); white-space: pre-wrap; word-break: break-word; }
 
   /* Grafo */
   .g-node, .g-edge { transition: opacity 180ms ease, stroke 180ms ease, fill 180ms ease; }

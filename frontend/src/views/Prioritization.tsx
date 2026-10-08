@@ -95,7 +95,7 @@ export function Prioritization() {
           <section className="panel overflow-hidden">
             <div className="flex flex-wrap items-center gap-3 border-b border-hairline px-4 py-3">
               <div className="relative w-[280px]">
-                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-4" />
+                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-3" />
                 <input className="field pl-9" placeholder="Buscar por ID, CVE, título o activo" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Buscar hallazgos" />
               </div>
               <Segmented<BandFilter>
@@ -217,7 +217,7 @@ function FindingDetail({ findingId }: { findingId: string }) {
             <li key={fa.key}>
               <div className="flex items-baseline justify-between gap-3 text-[0.8125rem]">
                 <span className="font-medium">{fa.label}</span>
-                <span className="num text-ink-2">{fa.points > 0 && fa.key === 'validacion' ? '+' : ''}{fmt(fa.points)}{fa.max > 0 && <span className="text-ink-4"> / {fa.max}</span>}</span>
+                <span className="num text-ink-2">{fa.points > 0 && fa.key === 'validacion' ? '+' : ''}{fmt(fa.points)}{fa.max > 0 && <span className="text-ink-3"> / {fa.max}</span>}</span>
               </div>
               {fa.max > 0 && <div className="mt-1.5"><ScoreBar value={fa.points} max={fa.max} color={fa.key === 'validacion' ? 'var(--color-critica)' : 'var(--color-accent)'} /></div>}
               <div className="mt-1 text-xs text-ink-3">{fa.detail}</div>
@@ -235,7 +235,7 @@ function FindingDetail({ findingId }: { findingId: string }) {
       </dl>
       <div>
         <h3 className="label mb-2 font-medium">Remediación · {g.owner}</h3>
-        <ol className="list-decimal space-y-1.5 pl-5 text-[0.8125rem] text-ink-2 marker:text-ink-4">{g.steps.map((st) => <li key={st}>{st}</li>)}</ol>
+        <ol className="list-decimal space-y-1.5 pl-5 text-[0.8125rem] text-ink-2 marker:text-ink-3">{g.steps.map((st) => <li key={st}>{st}</li>)}</ol>
       </div>
     </div>
   );

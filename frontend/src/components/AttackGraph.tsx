@@ -1,6 +1,7 @@
 import { AppWindow, Cloud, Crown, Database, Globe, KeyRound, Monitor, Network, Server, ShieldCheck, User } from 'lucide-react';
 import { useMemo, type ComponentType } from 'react';
 import type { GraphAnalysis, GraphNode } from '../engine/types';
+import { wrapLabel } from '../lib/format';
 
 const ICON: Record<GraphNode['type'], ComponentType<{ x?: number; y?: number; width?: number; height?: number; color?: string; strokeWidth?: number }>> = {
   internet: Globe, servidor: Server, estacion: Monitor, aplicacion_web: AppWindow, base_datos: Database,
@@ -8,9 +9,9 @@ const ICON: Record<GraphNode['type'], ComponentType<{ x?: number; y?: number; wi
 };
 
 const NW = 204;
-const NH = 52;
+const NH = 64;
 const COL = 262;
-const ROW = 78;
+const ROW = 88;
 const PAD = 24;
 
 /** Grafo de rutas de ataque en SVG puro: columnas por distancia desde Internet (BFS), sin dependencias. */
@@ -49,14 +50,14 @@ export function AttackGraph({ graph, highlight, focusNode, onNode }: {
   const dim = (id: string) => (highlight ? !highlight.has(id) : focusNode ? false : false);
 
   return (
-    <svg viewBox={`0 0 ${layout.width} ${layout.height}`} className="h-auto w-full select-none" role="img" aria-label={`Grafo de ataque: ${graph.nodes.length} nodos, ${graph.edges.length} aristas, ${graph.paths.length} rutas`}>
+    <svg viewBox={`0 0 ${layout.width} ${layout.height}`} className="h-auto w-full select-none" role="group" aria-label={`Grafo de ataque: ${graph.nodes.length} nodos, ${graph.edges.length} aristas, ${graph.paths.length} rutas`}>
       <defs>
         <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 1 L9 5 L0 9 z" fill="var(--color-ink-4)" /></marker>
         <marker id="arr-hot" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 1 L9 5 L0 9 z" fill="var(--color-alta)" /></marker>
         <marker id="arr-sel" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 1 L9 5 L0 9 z" fill="var(--color-accent)" /></marker>
       </defs>
       {layout.unreachableCol !== null && (
-        <text x={PAD + layout.unreachableCol * COL} y={14} fill="var(--color-ink-4)" fontSize={11}>Sin ruta desde Internet</text>
+        <text x={PAD + layout.unreachableCol * COL} y={14} fill="var(--color-ink-3)" fontSize={11}>Sin ruta desde Internet</text>
       )}
       <g fill="none">
         {graph.edges.map((e) => {
@@ -96,8 +97,17 @@ export function AttackGraph({ graph, highlight, focusNode, onNode }: {
             onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); onNode(focused ? null : n.id); } }}>
             <rect x={p.x} y={p.y} width={NW} height={NH} rx={12} fill={n.id === 'internet' ? 'var(--color-surface-3)' : 'var(--color-surface-2)'} stroke={ring} strokeWidth={focused || choke || sel ? 1.75 : 1} />
             <Icon x={p.x + 12} y={p.y + NH / 2 - 9} width={18} height={18} color={n.crown ? 'var(--color-accent)' : choke ? 'var(--color-alta)' : 'var(--color-ink-2)'} strokeWidth={1.75} />
-            <text x={p.x + 40} y={p.y + 22} fill="var(--color-ink)" fontSize={12} fontWeight={500}>{(() => { const max = n.crown ? 21 : 25; return n.label.length > max ? `${n.label.slice(0, max - 1)}…` : n.label; })()}</text>
-            <text x={p.x + 40} y={p.y + 38} fill={choke ? 'var(--color-alta)' : 'var(--color-ink-3)'} fontSize={10.5}>
+            <title>{n.label}</title>
+            {(() => {
+              const [l1, l2] = wrapLabel(n.label, n.crown ? 21 : 24);
+              return (
+                <text x={p.x + 40} y={p.y + (l2 ? 19 : 26)} fill="var(--color-ink)" fontSize={12} fontWeight={500}>
+                  {l1}
+                  {l2 && <tspan x={p.x + 40} dy={14}>{l2}</tspan>}
+                </text>
+              );
+            })()}
+            <text x={p.x + 40} y={p.y + (n.label.length > (n.crown ? 21 : 24) ? 52 : 44)} fill={choke ? 'var(--color-alta)' : 'var(--color-ink-3)'} fontSize={10.5}>
               {n.id === 'internet' ? 'Origen de las rutas' : choke ? `Estrangulamiento · ${count} rutas` : n.crown ? 'Joya de la corona' : n.entry ? 'Punto de entrada' : count ? `En ${count} rutas` : `Criticidad ${n.criticality}/5`}
             </text>
             {n.crown && <Crown x={p.x + NW - 22} y={p.y + 8} width={13} height={13} color="var(--color-accent)" strokeWidth={2} />}

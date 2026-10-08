@@ -155,11 +155,11 @@ export function NmapUploader({ onDone }: Props) {
               'Arrastra aquí tu reporte Nmap XML o haz clic para seleccionarlo'
             )}
           </div>
-          <p className="mt-1 text-[0.6875rem] text-ink-4">Soporta formato nativo XML exportado con -oX</p>
+          <p className="mt-1 text-[0.6875rem] text-ink-3">Soporta formato nativo XML exportado con -oX</p>
 
-          <label className="mt-3.5 inline-flex cursor-pointer items-center justify-center rounded-full bg-surface-3 px-4 py-1.5 text-xs font-medium text-ink transition hover:bg-surface-2 active:scale-95">
+          <label className="mt-3.5 inline-flex cursor-pointer focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-accent items-center justify-center rounded-full bg-surface-3 px-4 py-1.5 text-xs font-medium text-ink transition hover:bg-surface-2 active:scale-95">
             <span>{file ? 'Cambiar archivo' : 'Explorar archivos'}</span>
-            <input type="file" accept=".xml,text/xml" className="hidden" onChange={handleFileChange} />
+            <input type="file" accept=".xml,text/xml" className="sr-only" onChange={handleFileChange} />
           </label>
         </div>
 
@@ -214,29 +214,29 @@ export function NmapUploader({ onDone }: Props) {
             <h4 className="text-xs font-semibold uppercase tracking-wider text-ink-3">
               Muestra de activos identificados ({result.assets.length})
             </h4>
-            <div className="max-h-56 divide-y divide-hairline overflow-y-auto rounded-xl border border-hairline bg-surface">
+            <div tabIndex={0} className="max-h-56 divide-y divide-hairline overflow-y-auto rounded-xl border border-hairline bg-surface">
               {result.assets.slice(0, 6).map((a) => (
                 <div key={a.id} className="flex items-center justify-between px-3.5 py-2.5 text-xs">
                   <div className="flex items-center gap-2.5">
                     {a.criticality === 5 ? (
                       <span title="Joya de la corona"><Crown className="size-3.5 text-accent" /></span>
                     ) : (
-                      <Server className="size-3.5 text-ink-4" />
+                      <Server className="size-3.5 text-ink-3" />
                     )}
                     <span className="font-mono text-ink">{a.ip}</span>
                     <span className="text-ink-3">· {a.name}</span>
-                    <span className="rounded bg-surface-2 px-1.5 py-0.5 text-[10px] text-ink-2">
+                    <span className="rounded bg-surface-2 px-1.5 py-0.5 text-[11px] text-ink-2">
                       {ASSET_TYPE_LABEL[a.type]}
                     </span>
                     {a.internetExposed && (
-                      <span className="flex items-center gap-1 text-[10px] text-alta font-medium">
+                      <span className="flex items-center gap-1 text-[11px] text-alta font-medium">
                         <Globe className="size-3" /> Internet
                       </span>
                     )}
                   </div>
                   <div className="flex items-center gap-1">
                     {a.tags.slice(0, 3).map((t) => (
-                      <span key={t} className="chip text-[10px]">
+                      <span key={t} className="chip text-[11px]">
                         {t}
                       </span>
                     ))}
@@ -244,7 +244,7 @@ export function NmapUploader({ onDone }: Props) {
                 </div>
               ))}
               {result.assets.length > 6 && (
-                <div className="px-3 py-2 text-center text-xs text-ink-4">
+                <div className="px-3 py-2 text-center text-xs text-ink-3">
                   ... y {result.assets.length - 6} activos adicionales listos para incorporar.
                 </div>
               )}
@@ -256,19 +256,19 @@ export function NmapUploader({ onDone }: Props) {
               <h4 className="text-xs font-semibold uppercase tracking-wider text-ink-3">
                 Hallazgos y vectores identificados ({result.findings.length})
               </h4>
-              <div className="max-h-40 divide-y divide-hairline overflow-y-auto rounded-xl border border-hairline bg-surface">
+              <div tabIndex={0} className="max-h-40 divide-y divide-hairline overflow-y-auto rounded-xl border border-hairline bg-surface">
                 {result.findings.slice(0, 4).map((f) => (
                   <div key={f.id} className="flex items-center justify-between px-3.5 py-2 text-xs">
                     <div className="flex items-center gap-2">
                       <ShieldAlert className="size-3.5 text-critica" />
                       <span className="font-medium text-ink">{f.title}</span>
                       {f.cve && (
-                        <span className="rounded bg-critica/10 px-1.5 py-0.5 font-mono text-[10px] text-critica">
+                        <span className="rounded bg-critica/10 px-1.5 py-0.5 font-mono text-[11px] text-critica">
                           {f.cve}
                         </span>
                       )}
                     </div>
-                    <span className="font-mono text-[10px] text-ink-4">{f.assetId}</span>
+                    <span className="font-mono text-[11px] text-ink-3">{f.assetId}</span>
                   </div>
                 ))}
               </div>

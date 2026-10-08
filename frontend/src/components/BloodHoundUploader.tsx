@@ -121,7 +121,7 @@ export function BloodHoundUploader({ onDone }: Props) {
       {/* Zona de bienvenida y drag & drop */}
       <div className="rounded-2xl border border-hairline bg-surface-2/40 p-5">
         <div className="flex items-start gap-3.5">
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-orange-500/15 text-orange-400">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-alta/15 text-alta">
             <Users className="size-5" />
           </div>
           <div>
@@ -149,7 +149,7 @@ export function BloodHoundUploader({ onDone }: Props) {
           onDrop={handleDrop}
           className={`mt-4 flex flex-col items-center justify-center rounded-xl border-2 border-dashed p-6 text-center transition ${
             isDragging
-              ? 'border-orange-500 bg-orange-500/10 text-orange-400'
+              ? 'border-alta bg-alta/10 text-alta'
               : 'border-hairline bg-surface/50 hover:border-hairline-strong'
           }`}
         >
@@ -158,16 +158,16 @@ export function BloodHoundUploader({ onDone }: Props) {
           </div>
           <div className="mt-2.5 text-xs font-medium text-ink">
             {file ? (
-              <span className="font-semibold text-orange-400">{file.name} ({(file.size / 1024).toFixed(1)} KB)</span>
+              <span className="font-semibold text-alta">{file.name} ({(file.size / 1024).toFixed(1)} KB)</span>
             ) : (
               'Arrastra aquí tu archivo JSON de BloodHound o haz clic para seleccionarlo'
             )}
           </div>
-          <p className="mt-1 text-[0.6875rem] text-ink-4">Soporta exportaciones JSON de SharpHound / BloodHound CE</p>
+          <p className="mt-1 text-[0.6875rem] text-ink-3">Soporta exportaciones JSON de SharpHound / BloodHound CE</p>
 
-          <label className="mt-3.5 inline-flex cursor-pointer items-center justify-center rounded-full bg-surface-3 px-4 py-1.5 text-xs font-medium text-ink transition hover:bg-surface-2 active:scale-95">
+          <label className="mt-3.5 inline-flex cursor-pointer focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-accent items-center justify-center rounded-full bg-surface-3 px-4 py-1.5 text-xs font-medium text-ink transition hover:bg-surface-2 active:scale-95">
             <span>{file ? 'Cambiar archivo' : 'Explorar archivos'}</span>
-            <input type="file" accept=".json,application/json" className="hidden" onChange={handleFileChange} />
+            <input type="file" accept=".json,application/json" className="sr-only" onChange={handleFileChange} />
           </label>
         </div>
 
@@ -247,7 +247,7 @@ export function BloodHoundUploader({ onDone }: Props) {
             <h4 className="text-xs font-semibold uppercase tracking-wider text-ink-3">
               Objetos AD identificados ({result.assets.length})
             </h4>
-            <div className="max-h-52 divide-y divide-hairline overflow-y-auto rounded-xl border border-hairline bg-surface">
+            <div tabIndex={0} className="max-h-52 divide-y divide-hairline overflow-y-auto rounded-xl border border-hairline bg-surface">
               {result.assets.slice(0, 6).map((a) => (
                 <div key={a.id} className="flex items-center justify-between px-3.5 py-2.5 text-xs">
                   <div className="flex items-center gap-2.5">
@@ -256,16 +256,16 @@ export function BloodHoundUploader({ onDone }: Props) {
                         <Crown className="size-3.5 text-accent" />
                       </span>
                     ) : (
-                      <Server className="size-3.5 text-ink-4" />
+                      <Server className="size-3.5 text-ink-3" />
                     )}
                     <span className="font-semibold text-ink">{a.name}</span>
-                    <span className="rounded bg-surface-2 px-1.5 py-0.5 text-[10px] text-ink-2">
+                    <span className="rounded bg-surface-2 px-1.5 py-0.5 text-[11px] text-ink-2">
                       {ASSET_TYPE_LABEL[a.type]}
                     </span>
                   </div>
                   <div className="flex items-center gap-1">
                     {a.tags.slice(0, 3).map((t) => (
-                      <span key={t} className="chip text-[10px]">
+                      <span key={t} className="chip text-[11px]">
                         {t}
                       </span>
                     ))}
@@ -273,7 +273,7 @@ export function BloodHoundUploader({ onDone }: Props) {
                 </div>
               ))}
               {result.assets.length > 6 && (
-                <div className="px-3 py-2 text-center text-xs text-ink-4">
+                <div className="px-3 py-2 text-center text-xs text-ink-3">
                   ... y {result.assets.length - 6} objetos AD adicionales listos para incorporar.
                 </div>
               )}
@@ -285,14 +285,14 @@ export function BloodHoundUploader({ onDone }: Props) {
               <h4 className="text-xs font-semibold uppercase tracking-wider text-ink-3">
                 Debilidades y vectores de escalada ({result.findings.length})
               </h4>
-              <div className="max-h-40 divide-y divide-hairline overflow-y-auto rounded-xl border border-hairline bg-surface">
+              <div tabIndex={0} className="max-h-40 divide-y divide-hairline overflow-y-auto rounded-xl border border-hairline bg-surface">
                 {result.findings.slice(0, 4).map((f) => (
                   <div key={f.id} className="flex items-center justify-between px-3.5 py-2 text-xs">
                     <div className="flex items-center gap-2">
                       <ShieldAlert className="size-3.5 text-critica" />
                       <span className="font-medium text-ink">{f.title}</span>
                     </div>
-                    <span className="font-mono text-[10px] text-ink-4">{f.assetId}</span>
+                    <span className="font-mono text-[11px] text-ink-3">{f.assetId}</span>
                   </div>
                 ))}
               </div>

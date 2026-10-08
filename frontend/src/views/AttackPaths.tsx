@@ -106,10 +106,10 @@ export function AttackPaths() {
               <ol className="max-h-[340px] divide-hair overflow-auto border-t border-hairline">
                 {visiblePaths.map(({ p, i }) => (
                   <li key={i}>
-                    <button type="button" aria-pressed={selPath === i} onClick={() => setSelPath(selPath === i ? null : i)} className="row-interactive flex w-full gap-3 px-5 py-2.5 text-left aria-pressed:bg-[rgb(61_220_196/0.07)]">
-                      <span className="num w-5 pt-px text-xs text-ink-4">{i + 1}</span>
+                    <button type="button" data-testid="ruta" aria-pressed={selPath === i} onClick={() => setSelPath(selPath === i ? null : i)} className="row-interactive flex w-full gap-3 px-5 py-2.5 text-left aria-pressed:bg-accent/10">
+                      <span className="num w-5 pt-px text-xs text-ink-3">{i + 1}</span>
                       <span className="min-w-0 flex-1 text-xs leading-relaxed text-ink-2">
-                        {p.nodes.map((n, k) => <span key={n}>{k > 0 && <span className="px-1 text-ink-4">→</span>}<span className={k === p.nodes.length - 1 ? 'text-accent' : ''}>{label.get(n)}</span></span>)}
+                        {p.nodes.map((n, k) => <span key={n}>{k > 0 && <span className="px-1 text-ink-3">→</span>}<span className={k === p.nodes.length - 1 ? 'text-accent' : ''}>{label.get(n)}</span></span>)}
                       </span>
                       <span className="num text-xs text-ink-3">{p.length} saltos</span>
                     </button>
@@ -183,7 +183,7 @@ export function AttackPaths() {
             </ul>
           </section>
         </div>
-        {toValidate.length > 0 && <p className="text-xs text-ink-4">Bandas: <BandBadge band="critica" /> ≥ 80 · <BandBadge band="alta" /> ≥ 60 · <BandBadge band="media" /> ≥ 40 · <BandBadge band="baja" /> &lt; 40</p>}
+        {toValidate.length > 0 && <p className="text-xs text-ink-3">Bandas: <BandBadge band="critica" /> ≥ 80 · <BandBadge band="alta" /> ≥ 60 · <BandBadge band="media" /> ≥ 40 · <BandBadge band="baja" /> &lt; 40</p>}
       </div>
 
       <Modal open={showBloodhound} onClose={() => setShowBloodhound(false)} title="Ingesta de rutas de Active Directory (BloodHound)" maxWidth={680}>

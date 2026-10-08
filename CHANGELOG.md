@@ -2,6 +2,31 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico. La hoja de ruta está en [ROADMAP.md](ROADMAP.md).
 
+## [Sin publicar]
+
+Fase 1 de la hoja de ruta (en curso): accesibilidad AA verificada, controles sin duplicar y plazos visibles.
+
+### Añadido
+- `tests/e2e_app.py`: 50 comprobaciones con Playwright sobre el HTML autocontenido. Cubre la CSP, la red bloqueada, la navegación, la ingesta de Nmap y BloodHound, el rechazo de XML con entidades, las rutas que se cortan al validar, los SLA vencidos, exportar y reimportar, los diálogos, el tema, el idioma y el móvil.
+- `tests/a11y_app.py`: axe-core (WCAG 2.2 A/AA) en 128 estados (vistas, diálogos, menús, formularios, resultados de ingesta, ayuda y búsqueda), en claro y oscuro, a 1440 y 390 px. Incluye un barrido de contraste propio para los casos que axe deja sin decidir. Ambas suites corren en la CI.
+- Plazos de SLA (`engine/sla.ts`): fecha límite, «vencido hace N d», «vence hoy» o «vence en N d» en cada ticket; recuento de tickets fuera de plazo en Movilización y en el panel; fecha límite en los tickets en Markdown.
+- Ficheros de ejemplo en `shared/samples/` (Nmap y BloodHound ficticios), con pruebas.
+- «Acerca de» enlaza la web publicada de cada herramienta del ecosistema, además de su código. Se corrige la descripción de ARGOS.
+
+### Cambiado
+- **Contraste AA en toda la interfaz.** Las bandas tienen tonos propios en el tema claro, `ink-3` es más claro en el oscuro, los acentos se ajustan para llegar a 4,5:1 también sobre sus tintes y el texto mínimo pasa a 11 px. El bloque de comandos de verificación tenía texto turquesa fijo, ilegible en claro.
+- Búsqueda, idioma, tema y ayuda aparecen una sola vez, en la barra superior. El lateral se queda con la navegación, el acento y la cuenta. En escritorio, la cuenta solo está en el lateral.
+- Sin nombre de perfil, el avatar muestra el icono de usuario en lugar de «·».
+- Grafo de ataque: los nombres largos van en dos líneas con el nombre completo accesible, y el grafo es un grupo de nodos enfocables (antes, una imagen con controles dentro).
+- La demo desplaza sus fechas al día actual para no envejecer: siempre hay tickets vencidos, a punto de vencer y en plazo.
+- Las cifras no se parten (`94,4 %` con espacio duro).
+
+### Corregido
+- Diálogos accesibles: ayuda, búsqueda, perfil, ventanas y paneles con `role="dialog"`, nombre, Escape y devolución del foco. Pestañas de la ayuda con `tablist` y flechas. Menú de cuenta con foco inicial, flechas y Escape. Selector de acento con Escape.
+- Los selectores de fichero de las ingestas (`display: none`) eran inalcanzables con el teclado.
+- Las zonas desplazables (paneles, listas de resultados) se pueden recorrer con el teclado.
+- Etiquetas de navegación correctas («Secciones») en el lateral y en la barra inferior.
+
 ## [0.2.0] - 2026-10-08
 
 Fase 0 de la hoja de ruta: higiene del repositorio.

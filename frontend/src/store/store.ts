@@ -1,6 +1,7 @@
 /* Estado de la aplicación (zustand) con persistencia segura en localStorage / memoria. */
 import { create } from 'zustand';
-import { DEMO_ASSETS, DEMO_EDGES, DEMO_FINDINGS, DEMO_RANGES } from '../data/demo';
+import { DEMO_ANCHOR, DEMO_ASSETS, DEMO_EDGES, DEMO_FINDINGS, DEMO_RANGES } from '../data/demo';
+import { daysBetween, shiftDate } from '../engine/sla';
 import type { Project } from '../engine/io';
 import type { Asset, Finding, FindingStatus, ManualEdge, NetworkRange } from '../engine/types';
 import { load, remove, save } from '../lib/storage';
@@ -59,10 +60,14 @@ interface State extends Persisted {
 
 const KEY = 'ctem-nexus:v1';
 const emptyProject = (): Project => ({ format: 'ctem-nexus', version: 1, name: 'Mi organización', demo: false, assets: [], ranges: [], findings: [], edges: [] });
-export const demoProject = (): Project => ({
-  format: 'ctem-nexus', version: 1, name: 'Ejemplo · Industrias Meridiano S.A.', demo: true,
-  assets: structuredClone(DEMO_ASSETS), ranges: structuredClone(DEMO_RANGES), findings: structuredClone(DEMO_FINDINGS), edges: structuredClone(DEMO_EDGES),
-});
+export const demoProject = (today: Date = new Date()): Project => {
+  const offset = daysBetween(new Date(`${DEMO_ANCHOR}T00:00:00Z`), today);
+  const findings = structuredClone(DEMO_FINDINGS).map((f) => ({ ...f, detectedAt: shiftDate(f.detectedAt, offset) ?? undefined, resolvedAt: shiftDate(f.resolvedAt, offset) }));
+  return {
+    format: 'ctem-nexus', version: 1, name: 'Ejemplo · Industrias Meridiano S.A.', demo: true,
+    assets: structuredClone(DEMO_ASSETS), ranges: structuredClone(DEMO_RANGES), findings, edges: structuredClone(DEMO_EDGES),
+  };
+};
 const defaults: Settings = { useApi: false, apiUrl: 'http://127.0.0.1:8000', theme: 'dark', lang: 'es', accent: 'azul', profile: { nombre: '', rol: '', organizacion: '', correo: '' } };
 
 const stored = load<Partial<Persisted>>(KEY);
