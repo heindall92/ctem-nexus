@@ -47,7 +47,10 @@ export const DEMO_FINDINGS: Finding[] = [
   { id: 'H-016', title: 'Microsoft Office: RCE mediante documentos', kind: 'cve', cve: 'CVE-2023-36884', cvss: 8.8, epss: 0.72, kev: true, exploitPublic: true, assetId: 'a05', status: 'abierto', remediation: 'patch_cve', detectedAt: d('2026-09-09') },
   { id: 'H-017', title: 'TLS 1.0/1.1 y cifrados débiles habilitados', kind: 'configuracion', cvss: 5.3, epss: null, kev: false, exploitPublic: false, assetId: 'a01', status: 'mitigado', remediation: 'tls_hardening', detectedAt: d('2026-09-02'), resolvedAt: d('2026-09-12') },
   { id: 'H-018', title: 'Usuarios sin preautenticación Kerberos (AS-REP roasting)', kind: 'identidad', cvss: 7.5, epss: null, kev: false, exploitPublic: true, assetId: 'a06', status: 'abierto', remediation: 'asrep_roast', detectedAt: d('2026-09-10') },
-  { id: 'H-019', title: 'Copias de seguridad del ERP sin cifrar', kind: 'configuracion', cvss: 5.5, epss: null, kev: false, exploitPublic: false, assetId: 'a08', status: 'abierto', remediation: 'weak_config', detectedAt: d('2026-09-10') },
+  {
+    id: 'H-019', title: 'Copias de seguridad del ERP sin cifrar', kind: 'configuracion', cvss: 5.5, epss: null, kev: false, exploitPublic: false, assetId: 'a08', status: 'aceptado', remediation: 'weak_config', detectedAt: d('2026-09-10'),
+    exception: { owner: 'Dirección financiera', reason: 'El proveedor de copias no admite cifrado hasta la migración del cuarto trimestre.', expires: d('2026-12-15'), compensating: 'Cintas en caja fuerte con acceso registrado y red de copias aislada.', approvedAt: d('2026-09-12'), previous: 'abierto' },
+  },
   { id: 'H-020', title: 'Inscripción web de ADCS por HTTP sin EPA (ESC8)', kind: 'configuracion', cvss: 8.1, epss: null, kev: false, exploitPublic: true, assetId: 'a07', status: 'mitigado', remediation: 'adcs_esc1', detectedAt: d('2026-09-05'), resolvedAt: d('2026-09-15') },
 ];
 

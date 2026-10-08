@@ -5,6 +5,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { expect, it } from 'vitest';
 import { DEMO_ASSETS, DEMO_EDGES, DEMO_FINDINGS } from '../data/demo';
+import { PROFILE_IDS } from './constants';
 import { prioritize } from './engine';
 
 const file = resolve(__dirname, '../../../shared/golden-demo.json');
@@ -17,6 +18,11 @@ it('coincide con shared/golden-demo.json', () => {
     paths: r.graph.paths.length,
     chokePoints: r.graph.chokePoints,
     summary: r.summary,
+    // Cada perfil de ponderación también debe coincidir con el motor Python.
+    profiles: Object.fromEntries(PROFILE_IDS.filter((p) => p !== 'defecto').map((profile) => {
+      const rp = prioritize({ ...input, profile });
+      return [profile, { scored: rp.scored.map(({ id, score, band, explanation }) => ({ id, score, band, explanation })), summary: rp.summary }];
+    })),
   };
   if (process.env.GOLDEN === '1' || !existsSync(file)) {
     writeFileSync(file, JSON.stringify({ engineVersion: r.version, input, expected }, null, 2) + '\n');

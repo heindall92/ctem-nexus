@@ -8,7 +8,8 @@ from pydantic.alias_generators import to_camel
 
 AssetType = Literal["servidor", "estacion", "aplicacion_web", "base_datos", "controlador_dominio", "pki", "perimetro", "nube", "identidad"]
 FindingKind = Literal["cve", "configuracion", "identidad"]
-FindingStatus = Literal["abierto", "validado", "no_explotable", "mitigado"]
+FindingStatus = Literal["abierto", "validado", "no_explotable", "mitigado", "aceptado"]
+ProfileId = Literal["defecto", "ot", "banca"]
 
 
 class CamelModel(BaseModel):
@@ -33,6 +34,15 @@ class NetworkRange(CamelModel):
     in_scope: bool = True
 
 
+class RiskException(CamelModel):
+    owner: str = Field(default="", max_length=120)
+    reason: str = Field(default="", max_length=1000)
+    expires: str = Field(pattern=r"^\d{4}-\d{2}-\d{2}$")
+    compensating: str = Field(default="", max_length=1000)
+    approved_at: str = Field(default="", max_length=10)
+    previous: Literal["abierto", "validado"] = "abierto"
+
+
 class Finding(CamelModel):
     id: str = Field(min_length=1, max_length=40)
     title: str = Field(min_length=1, max_length=200)
@@ -51,6 +61,11 @@ class Finding(CamelModel):
     technique: Optional[str] = None
     edge_from: Optional[str] = None
     leads_to: list[str] = Field(default_factory=list)
+    related_cves: list[str] = Field(default_factory=list, max_length=200)
+    sources: list[str] = Field(default_factory=list, max_length=12)
+    evidence: Optional[str] = Field(default=None, max_length=4000)
+    attack: list[str] = Field(default_factory=list, max_length=20)
+    exception: Optional[RiskException] = None
 
 
 class ManualEdge(CamelModel):
@@ -64,6 +79,7 @@ class EngineInput(CamelModel):
     assets: list[Asset] = Field(default_factory=list, max_length=5000)
     findings: list[Finding] = Field(default_factory=list, max_length=20000)
     edges: list[ManualEdge] = Field(default_factory=list, max_length=5000)
+    profile: ProfileId = "defecto"
 
     def to_engine(self) -> dict:
         """Diccionario camelCase que consume app.engine (idéntico al JSON de la interfaz)."""

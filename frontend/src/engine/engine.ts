@@ -4,13 +4,13 @@
  * mismas constantes, mismo orden de operaciones, mismo redondeo y mismos textos. La paridad se comprueba
  * con shared/golden-demo.json en las pruebas de los dos lados. Fórmula documentada en docs/SCORING.md. */
 import {
-  BAND_LABEL, BAND_THRESHOLDS, CHOKE_MIN_PATHS, CHOKE_SHARE, ENGINE_VERSION, EXPLOIT_PUBLIC_FLOOR,
-  INTERNET_ID, MAX_PATHS, MAX_PATH_DEPTH, NOT_EXPLOITABLE_FACTOR, PROXIMITY_HOPS, SLA_DAYS,
-  VALIDATED_BONUS, WEIGHTS,
+  BAND_LABEL, BAND_THRESHOLDS, CHOKE_MIN_PATHS, CHOKE_SHARE, DEFAULT_PROFILE, ENGINE_VERSION, EXPLOIT_PUBLIC_FLOOR,
+  INTERNET_ID, MAX_PATHS, MAX_PATH_DEPTH, NOT_EXPLOITABLE_FACTOR, PROFILES, PROXIMITY_HOPS, SLA_DAYS,
+  VALIDATED_BONUS, WEIGHTS, type Weights,
 } from './constants';
 import type {
   Asset, AttackPath, Band, ChokePoint, EngineInput, EngineResult, Factor, Finding, GraphAnalysis,
-  GraphEdge, GraphNode, ScoredFinding, Summary,
+  GraphEdge, GraphNode, ProfileId, ScoredFinding, Summary,
 } from './types';
 
 /** Redondeo a una décima, «mitad hacia arriba» (igual que math.floor(x * 10 + 0.5) / 10 en Python). */
@@ -161,7 +161,10 @@ function exploitDetail(f: Finding, epss: number): string {
   return 'Sin indicios de explotación';
 }
 
-export function scoreFinding(f: Finding, asset: Asset | undefined, hops: number | null, onAttackPath: boolean): ScoredFinding {
+/** Perfil válido (cualquier otro valor cae en el de por defecto). */
+export const profileOf = (p: unknown): ProfileId => (typeof p === 'string' && Object.prototype.hasOwnProperty.call(PROFILES, p) ? (p as ProfileId) : DEFAULT_PROFILE);
+
+export function scoreFinding(f: Finding, asset: Asset | undefined, hops: number | null, onAttackPath: boolean, W: Weights = WEIGHTS): ScoredFinding {
   const cvss = clamp(f.cvss, 0, 10);
   const epss = clamp(f.epss ?? 0, 0, 1);
   const e = Math.max(f.kev ? 1 : 0, f.exploitPublic ? EXPLOIT_PUBLIC_FLOOR : 0, epss);
@@ -169,20 +172,20 @@ export function scoreFinding(f: Finding, asset: Asset | undefined, hops: number 
   const exposed = asset ? asset.internetExposed : false;
   const p = hops === null ? 0 : Math.max(0, 1 - hops / PROXIMITY_HOPS);
 
-  const sev = (cvss / 10) * WEIGHTS.severidad;
-  const expl = e * WEIGHTS.explotabilidad;
-  const crt = ((crit - 1) / 4) * WEIGHTS.criticidad;
-  const exp = exposed ? WEIGHTS.exposicion : 0;
-  const prox = p * WEIGHTS.proximidad;
+  const sev = (cvss / 10) * W.severidad;
+  const expl = e * W.explotabilidad;
+  const crt = ((crit - 1) / 4) * W.criticidad;
+  const exp = exposed ? W.exposicion : 0;
+  const prox = p * W.proximidad;
   const base = sev + expl + crt + exp + prox;
 
   const factors: Factor[] = [
-    { key: 'severidad', label: 'Severidad', points: r1(sev), max: WEIGHTS.severidad, detail: `CVSS ${fmt(cvss)}` },
-    { key: 'explotabilidad', label: 'Explotabilidad', points: r1(expl), max: WEIGHTS.explotabilidad, detail: exploitDetail(f, epss) },
-    { key: 'criticidad', label: 'Criticidad del activo', points: r1(crt), max: WEIGHTS.criticidad, detail: `Criticidad de negocio ${crit}/5${asset ? ` (${asset.name})` : ' (activo desconocido)'}` },
-    { key: 'exposicion', label: 'Exposición', points: r1(exp), max: WEIGHTS.exposicion, detail: exposed ? 'Expuesto a Internet' : 'Solo accesible desde la red interna' },
+    { key: 'severidad', label: 'Severidad', points: r1(sev), max: W.severidad, detail: `CVSS ${fmt(cvss)}` },
+    { key: 'explotabilidad', label: 'Explotabilidad', points: r1(expl), max: W.explotabilidad, detail: exploitDetail(f, epss) },
+    { key: 'criticidad', label: 'Criticidad del activo', points: r1(crt), max: W.criticidad, detail: `Criticidad de negocio ${crit}/5${asset ? ` (${asset.name})` : ' (activo desconocido)'}` },
+    { key: 'exposicion', label: 'Exposición', points: r1(exp), max: W.exposicion, detail: exposed ? 'Expuesto a Internet' : 'Solo accesible desde la red interna' },
     {
-      key: 'proximidad', label: 'Proximidad', points: r1(prox), max: WEIGHTS.proximidad,
+      key: 'proximidad', label: 'Proximidad', points: r1(prox), max: W.proximidad,
       detail: hops === null ? 'Sin ruta conocida hacia una joya de la corona'
         : hops === 0 ? 'Afecta directamente a una joya de la corona'
           : `A ${hops} ${hops === 1 ? 'salto' : 'saltos'} de una joya de la corona`,
@@ -209,7 +212,9 @@ export function scoreFinding(f: Finding, asset: Asset | undefined, hops: number 
     .map(({ fa }) => fa.detail);
   const tail = factors.length > 5 ? [factors[5].detail] : [];
   const reasons = [...ranked, ...tail];
-  const prefix = f.status === 'mitigado' ? 'Mitigado; puntuación de referencia' : `Prioridad ${BAND_LABEL[band]}`;
+  const prefix = f.status === 'mitigado' ? 'Mitigado; puntuación de referencia'
+    : f.status === 'aceptado' ? 'Riesgo aceptado; puntuación de referencia'
+      : `Prioridad ${BAND_LABEL[band]}`;
   const explanation = `${prefix} (${fmt(score)}/100). ${reasons.length ? reasons.join('; ') : 'Sin factores de riesgo relevantes'}.`;
 
   return { id: f.id, score, band, factors, explanation, hopsToCrown: hops, onAttackPath, slaDays: SLA_DAYS[band] };
@@ -218,6 +223,15 @@ export function scoreFinding(f: Finding, asset: Asset | undefined, hops: number 
 /* ───────────────────────── Resumen ───────────────────────── */
 
 const dayMs = 86_400_000;
+
+/** Índice de exposición: 0,5 × la peor puntuación + 0,5 × la media de las cinco peores (hallazgos activos). */
+export function exposureIndexOf(activeScores: number[]): number {
+  if (!activeScores.length) return 0;
+  const scores = [...activeScores].sort((a, b) => b - a);
+  const top = scores.slice(0, 5);
+  const mean = top.reduce((acc, x) => acc + x, 0) / top.length;
+  return r1(0.5 * scores[0] + 0.5 * mean);
+}
 const dateOnly = (s: string): number => Date.parse(`${s.slice(0, 10)}T00:00:00Z`);
 
 export function summarize(input: EngineInput, scored: ScoredFinding[], graph: GraphAnalysis): Summary {
@@ -225,13 +239,7 @@ export function summarize(input: EngineInput, scored: ScoredFinding[], graph: Gr
   const open = scored.filter((s) => { const f = byId.get(s.id); return f ? isActive(f) : false; });
   const byBand: Record<Band, number> = { critica: 0, alta: 0, media: 0, baja: 0 };
   for (const s of open) byBand[s.band] += 1;
-  const scores = open.map((s) => s.score).sort((a, b) => b - a);
-  let exposureIndex = 0;
-  if (scores.length) {
-    const top = scores.slice(0, 5);
-    const mean = top.reduce((acc, x) => acc + x, 0) / top.length;
-    exposureIndex = r1(0.5 * scores[0] + 0.5 * mean);
-  }
+  const exposureIndex = exposureIndexOf(open.map((s) => s.score));
   const atRisk = new Set<string>();
   for (const s of open) if (s.band === 'critica' || s.band === 'alta') atRisk.add(byId.get(s.id)!.assetId);
   const resolved = input.findings.filter((f) => f.status === 'mitigado' && f.detectedAt && f.resolvedAt);
@@ -249,12 +257,15 @@ export function summarize(input: EngineInput, scored: ScoredFinding[], graph: Gr
     chokePoints: graph.chokePoints.filter((c) => c.kind === 'nodo').length,
     attackPaths: graph.paths.length,
     mttrDays,
+    accepted: input.findings.filter((f) => f.status === 'aceptado').length,
   };
 }
 
 /* ───────────────────────── Entrada principal ───────────────────────── */
 
 export function prioritize(input: EngineInput): EngineResult {
+  const profile = profileOf(input.profile);
+  const W = PROFILES[profile];
   const graph = analyzeGraph(input);
   const hops = hopsToCrown(graph.nodes, graph.edges);
   const onPath = new Set<string>();
@@ -271,7 +282,7 @@ export function prioritize(input: EngineInput): EngineResult {
     return best;
   };
   const scored = input.findings
-    .map((f) => scoreFinding(f, assets.get(f.assetId), findingHops(f), onPath.has(f.assetId)))
+    .map((f) => scoreFinding(f, assets.get(f.assetId), findingHops(f), onPath.has(f.assetId), W))
     .sort((a, b) => b.score - a.score || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
-  return { engine: 'ts', version: ENGINE_VERSION, scored, graph, summary: summarize(input, scored, graph) };
+  return { engine: 'ts', version: ENGINE_VERSION, profile, scored, graph, summary: summarize(input, scored, graph) };
 }

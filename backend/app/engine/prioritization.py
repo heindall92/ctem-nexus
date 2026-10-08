@@ -10,9 +10,15 @@ import math
 from datetime import date
 from typing import Any
 
-ENGINE_VERSION = "1.0.0"
+ENGINE_VERSION = "1.1.0"
 
-WEIGHTS = {"severidad": 30, "explotabilidad": 25, "criticidad": 20, "exposicion": 10, "proximidad": 15}
+PROFILES = {
+    "defecto": {"severidad": 30, "explotabilidad": 25, "criticidad": 20, "exposicion": 10, "proximidad": 15},
+    "ot": {"severidad": 20, "explotabilidad": 20, "criticidad": 30, "exposicion": 10, "proximidad": 20},
+    "banca": {"severidad": 25, "explotabilidad": 30, "criticidad": 20, "exposicion": 15, "proximidad": 10},
+}
+DEFAULT_PROFILE = "defecto"
+WEIGHTS = PROFILES[DEFAULT_PROFILE]
 EXPLOIT_PUBLIC_FLOOR = 0.6
 PROXIMITY_HOPS = 4
 VALIDATED_BONUS = 5
@@ -219,7 +225,13 @@ def _exploit_detail(f: Json, epss: float) -> str:
     return "Sin indicios de explotación"
 
 
-def score_finding(f: Json, asset: Json | None, hops: int | None, on_attack_path: bool) -> Json:
+def profile_of(p: Any) -> str:
+    """Perfil válido (cualquier otro valor cae en el de por defecto)."""
+    return p if isinstance(p, str) and p in PROFILES else DEFAULT_PROFILE
+
+
+def score_finding(f: Json, asset: Json | None, hops: int | None, on_attack_path: bool, w: Json | None = None) -> Json:
+    w = w or WEIGHTS
     cvss = _clamp(float(f.get("cvss") or 0), 0, 10)
     epss = _clamp(float(f.get("epss") or 0), 0, 1)
     e = max(1 if f.get("kev") else 0, EXPLOIT_PUBLIC_FLOOR if f.get("exploitPublic") else 0, epss)
@@ -227,11 +239,11 @@ def score_finding(f: Json, asset: Json | None, hops: int | None, on_attack_path:
     exposed = bool(asset.get("internetExposed")) if asset else False
     p = 0 if hops is None else max(0, 1 - hops / PROXIMITY_HOPS)
 
-    sev = (cvss / 10) * WEIGHTS["severidad"]
-    expl = e * WEIGHTS["explotabilidad"]
-    crt = ((crit - 1) / 4) * WEIGHTS["criticidad"]
-    exp = WEIGHTS["exposicion"] if exposed else 0
-    prox = p * WEIGHTS["proximidad"]
+    sev = (cvss / 10) * w["severidad"]
+    expl = e * w["explotabilidad"]
+    crt = ((crit - 1) / 4) * w["criticidad"]
+    exp = w["exposicion"] if exposed else 0
+    prox = p * w["proximidad"]
     base = sev + expl + crt + exp + prox
 
     if hops is None:
@@ -242,11 +254,11 @@ def score_finding(f: Json, asset: Json | None, hops: int | None, on_attack_path:
         prox_detail = f"A {hops} {'salto' if hops == 1 else 'saltos'} de una joya de la corona"
     crit_detail = f"Criticidad de negocio {crit}/5" + (f" ({asset['name']})" if asset else " (activo desconocido)")
     factors: list[Json] = [
-        {"key": "severidad", "label": "Severidad", "points": r1(sev), "max": WEIGHTS["severidad"], "detail": f"CVSS {fmt(cvss)}"},
-        {"key": "explotabilidad", "label": "Explotabilidad", "points": r1(expl), "max": WEIGHTS["explotabilidad"], "detail": _exploit_detail(f, epss)},
-        {"key": "criticidad", "label": "Criticidad del activo", "points": r1(crt), "max": WEIGHTS["criticidad"], "detail": crit_detail},
-        {"key": "exposicion", "label": "Exposición", "points": r1(exp), "max": WEIGHTS["exposicion"], "detail": "Expuesto a Internet" if exposed else "Solo accesible desde la red interna"},
-        {"key": "proximidad", "label": "Proximidad", "points": r1(prox), "max": WEIGHTS["proximidad"], "detail": prox_detail},
+        {"key": "severidad", "label": "Severidad", "points": r1(sev), "max": w["severidad"], "detail": f"CVSS {fmt(cvss)}"},
+        {"key": "explotabilidad", "label": "Explotabilidad", "points": r1(expl), "max": w["explotabilidad"], "detail": _exploit_detail(f, epss)},
+        {"key": "criticidad", "label": "Criticidad del activo", "points": r1(crt), "max": w["criticidad"], "detail": crit_detail},
+        {"key": "exposicion", "label": "Exposición", "points": r1(exp), "max": w["exposicion"], "detail": "Expuesto a Internet" if exposed else "Solo accesible desde la red interna"},
+        {"key": "proximidad", "label": "Proximidad", "points": r1(prox), "max": w["proximidad"], "detail": prox_detail},
     ]
 
     raw = base
@@ -262,7 +274,12 @@ def score_finding(f: Json, asset: Json | None, hops: int | None, on_attack_path:
 
     ranked = sorted(((fa, i) for i, fa in enumerate(factors[:5]) if fa["points"] > 0), key=lambda t: (-t[0]["points"], t[1]))
     reasons = [fa["detail"] for fa, _ in ranked[:3]] + ([factors[5]["detail"]] if len(factors) > 5 else [])
-    prefix = "Mitigado; puntuación de referencia" if status == "mitigado" else f"Prioridad {BAND_LABEL[band]}"
+    if status == "mitigado":
+        prefix = "Mitigado; puntuación de referencia"
+    elif status == "aceptado":
+        prefix = "Riesgo aceptado; puntuación de referencia"
+    else:
+        prefix = f"Prioridad {BAND_LABEL[band]}"
     explanation = f"{prefix} ({fmt(score)}/100). {'; '.join(reasons) if reasons else 'Sin factores de riesgo relevantes'}."
     return {
         "id": f["id"], "score": score, "band": band, "factors": factors, "explanation": explanation,
@@ -272,18 +289,22 @@ def score_finding(f: Json, asset: Json | None, hops: int | None, on_attack_path:
 
 # ───────────────────────── Resumen ─────────────────────────
 
+def exposure_index_of(active_scores: list[float]) -> float:
+    """Índice de exposición: 0,5 × la peor puntuación + 0,5 × la media de las cinco peores (hallazgos activos)."""
+    if not active_scores:
+        return 0
+    scores = sorted(active_scores, reverse=True)
+    top = scores[:5]
+    return r1(0.5 * scores[0] + 0.5 * (sum(top) / len(top)))
+
+
 def summarize(inp: Json, scored: list[Json], graph: Json) -> Json:
     by_id = {f["id"]: f for f in inp.get("findings", [])}
     open_ = [s for s in scored if s["id"] in by_id and is_active(by_id[s["id"]])]
     by_band = {"critica": 0, "alta": 0, "media": 0, "baja": 0}
     for s in open_:
         by_band[s["band"]] += 1
-    scores = sorted((s["score"] for s in open_), reverse=True)
-    exposure = 0
-    if scores:
-        top = scores[:5]
-        mean = sum(top) / len(top)
-        exposure = r1(0.5 * scores[0] + 0.5 * mean)
+    exposure = exposure_index_of([s["score"] for s in open_])
     at_risk = {by_id[s["id"]]["assetId"] for s in open_ if s["band"] in ("critica", "alta")}
     resolved = [f for f in inp.get("findings", []) if f.get("status") == "mitigado" and f.get("detectedAt") and f.get("resolvedAt")]
     mttr = None
@@ -299,12 +320,15 @@ def summarize(inp: Json, scored: list[Json], graph: Json) -> Json:
         "chokePoints": sum(1 for c in graph["chokePoints"] if c["kind"] == "nodo"),
         "attackPaths": len(graph["paths"]),
         "mttrDays": mttr,
+        "accepted": sum(1 for f in inp.get("findings", []) if f.get("status") == "aceptado"),
     }
 
 
 # ───────────────────────── Entrada principal ─────────────────────────
 
 def prioritize(inp: Json) -> Json:
+    profile = profile_of(inp.get("profile"))
+    w = PROFILES[profile]
     graph = analyze_graph(inp)
     hops = hops_to_crown(graph["nodes"], graph["edges"])
     on_path = {n for p in graph["paths"] for n in p["nodes"] if n != INTERNET_ID}
@@ -318,6 +342,6 @@ def prioritize(inp: Json) -> Json:
                     best = hops[t] + 1
         return best
 
-    scored = [score_finding(f, assets.get(f["assetId"]), finding_hops(f), f["assetId"] in on_path) for f in inp.get("findings", [])]
+    scored = [score_finding(f, assets.get(f["assetId"]), finding_hops(f), f["assetId"] in on_path, w) for f in inp.get("findings", [])]
     scored.sort(key=lambda s: (-s["score"], s["id"]))
-    return {"engine": "python", "version": ENGINE_VERSION, "scored": scored, "graph": graph, "summary": summarize(inp, scored, graph)}
+    return {"engine": "python", "version": ENGINE_VERSION, "profile": profile, "scored": scored, "graph": graph, "summary": summarize(inp, scored, graph)}

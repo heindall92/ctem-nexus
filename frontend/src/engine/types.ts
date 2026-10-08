@@ -30,7 +30,23 @@ export interface NetworkRange {
 }
 
 export type FindingKind = 'cve' | 'configuracion' | 'identidad';
-export type FindingStatus = 'abierto' | 'validado' | 'no_explotable' | 'mitigado';
+export type FindingStatus = 'abierto' | 'validado' | 'no_explotable' | 'mitigado' | 'aceptado';
+
+/** Origen de un hallazgo (importador o alta manual). */
+export type FindingSource = 'manual' | 'csv' | 'nmap' | 'bloodhound' | 'nessus' | 'openvas' | 'nuclei' | 'trivy' | 'sarif';
+
+/** Aceptación formal del riesgo: el hallazgo sale de los abiertos hasta que caduca (y vuelve a abierto). */
+export interface RiskException {
+  owner: string;
+  reason: string;
+  /** Fecha de caducidad (AAAA-MM-DD). */
+  expires: string;
+  compensating: string;
+  /** Fecha de aprobación (AAAA-MM-DD). */
+  approvedAt: string;
+  /** Estado al que vuelve al caducar o revocarse. */
+  previous: 'abierto' | 'validado';
+}
 
 export interface Finding {
   id: string;
@@ -53,6 +69,16 @@ export interface Finding {
   edgeFrom?: string | null;
   /** Nodos a los que da acceso. */
   leadsTo?: string[];
+  /** Otros CVE del mismo hallazgo (p. ej. un parche acumulativo de Nessus). */
+  relatedCves?: string[];
+  /** Herramientas que lo han detectado (deduplicación entre fuentes). */
+  sources?: FindingSource[];
+  /** Evidencias fusionadas (puertos, rutas, paquetes), en texto. */
+  evidence?: string;
+  /** Técnicas MITRE ATT&CK explícitas (Txxxx o Txxxx.yyy). Si no hay, se infieren. */
+  attack?: string[];
+  /** Aceptación del riesgo vigente o la última caducada. */
+  exception?: RiskException | null;
 }
 
 export interface ManualEdge {
@@ -62,10 +88,14 @@ export interface ManualEdge {
   technique: string;
 }
 
+export type ProfileId = 'defecto' | 'ot' | 'banca';
+
 export interface EngineInput {
   assets: Asset[];
   findings: Finding[];
   edges: ManualEdge[];
+  /** Perfil de ponderación (por defecto, «defecto»). */
+  profile?: ProfileId;
 }
 
 export type Band = 'critica' | 'alta' | 'media' | 'baja';
@@ -140,11 +170,14 @@ export interface Summary {
   chokePoints: number;
   attackPaths: number;
   mttrDays: number | null;
+  /** Hallazgos con el riesgo aceptado (fuera de los abiertos, pero sus rutas siguen en el grafo). */
+  accepted: number;
 }
 
 export interface EngineResult {
   engine: 'ts' | 'python';
   version: string;
+  profile: ProfileId;
   scored: ScoredFinding[];
   graph: GraphAnalysis;
   summary: Summary;

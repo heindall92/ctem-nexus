@@ -1,16 +1,23 @@
 /* Constantes del motor. Deben coincidir EXACTAMENTE con backend/app/engine/prioritization.py
  * (lo comprueban frontend/src/engine/engine.test.ts y backend/tests/test_parity.py). */
-import type { Band } from './types';
+import type { Band, ProfileId } from './types';
 
-export const ENGINE_VERSION = '1.0.0';
+export const ENGINE_VERSION = '1.1.0';
 
-export const WEIGHTS = {
-  severidad: 30,
-  explotabilidad: 25,
-  criticidad: 20,
-  exposicion: 10,
-  proximidad: 15,
-} as const;
+export interface Weights { severidad: number; explotabilidad: number; criticidad: number; exposicion: number; proximidad: number }
+
+/** Perfiles de ponderación. Cada uno suma 100 (lo comprueban las pruebas de los dos motores).
+ * - defecto: equilibrio general entre severidad, explotación y negocio.
+ * - ot: entornos industriales; pesa más la criticidad del proceso y la cercanía a la zona de control que el CVSS.
+ * - banca: amenaza dirigida (DORA, TLPT): pesa más la explotación real y la exposición a Internet. */
+export const PROFILES: Record<ProfileId, Weights> = {
+  defecto: { severidad: 30, explotabilidad: 25, criticidad: 20, exposicion: 10, proximidad: 15 },
+  ot: { severidad: 20, explotabilidad: 20, criticidad: 30, exposicion: 10, proximidad: 20 },
+  banca: { severidad: 25, explotabilidad: 30, criticidad: 20, exposicion: 15, proximidad: 10 },
+};
+export const PROFILE_IDS: ProfileId[] = ['defecto', 'ot', 'banca'];
+export const DEFAULT_PROFILE: ProfileId = 'defecto';
+export const WEIGHTS = PROFILES.defecto;
 
 /** Explotabilidad: KEV = 1; exploit público = 0,6; si no, EPSS. Se toma el máximo. */
 export const EXPLOIT_PUBLIC_FLOOR = 0.6;

@@ -16,8 +16,8 @@ export const BAND_COLOR: Record<Band, string> = {
   critica: 'var(--color-critica)', alta: 'var(--color-alta)', media: 'var(--color-media)', baja: 'var(--color-baja)',
 };
 const STATUS: Record<Lang, Record<FindingStatus, string>> = {
-  es: { abierto: 'Abierto', validado: 'Validado', no_explotable: 'No explotable', mitigado: 'Mitigado' },
-  en: { abierto: 'Open', validado: 'Validated', no_explotable: 'Not exploitable', mitigado: 'Mitigated' },
+  es: { abierto: 'Abierto', validado: 'Validado', no_explotable: 'No explotable', mitigado: 'Mitigado', aceptado: 'Riesgo aceptado' },
+  en: { abierto: 'Open', validado: 'Validated', no_explotable: 'Not exploitable', mitigado: 'Mitigated', aceptado: 'Risk accepted' },
 };
 const KIND: Record<Lang, Record<FindingKind, string>> = {
   es: { cve: 'CVE', configuracion: 'Configuración', identidad: 'Identidad' },

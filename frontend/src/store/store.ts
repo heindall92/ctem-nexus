@@ -64,7 +64,12 @@ const KEY = 'ctem-nexus:v1';
 const emptyProject = (): Project => ({ format: 'ctem-nexus', version: 1, name: 'Mi organización', demo: false, assets: [], ranges: [], findings: [], edges: [] });
 export const demoProject = (today: Date = new Date()): Project => {
   const offset = daysBetween(new Date(`${DEMO_ANCHOR}T00:00:00Z`), today);
-  const findings = structuredClone(DEMO_FINDINGS).map((f) => ({ ...f, detectedAt: shiftDate(f.detectedAt, offset) ?? undefined, resolvedAt: shiftDate(f.resolvedAt, offset) }));
+  const findings = structuredClone(DEMO_FINDINGS).map((f) => ({
+    ...f,
+    detectedAt: shiftDate(f.detectedAt, offset) ?? undefined,
+    resolvedAt: shiftDate(f.resolvedAt, offset),
+    ...(f.exception ? { exception: { ...f.exception, expires: shiftDate(f.exception.expires, offset)!, approvedAt: shiftDate(f.exception.approvedAt, offset)! } } : {}),
+  }));
   return {
     format: 'ctem-nexus', version: 1, name: 'Ejemplo · Industrias Meridiano S.A.', demo: true,
     assets: structuredClone(DEMO_ASSETS), ranges: structuredClone(DEMO_RANGES), findings, edges: structuredClone(DEMO_EDGES),

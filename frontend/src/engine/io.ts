@@ -4,7 +4,7 @@ import { fmt } from './engine';
 import { explanationIn, reasonsIn, type Lang } from './explain';
 import { guideIn } from './remediation';
 import { slaInfo } from './sla';
-import type { Asset, AssetType, EngineResult, Finding, FindingKind, FindingStatus, ManualEdge, NetworkRange } from './types';
+import type { Asset, AssetType, EngineResult, Finding, FindingKind, FindingSource, FindingStatus, ManualEdge, NetworkRange, RiskException } from './types';
 
 export interface Project {
   format: 'ctem-nexus';
@@ -21,8 +21,11 @@ export interface Project {
 
 const ASSET_TYPES: AssetType[] = ['servidor', 'estacion', 'aplicacion_web', 'base_datos', 'controlador_dominio', 'pki', 'perimetro', 'nube', 'identidad'];
 const KINDS: FindingKind[] = ['cve', 'configuracion', 'identidad'];
-const STATUSES: FindingStatus[] = ['abierto', 'validado', 'no_explotable', 'mitigado'];
+const STATUSES: FindingStatus[] = ['abierto', 'validado', 'no_explotable', 'mitigado', 'aceptado'];
 const CVE_RE = /^CVE-\d{4}-\d{4,7}$/i;
+const SOURCES: FindingSource[] = ['manual', 'csv', 'nmap', 'bloodhound', 'nessus', 'openvas', 'nuclei', 'trivy', 'sarif'];
+const ATTACK_RE = /^T\d{4}(\.\d{3})?$/;
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 /* ───────────── Utilidades seguras ───────────── */
 
@@ -173,6 +176,39 @@ export function normalizeFinding(raw: Record<string, unknown>, i: number, assets
     technique: str(raw.technique, 160) || null,
     edgeFrom: edgeFromRef ? resolveRef(edgeFromRef) ?? null : null,
     leadsTo,
+    ...optionalFields(raw),
+  };
+}
+
+/** Campos opcionales de la fase 3 (CVE relacionados, fuentes, evidencias, ATT&CK y aceptación del riesgo), saneados. */
+function optionalFields(raw: Record<string, unknown>): Partial<Finding> {
+  const out: Partial<Finding> = {};
+  const related = [...new Set(list(raw.relatedCves).map((c) => c.toUpperCase()).filter((c) => CVE_RE.test(c)))].slice(0, 200);
+  if (related.length) out.relatedCves = related;
+  const sources = [...new Set(list(raw.sources).map((x) => x.toLowerCase()).filter((x): x is FindingSource => (SOURCES as string[]).includes(x)))];
+  if (sources.length) out.sources = sources;
+  const evidence = str(raw.evidence, 4000);
+  if (evidence) out.evidence = evidence;
+  const attack = [...new Set(list(raw.attack).map((x) => x.toUpperCase()).filter((x) => ATTACK_RE.test(x)))].slice(0, 20);
+  if (attack.length) out.attack = attack;
+  const ex = parseException(raw.exception);
+  if (ex) out.exception = ex;
+  return out;
+}
+
+export function parseException(v: unknown): RiskException | null {
+  if (!v || typeof v !== 'object') return null;
+  const e = v as Record<string, unknown>;
+  const expires = str(e.expires, 10);
+  if (!DATE_RE.test(expires)) return null;
+  const approvedAt = str(e.approvedAt, 10);
+  return {
+    owner: str(e.owner, 120),
+    reason: str(e.reason, 1000),
+    expires,
+    compensating: str(e.compensating, 1000),
+    approvedAt: DATE_RE.test(approvedAt) ? approvedAt : '',
+    previous: e.previous === 'validado' ? 'validado' : 'abierto',
   };
 }
 

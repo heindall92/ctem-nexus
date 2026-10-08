@@ -1,0 +1,59 @@
+<?xml version="1.0" ?>
+<!-- Ejemplo FICTICIO de CTEM-Nexus: estructura NessusClientData_v2 con direcciones de documentación (RFC 5737) y redes privadas. -->
+<NessusClientData_v2>
+  <Policy><policyName>Auditoría trimestral · ejemplo</policyName></Policy>
+  <Report name="Meridiano · perímetro e interna">
+    <ReportHost name="203.0.113.10">
+      <HostProperties>
+        <tag name="host-ip">203.0.113.10</tag>
+        <tag name="host-fqdn">portal.meridiano.example</tag>
+        <tag name="operating-system">Linux Kernel 5.15</tag>
+      </HostProperties>
+      <ReportItem port="443" svc_name="www" protocol="tcp" severity="4" pluginID="156032" pluginName="Apache Log4j 2.x &lt; 2.16.0 RCE (Log4Shell)" pluginFamily="Misc.">
+        <cve>CVE-2021-44228</cve>
+        <cve>CVE-2021-45046</cve>
+        <cvss3_base_score>10.0</cvss3_base_score>
+        <exploit_available>true</exploit_available>
+        <cisa-known-exploited>2021/12/24</cisa-known-exploited>
+        <synopsis>El servidor web usa una versión de Log4j vulnerable a ejecución remota de código.</synopsis>
+      </ReportItem>
+      <ReportItem port="443" svc_name="www" protocol="tcp" severity="2" pluginID="51192" pluginName="SSL Certificate Cannot Be Trusted" pluginFamily="General">
+        <cvss3_base_score>6.5</cvss3_base_score>
+        <synopsis>La cadena del certificado no termina en una CA de confianza.</synopsis>
+      </ReportItem>
+      <ReportItem port="0" svc_name="general" protocol="tcp" severity="0" pluginID="19506" pluginName="Nessus Scan Information" pluginFamily="Settings">
+        <synopsis>Información del escaneo (informativo, se omite).</synopsis>
+      </ReportItem>
+    </ReportHost>
+    <ReportHost name="10.10.20.15">
+      <HostProperties>
+        <tag name="host-ip">10.10.20.15</tag>
+        <tag name="netbios-name">APP01</tag>
+        <tag name="operating-system">Microsoft Windows Server 2019 Standard</tag>
+      </HostProperties>
+      <ReportItem port="445" svc_name="cifs" protocol="tcp" severity="2" pluginID="57608" pluginName="SMB Signing not required" pluginFamily="Misc.">
+        <cvss3_base_score>5.3</cvss3_base_score>
+        <synopsis>No se exige la firma en el servidor SMB remoto.</synopsis>
+      </ReportItem>
+      <ReportItem port="139" svc_name="smb" protocol="tcp" severity="2" pluginID="57608" pluginName="SMB Signing not required" pluginFamily="Misc.">
+        <cvss3_base_score>5.3</cvss3_base_score>
+        <synopsis>No se exige la firma en el servidor SMB remoto.</synopsis>
+      </ReportItem>
+    </ReportHost>
+    <ReportHost name="10.10.40.20">
+      <HostProperties>
+        <tag name="host-ip">10.10.40.20</tag>
+        <tag name="host-fqdn">fs01.meridiano.example</tag>
+        <tag name="operating-system">Microsoft Windows Server 2008 R2</tag>
+      </HostProperties>
+      <ReportItem port="445" svc_name="cifs" protocol="tcp" severity="4" pluginID="97833" pluginName="MS17-010: Security Update for Microsoft Windows SMB Server (EternalBlue)" pluginFamily="Windows">
+        <cve>CVE-2017-0144</cve>
+        <cve>CVE-2017-0143</cve>
+        <cvss3_base_score>8.1</cvss3_base_score>
+        <exploit_available>true</exploit_available>
+        <exploitability_ease>Exploits are available</exploitability_ease>
+        <synopsis>El servidor SMB remoto tiene vulnerabilidades de ejecución remota de código.</synopsis>
+      </ReportItem>
+    </ReportHost>
+  </Report>
+</NessusClientData_v2>

@@ -1,5 +1,5 @@
 from app.engine import score_finding
-from app.engine.prioritization import WEIGHTS, band_for, r1
+from app.engine.prioritization import PROFILES, WEIGHTS, band_for, prioritize, profile_of, r1
 
 
 def asset(**kw):
@@ -12,6 +12,25 @@ def finding(**kw):
 
 def test_pesos_suman_100():
     assert sum(WEIGHTS.values()) == 100
+    for nombre, pesos in PROFILES.items():
+        assert sum(pesos.values()) == 100, nombre
+
+
+def test_perfil_desconocido_cae_en_defecto():
+    assert profile_of("inventado") == "defecto"
+    assert profile_of(None) == "defecto"
+    r = prioritize({"assets": [asset()], "findings": [finding()], "edges": [], "profile": "__proto__"})
+    assert r["profile"] == "defecto"
+
+
+def test_riesgo_aceptado_sale_de_abiertos_pero_no_del_grafo():
+    a = [asset(id="e", name="E", internetExposed=True), asset(id="c", name="C", criticality=5)]
+    f = [finding(id="F1", assetId="e", status="aceptado", leadsTo=["c"]), finding(id="F2", assetId="e")]
+    r = prioritize({"assets": a, "findings": f, "edges": []})
+    assert r["summary"]["openFindings"] == 1 and r["summary"]["accepted"] == 1
+    assert r["summary"]["attackPaths"] == 1
+    acc = next(s for s in r["scored"] if s["id"] == "F1")
+    assert acc["explanation"].startswith("Riesgo aceptado; puntuación de referencia")
 
 
 def test_maximo_y_minimo():

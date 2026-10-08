@@ -17,3 +17,14 @@ def test_rutas_estrangulamientos_y_resumen(golden):
     assert len(r["graph"]["paths"]) == golden["expected"]["paths"]
     assert r["graph"]["chokePoints"] == golden["expected"]["chokePoints"]
     assert r["summary"] == golden["expected"]["summary"]
+
+
+def test_perfiles_de_ponderacion(golden):
+    """Cada perfil (industrial/OT, banca) produce lo mismo en los dos motores."""
+    assert set(golden["expected"]["profiles"]) == {"ot", "banca"}
+    for profile, exp in golden["expected"]["profiles"].items():
+        r = prioritize({**golden["input"], "profile": profile})
+        assert r["profile"] == profile
+        got = [{k: s[k] for k in ("id", "score", "band", "explanation")} for s in r["scored"]]
+        assert got == exp["scored"], profile
+        assert r["summary"] == exp["summary"], profile

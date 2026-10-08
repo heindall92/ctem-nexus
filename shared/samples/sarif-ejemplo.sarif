@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "Semgrep OSS",
+          "version": "1.90.0",
+          "rules": [
+            { "id": "java.lang.security.audit.sqli.jdbc-sqli", "shortDescription": { "text": "Inyección SQL: consulta construida con concatenación" }, "properties": { "security-severity": "8.8", "tags": ["security", "CWE-89"] } },
+            { "id": "generic.secrets.hardcoded-password", "shortDescription": { "text": "Contraseña escrita en el código" }, "properties": { "security-severity": "7.5" } },
+            { "id": "java.lang.style.unused-import", "shortDescription": { "text": "Importación sin uso" }, "defaultConfiguration": { "level": "none" } }
+          ]
+        }
+      },
+      "versionControlProvenance": [ { "repositoryUri": "https://git.meridiano.example/web/portal.git", "revisionId": "4b1e0c2" } ],
+      "results": [
+        { "ruleId": "java.lang.security.audit.sqli.jdbc-sqli", "level": "error", "message": { "text": "Parámetro «id» concatenado en la consulta de clientes." }, "locations": [ { "physicalLocation": { "artifactLocation": { "uri": "src/main/java/es/meridiano/ClientesDao.java" }, "region": { "startLine": 88 } } } ] },
+        { "ruleId": "java.lang.security.audit.sqli.jdbc-sqli", "level": "error", "message": { "text": "Parámetro «nif» concatenado en la búsqueda." }, "locations": [ { "physicalLocation": { "artifactLocation": { "uri": "src/main/java/es/meridiano/BusquedaDao.java" }, "region": { "startLine": 41 } } } ] },
+        { "ruleId": "generic.secrets.hardcoded-password", "level": "warning", "message": { "text": "Contraseña de la base de datos en claro." }, "locations": [ { "physicalLocation": { "artifactLocation": { "uri": "src/main/resources/db.properties" }, "region": { "startLine": 3 } } } ] },
+        { "ruleId": "java.lang.style.unused-import", "level": "none", "message": { "text": "Importación sin uso." } }
+      ]
+    }
+  ]
+}

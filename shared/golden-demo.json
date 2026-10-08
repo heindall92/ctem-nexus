@@ -1,5 +1,5 @@
 {
-  "engineVersion": "1.0.0",
+  "engineVersion": "1.1.0",
   "input": {
     "assets": [
       {
@@ -409,9 +409,17 @@
         "kev": false,
         "exploitPublic": false,
         "assetId": "a08",
-        "status": "abierto",
+        "status": "aceptado",
         "remediation": "weak_config",
-        "detectedAt": "2026-09-10"
+        "detectedAt": "2026-09-10",
+        "exception": {
+          "owner": "Dirección financiera",
+          "reason": "El proveedor de copias no admite cifrado hasta la migración del cuarto trimestre.",
+          "expires": "2026-12-15",
+          "compensating": "Cintas en caja fuerte con acceso registrado y red de copias aislada.",
+          "approvedAt": "2026-09-12",
+          "previous": "abierto"
+        }
       },
       {
         "id": "H-020",
@@ -573,7 +581,7 @@
         "band": "media",
         "hopsToCrown": 0,
         "onAttackPath": true,
-        "explanation": "Prioridad Media (51,5/100). Criticidad de negocio 5/5 (ERP y base de datos financiera); CVSS 5,5; Afecta directamente a una joya de la corona."
+        "explanation": "Riesgo aceptado; puntuación de referencia (51,5/100). Criticidad de negocio 5/5 (ERP y base de datos financiera); CVSS 5,5; Afecta directamente a una joya de la corona."
       },
       {
         "id": "H-011",
@@ -640,18 +648,301 @@
     ],
     "summary": {
       "exposureIndex": 90.9,
-      "openFindings": 17,
+      "openFindings": 16,
       "byBand": {
         "critica": 5,
         "alta": 8,
-        "media": 4,
+        "media": 3,
         "baja": 0
       },
       "kevOpen": 7,
       "assetsAtRisk": 8,
       "chokePoints": 3,
       "attackPaths": 7,
-      "mttrDays": 10
+      "mttrDays": 10,
+      "accepted": 1
+    },
+    "profiles": {
+      "ot": {
+        "scored": [
+          {
+            "id": "H-001",
+            "score": 87.5,
+            "band": "critica",
+            "explanation": "Prioridad Crítica (87,5/100). Criticidad de negocio 4/5 (Portal web de clientes); CVSS 10,0; En el catálogo CISA KEV: explotación activa confirmada; Validado como explotable."
+          },
+          {
+            "id": "H-002",
+            "score": 87.1,
+            "band": "critica",
+            "explanation": "Prioridad Crítica (87,1/100). Criticidad de negocio 4/5 (Exchange OWA); En el catálogo CISA KEV: explotación activa confirmada; CVSS 9,8."
+          },
+          {
+            "id": "H-013",
+            "score": 87.1,
+            "band": "critica",
+            "explanation": "Prioridad Crítica (87,1/100). Criticidad de negocio 4/5 (Exchange OWA); En el catálogo CISA KEV: explotación activa confirmada; CVSS 9,8."
+          },
+          {
+            "id": "H-004",
+            "score": 82.1,
+            "band": "critica",
+            "explanation": "Prioridad Crítica (82,1/100). Criticidad de negocio 4/5 (Citrix NetScaler Gateway); En el catálogo CISA KEV: explotación activa confirmada; CVSS 9,8."
+          },
+          {
+            "id": "H-003",
+            "score": 81.3,
+            "band": "critica",
+            "explanation": "Prioridad Crítica (81,3/100). Criticidad de negocio 4/5 (Citrix NetScaler Gateway); En el catálogo CISA KEV: explotación activa confirmada; CVSS 9,4."
+          },
+          {
+            "id": "H-010",
+            "score": 79.6,
+            "band": "alta",
+            "explanation": "Prioridad Alta (79,6/100). Criticidad de negocio 5/5 (ERP y base de datos financiera); Afecta directamente a una joya de la corona; CVSS 8,8."
+          },
+          {
+            "id": "H-005",
+            "score": 78.2,
+            "band": "alta",
+            "explanation": "Prioridad Alta (78,2/100). Criticidad de negocio 5/5 (Controlador de dominio DC01); Afecta directamente a una joya de la corona; CVSS 8,1."
+          },
+          {
+            "id": "H-018",
+            "score": 77,
+            "band": "alta",
+            "explanation": "Prioridad Alta (77,0/100). Criticidad de negocio 5/5 (Controlador de dominio DC01); Afecta directamente a una joya de la corona; CVSS 7,5."
+          },
+          {
+            "id": "H-012",
+            "score": 75.6,
+            "band": "alta",
+            "explanation": "Prioridad Alta (75,6/100). Criticidad de negocio 5/5 (Controlador de dominio DC01); Afecta directamente a una joya de la corona; CVSS 6,8."
+          },
+          {
+            "id": "H-014",
+            "score": 69.6,
+            "band": "alta",
+            "explanation": "Prioridad Alta (69,6/100). En el catálogo CISA KEV: explotación activa confirmada; CVSS 9,8; Criticidad de negocio 3/5 (Servidor de aplicaciones APP01)."
+          },
+          {
+            "id": "H-007",
+            "score": 67.5,
+            "band": "alta",
+            "explanation": "Prioridad Alta (67,5/100). Criticidad de negocio 4/5 (Entidad de certificación PKI-CA01); CVSS 9,0; A 1 salto de una joya de la corona."
+          },
+          {
+            "id": "H-019",
+            "score": 61,
+            "band": "alta",
+            "explanation": "Riesgo aceptado; puntuación de referencia (61,0/100). Criticidad de negocio 5/5 (ERP y base de datos financiera); Afecta directamente a una joya de la corona; CVSS 5,5."
+          },
+          {
+            "id": "H-016",
+            "score": 60.1,
+            "band": "alta",
+            "explanation": "Prioridad Alta (60,1/100). En el catálogo CISA KEV: explotación activa confirmada; CVSS 8,8; A 1 salto de una joya de la corona."
+          },
+          {
+            "id": "H-006",
+            "score": 59.6,
+            "band": "media",
+            "explanation": "Prioridad Media (59,6/100). CVSS 8,8; Criticidad de negocio 3/5 (Servidor de aplicaciones APP01); A 1 salto de una joya de la corona."
+          },
+          {
+            "id": "H-008",
+            "score": 57,
+            "band": "media",
+            "explanation": "Prioridad Media (57,0/100). CVSS 7,5; Criticidad de negocio 3/5 (Servidor de aplicaciones APP01); A 1 salto de una joya de la corona."
+          },
+          {
+            "id": "H-017",
+            "score": 53.1,
+            "band": "media",
+            "explanation": "Mitigado; puntuación de referencia (53,1/100). Criticidad de negocio 4/5 (Portal web de clientes); CVSS 5,3; Expuesto a Internet."
+          },
+          {
+            "id": "H-020",
+            "score": 50.7,
+            "band": "media",
+            "explanation": "Mitigado; puntuación de referencia (50,7/100). Criticidad de negocio 4/5 (Entidad de certificación PKI-CA01); CVSS 8,1; Exploit público disponible."
+          },
+          {
+            "id": "H-009",
+            "score": 50.1,
+            "band": "media",
+            "explanation": "Prioridad Media (50,1/100). CVSS 7,8; A 1 salto de una joya de la corona; Exploit público disponible."
+          },
+          {
+            "id": "H-011",
+            "score": 47.5,
+            "band": "media",
+            "explanation": "Prioridad Media (47,5/100). A 1 salto de una joya de la corona; CVSS 6,5; Exploit público disponible."
+          },
+          {
+            "id": "H-015",
+            "score": 14.6,
+            "band": "baja",
+            "explanation": "Prioridad Baja (14,6/100). CVSS 8,1; Criticidad de negocio 3/5 (Servidor de aplicaciones APP01); A 1 salto de una joya de la corona; Validado como no explotable (×0,25)."
+          }
+        ],
+        "summary": {
+          "exposureIndex": 86.3,
+          "openFindings": 16,
+          "byBand": {
+            "critica": 5,
+            "alta": 7,
+            "media": 4,
+            "baja": 0
+          },
+          "kevOpen": 7,
+          "assetsAtRisk": 8,
+          "chokePoints": 3,
+          "attackPaths": 7,
+          "mttrDays": 10,
+          "accepted": 1
+        }
+      },
+      "banca": {
+        "scored": [
+          {
+            "id": "H-001",
+            "score": 95,
+            "band": "critica",
+            "explanation": "Prioridad Crítica (95,0/100). En el catálogo CISA KEV: explotación activa confirmada; CVSS 10,0; Criticidad de negocio 4/5 (Portal web de clientes); Validado como explotable."
+          },
+          {
+            "id": "H-002",
+            "score": 92,
+            "band": "critica",
+            "explanation": "Prioridad Crítica (92,0/100). En el catálogo CISA KEV: explotación activa confirmada; CVSS 9,8; Criticidad de negocio 4/5 (Exchange OWA)."
+          },
+          {
+            "id": "H-013",
+            "score": 92,
+            "band": "critica",
+            "explanation": "Prioridad Crítica (92,0/100). En el catálogo CISA KEV: explotación activa confirmada; CVSS 9,8; Criticidad de negocio 4/5 (Exchange OWA)."
+          },
+          {
+            "id": "H-004",
+            "score": 89.5,
+            "band": "critica",
+            "explanation": "Prioridad Crítica (89,5/100). En el catálogo CISA KEV: explotación activa confirmada; CVSS 9,8; Criticidad de negocio 4/5 (Citrix NetScaler Gateway)."
+          },
+          {
+            "id": "H-003",
+            "score": 88.5,
+            "band": "critica",
+            "explanation": "Prioridad Crítica (88,5/100). En el catálogo CISA KEV: explotación activa confirmada; CVSS 9,4; Criticidad de negocio 4/5 (Citrix NetScaler Gateway)."
+          },
+          {
+            "id": "H-014",
+            "score": 72,
+            "band": "alta",
+            "explanation": "Prioridad Alta (72,0/100). En el catálogo CISA KEV: explotación activa confirmada; CVSS 9,8; Criticidad de negocio 3/5 (Servidor de aplicaciones APP01)."
+          },
+          {
+            "id": "H-010",
+            "score": 70,
+            "band": "alta",
+            "explanation": "Prioridad Alta (70,0/100). CVSS 8,8; Criticidad de negocio 5/5 (ERP y base de datos financiera); Exploit público disponible."
+          },
+          {
+            "id": "H-005",
+            "score": 68.3,
+            "band": "alta",
+            "explanation": "Prioridad Alta (68,3/100). CVSS 8,1; Criticidad de negocio 5/5 (Controlador de dominio DC01); Exploit público disponible."
+          },
+          {
+            "id": "H-018",
+            "score": 66.8,
+            "band": "alta",
+            "explanation": "Prioridad Alta (66,8/100). Criticidad de negocio 5/5 (Controlador de dominio DC01); CVSS 7,5; Exploit público disponible."
+          },
+          {
+            "id": "H-012",
+            "score": 65,
+            "band": "alta",
+            "explanation": "Prioridad Alta (65,0/100). Criticidad de negocio 5/5 (Controlador de dominio DC01); Exploit público disponible; CVSS 6,8."
+          },
+          {
+            "id": "H-016",
+            "score": 64.5,
+            "band": "alta",
+            "explanation": "Prioridad Alta (64,5/100). En el catálogo CISA KEV: explotación activa confirmada; CVSS 8,8; A 1 salto de una joya de la corona."
+          },
+          {
+            "id": "H-007",
+            "score": 63,
+            "band": "alta",
+            "explanation": "Prioridad Alta (63,0/100). CVSS 9,0; Exploit público disponible; Criticidad de negocio 4/5 (Entidad de certificación PKI-CA01)."
+          },
+          {
+            "id": "H-006",
+            "score": 57.5,
+            "band": "media",
+            "explanation": "Prioridad Media (57,5/100). CVSS 8,8; Exploit público disponible; Criticidad de negocio 3/5 (Servidor de aplicaciones APP01)."
+          },
+          {
+            "id": "H-008",
+            "score": 54.3,
+            "band": "media",
+            "explanation": "Prioridad Media (54,3/100). CVSS 7,5; Exploit público disponible; Criticidad de negocio 3/5 (Servidor de aplicaciones APP01)."
+          },
+          {
+            "id": "H-020",
+            "score": 53.3,
+            "band": "media",
+            "explanation": "Mitigado; puntuación de referencia (53,3/100). CVSS 8,1; Exploit público disponible; Criticidad de negocio 4/5 (Entidad de certificación PKI-CA01)."
+          },
+          {
+            "id": "H-009",
+            "score": 50,
+            "band": "media",
+            "explanation": "Prioridad Media (50,0/100). CVSS 7,8; Exploit público disponible; A 1 salto de una joya de la corona."
+          },
+          {
+            "id": "H-017",
+            "score": 48.3,
+            "band": "media",
+            "explanation": "Mitigado; puntuación de referencia (48,3/100). Criticidad de negocio 4/5 (Portal web de clientes); Expuesto a Internet; CVSS 5,3."
+          },
+          {
+            "id": "H-011",
+            "score": 46.8,
+            "band": "media",
+            "explanation": "Prioridad Media (46,8/100). Exploit público disponible; CVSS 6,5; A 1 salto de una joya de la corona."
+          },
+          {
+            "id": "H-019",
+            "score": 43.8,
+            "band": "media",
+            "explanation": "Riesgo aceptado; puntuación de referencia (43,8/100). Criticidad de negocio 5/5 (ERP y base de datos financiera); CVSS 5,5; Afecta directamente a una joya de la corona."
+          },
+          {
+            "id": "H-015",
+            "score": 13.9,
+            "band": "baja",
+            "explanation": "Prioridad Baja (13,9/100). CVSS 8,1; Exploit público disponible (EPSS 8,0 %); Criticidad de negocio 3/5 (Servidor de aplicaciones APP01); Validado como no explotable (×0,25)."
+          }
+        ],
+        "summary": {
+          "exposureIndex": 93.2,
+          "openFindings": 16,
+          "byBand": {
+            "critica": 5,
+            "alta": 7,
+            "media": 4,
+            "baja": 0
+          },
+          "kevOpen": 7,
+          "assetsAtRisk": 8,
+          "chokePoints": 3,
+          "attackPaths": 7,
+          "mttrDays": 10,
+          "accepted": 1
+        }
+      }
     }
   }
 }
