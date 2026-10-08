@@ -333,6 +333,25 @@ def movil(b):
     check("en móvil la cuenta está en la barra superior", cuenta.count() == 1)
     ancho = page.evaluate("document.documentElement.scrollWidth")
     check("sin desplazamiento horizontal de la página", ancho <= 390, ancho)
+    # Nada recortado: ningún texto visible se sale de la pantalla (salvo dentro de zonas con desplazamiento horizontal).
+    recorte = """() => {
+      const W = window.innerWidth;
+      const scrollable = (el) => { for (let p = el.parentElement; p; p = p.parentElement) { const o = getComputedStyle(p).overflowX; if ((o === 'auto' || o === 'scroll') && p.scrollWidth > p.clientWidth) return true; } return false; };
+      const out = [];
+      for (const el of document.querySelectorAll('main td, main th, main li, main p, main h2, main h3, main dd')) {
+        const r = el.getBoundingClientRect();
+        if (r.width === 0 || r.height === 0 || getComputedStyle(el).visibility === 'hidden') continue;
+        if (r.right > W + 1 && !scrollable(el)) out.push(el.tagName + ': ' + (el.textContent || '').trim().slice(0, 40));
+      }
+      return out.slice(0, 5);
+    }"""
+    for v in ["panel", "alcance", "priorizacion", "rutas", "movilizacion", "ajustes"]:
+        page.evaluate(f"{S}.setView('{v}')")
+        page.wait_for_timeout(250)
+        fuera = page.evaluate(recorte)
+        check(f"en móvil, «{v}» no recorta contenido por la derecha", not fuera, fuera)
+    page.evaluate(f"{S}.setView('movilizacion')")
+    check("en móvil, los riesgos principales se ven como tarjetas", page.get_by_test_id("tarjetas-riesgos").is_visible())
     barra.get_by_role("button", name="Más").click()
     page.get_by_role("button", name="Alcance y activos").click()
     check("«Más» lleva a las vistas secundarias", page.evaluate(f"{S}.view") == "alcance")

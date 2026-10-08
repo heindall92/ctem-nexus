@@ -114,6 +114,24 @@ export function Mobilization() {
               <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
                 <section className="px-6 py-4">
                   <h3 className="title-md mb-2">{c.topRisks}</h3>
+                  {/* Móvil: tarjetas (la tabla de cinco columnas no cabe en 390 px). */}
+                  <ol className="divide-hair sm:hidden" data-testid="tarjetas-riesgos">
+                    {top.map((t, i) => (
+                      <li key={t.finding.id} className="flex gap-3 py-3">
+                        <span className="num w-5 shrink-0 pt-0.5 text-ink-3">{i + 1}</span>
+                        <div className="min-w-0 flex-1">
+                          <div className="font-medium leading-snug">{t.finding.title}</div>
+                          <div className="mt-0.5 text-xs text-ink-3"><span className="num">{t.finding.cve ?? t.finding.id}</span> · {t.asset?.name ?? t.finding.assetId}</div>
+                          <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+                            <span className="num font-semibold" style={{ color: BAND_COLOR[t.scored.band] }}>{n1(t.scored.score)}</span>
+                            <BandBadge band={t.scored.band} />
+                            <span className="num text-xs text-ink-3">SLA {t.scored.slaDays} d</span>
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                  <div className="hidden sm:block">
                   <table className="table">
                     <thead><tr><th className="!px-0">#</th><th>{L('Hallazgo', 'Finding')}</th><th>{c.thAsset}</th><th>{L('Prioridad', 'Priority')}</th><th className="text-right">SLA</th></tr></thead>
                     <tbody>
@@ -128,6 +146,7 @@ export function Mobilization() {
                       ))}
                     </tbody>
                   </table>
+                  </div>
                 </section>
                 <section className="border-t border-hairline px-6 py-4 lg:border-l lg:border-t-0">
                   <h3 className="title-md mb-2">{c.chokes}</h3>

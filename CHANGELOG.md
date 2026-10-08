@@ -2,6 +2,12 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico. La hoja de ruta está en [ROADMAP.md](ROADMAP.md).
 
+## [0.4.2] - 2026-10-08
+
+### Corregido
+- **Movilización en el móvil:** la tabla «Riesgos principales» se cortaba por la derecha (activo, prioridad y SLA quedaban ocultos y no había desplazamiento). Por debajo de 640 px ahora se muestra como tarjetas con el título completo, el CVE, el activo, la puntuación, la banda y el SLA. La causa: la utilidad `table` de Tailwind 4 anulaba `hidden` y el panel con `overflow-hidden` escondía el desbordamiento.
+- Nueva comprobación e2e: en 390 px ninguna vista recorta texto por la derecha fuera de una zona con desplazamiento. La prueba de anchura de página no lo detectaba porque el recorte ocurría dentro del panel.
+
 ## [0.4.1] - 2026-10-08
 
 ### Cambiado
