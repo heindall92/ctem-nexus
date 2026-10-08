@@ -29,7 +29,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { ACCENT_SWATCHES, chrome, roleLabel, screen } from '../i18n';
+import { ACCENT_SWATCHES, chrome, roleLabel, screen, useL } from '../i18n';
 import { useResult } from '../lib/analysis';
 import { download, stamp } from '../lib/download';
 import { useStore, type View } from '../store/store';
@@ -170,7 +170,7 @@ export function Sidebar() {
           {/* Badge de alertas */}
           {badges[n.view] ? (
             collapsed ? (
-              <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-critica ring-2 ring-surface" title={`${badges[n.view]} alertas críticas`} />
+              <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-critica ring-2 ring-surface" title={c.alerts(badges[n.view] ?? 0)} />
             ) : (
               <span className="flex size-5 items-center justify-center rounded-full bg-critica text-[11px] font-bold text-[var(--color-on-critica)] shadow-sm">
                 {badges[n.view]}
@@ -812,6 +812,7 @@ export function MobileTabBar() {
 }
 
 export function Toasts() {
+  const L = useL();
   const toasts = useStore((s) => s.toasts);
   const dismiss = useStore((s) => s.dismiss);
   const reduce = useReducedMotion();
@@ -845,7 +846,7 @@ export function Toasts() {
             <button
               type="button"
               className="btn btn-ghost btn-sm btn-icon -my-1 -mr-2 rounded-full"
-              aria-label="Cerrar aviso"
+              aria-label={L('Cerrar aviso', 'Close notice')}
               onClick={() => dismiss(t.id)}
             >
               <X className="size-3.5" />
@@ -875,6 +876,7 @@ export function Drawer({
   width?: number;
   hasOverlay?: boolean;
 }) {
+  const L = useL();
   const reduce = useReducedMotion();
   const ref = useRef<HTMLElement>(null);
   const titleId = useId();
@@ -926,7 +928,7 @@ export function Drawer({
                 type="button"
                 className="btn btn-ghost btn-sm btn-icon -mr-1 rounded-full text-ink-3 hover:text-ink"
                 onClick={onClose}
-                aria-label="Cerrar panel"
+                aria-label={L('Cerrar panel', 'Close panel')}
               >
                 <X className="size-4" />
               </button>
@@ -958,6 +960,7 @@ export function Modal({
   children: ReactNode;
   maxWidth?: number;
 }) {
+  const L = useL();
   const reduce = useReducedMotion();
   const hidden = reduce ? { opacity: 0 } : { opacity: 0, scale: 0.95, y: 12 };
   const titleId = useId();
@@ -1010,7 +1013,7 @@ export function Modal({
                 type="button"
                 className="btn btn-ghost btn-sm btn-icon rounded-full text-ink-3 hover:text-ink"
                 onClick={onClose}
-                aria-label="Cerrar ventana"
+                aria-label={L('Cerrar ventana', 'Close window')}
               >
                 <X className="size-4" />
               </button>

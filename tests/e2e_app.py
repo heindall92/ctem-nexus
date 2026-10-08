@@ -39,6 +39,27 @@ def abrir(browser, ancho=1440, alto=900, tema="dark"):
     return ctx, page, problemas
 
 
+ESPANOL = re.compile(r"[áéíóúñ¿¡]|\\b(de|del|los|las|para|con|sin|una|hallazgos?|activos?|rutas?|importar|añadir|guardar|cerrar|todas|joyas?|corona|ajustes|panel|inicio|alcance|exposición|criticidad|validación|movilización|priorización|puntuación|abiertos?|mitigados?|días)\\b", re.I)
+
+
+def texto_sin_datos(page):
+    """Texto visible menos los datos del proyecto (nombres, títulos, técnicas…), el texto del grafo y el nombre del autor."""
+    return page.evaluate(f"""() => {{
+      const p = {S}.project;
+      const datos = [p.name, ...p.assets.flatMap(a => [a.name, a.owner, ...a.tags]), ...p.findings.flatMap(f => [f.title, f.technique || '', f.description || '']),
+        ...p.ranges.map(r => r.label), ...p.edges.map(e => e.technique), ...[...document.querySelectorAll('svg text, svg tspan')].map(t => t.textContent),
+        'Yoandy Ramírez Delgado'].filter(Boolean).sort((a, b) => b.length - a.length);
+      let t = document.body.innerText;
+      for (const d of datos) t = t.split(d).join(' ');
+      return t;
+    }}""")
+
+
+def restos_en_espanol(page):
+    page.wait_for_timeout(250)
+    return sorted({l.strip() for l in texto_sin_datos(page).split("\n") if l.strip() and ESPANOL.search(l)})
+
+
 def nav(page, nombre):
     page.get_by_role("navigation", name="Secciones").get_by_role("button", name=nombre).click()
 
@@ -117,7 +138,7 @@ def escritorio(b, tmp):
     bh = page.get_by_role("dialog", name=re.compile("BloodHound"))
     bh.locator('input[type="file"]').set_input_files(str(ROOT / "shared" / "samples" / "bloodhound-ejemplo.json"))
     bh.get_by_role("button", name="Analizar BloodHound").click()
-    expect(bh.get_by_text("Estructura Active Directory parseada")).to_be_visible()
+    expect(bh.get_by_text("Estructura de Active Directory analizada")).to_be_visible()
     bh.get_by_role("button", name="Mapear topología de AD en CTEM-Nexus").click()
     check("BloodHound añade hallazgos de identidad (kerberoasting, AS-REP, delegación)", J(f"{S}.project.findings.length") >= antes + 3, f"{antes} → {J(f'{S}.project.findings.length')}")
     if page.get_by_role("dialog").count():
@@ -169,6 +190,9 @@ def escritorio(b, tmp):
     page.get_by_role("tab", name="Ciclo CTEM").focus()
     page.keyboard.press("ArrowRight")
     check("las pestañas de la ayuda se recorren con las flechas", page.get_by_role("tab", name="Cálculo de riesgo").get_attribute("aria-selected") == "true")
+    page.get_by_role("tab", name="Cálculo de riesgo").click()
+    formula = page.get_by_test_id("formula").inner_text()
+    check("la ayuda muestra la fórmula real del motor (30 · 25 · 20 · 10 · 15)", all(f"× {w}" in formula for w in (30, 25, 20, 10, 15)) and "0.35" not in formula, formula)
     page.get_by_role("tab", name="Acerca de").click()
     check("«Acerca de» enlaza las webs del ecosistema", page.get_by_role("link", name="Abrir ARGOS").count() == 1 and page.get_by_role("link", name="Abrir Rosetta").count() == 1)
     page.keyboard.press("Escape")
@@ -191,6 +215,27 @@ def escritorio(b, tmp):
     check("el interruptor cambia a tema claro", page.evaluate("document.documentElement.dataset.theme") == "light")
     page.get_by_role("group", name="Idioma").get_by_role("button", name="EN").click()
     check("el idioma cambia a inglés", page.evaluate("document.documentElement.lang") == "en")
+
+    # Inglés completo: ninguna vista, detalle, formulario ni pestaña de ayuda conserva texto de interfaz en español
+    J(f"{S}.loadDemo()")
+    restos = {}
+    for v in ["panel", "alcance", "priorizacion", "rutas", "movilizacion", "ajustes"]:
+        J(f"{S}.setView('{v}')")
+        restos[v] = restos_en_espanol(page)
+    J(f"{S}.setView('priorizacion')"); J(f"{S}.selectFinding('H-001')")
+    restos["detalle"] = restos_en_espanol(page)
+    page.keyboard.press("Escape")
+    page.get_by_role("button", name="Add finding").first.click()
+    restos["formulario"] = restos_en_espanol(page)
+    page.keyboard.press("Escape")
+    J(f"{S}.setHelpOpen(true)")
+    for t in ["CTEM cycle", "Risk scoring", "Data intake", "Keyboard shortcuts", "Glossary", "About"]:
+        page.get_by_role("tab", name=t).click()
+        restos[f"ayuda/{t}"] = restos_en_espanol(page)
+    J(f"{S}.setHelpOpen(false)")
+    sucios = {k: v[:3] for k, v in restos.items() if v}
+    check("en inglés no queda texto de interfaz en español (14 pantallas)", not sucios, sucios)
+    J(f"{S}.setLang('es')")
 
     check("sin errores de consola ni peticiones externas", not problemas, problemas[:5])
     ctx.close()

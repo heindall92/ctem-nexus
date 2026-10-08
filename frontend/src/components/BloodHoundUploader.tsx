@@ -2,7 +2,8 @@ import { AlertCircle, CheckCircle2, ChevronRight, Crown, FileCode, Server, Shiel
 import { useState, type DragEvent } from 'react';
 import { parseBloodHoundJson, type BloodHoundParseResult } from '../engine/bloodhound';
 import { readFile } from '../lib/download';
-import { ASSET_TYPE_LABEL } from '../lib/format';
+import { assetTypeLabel } from '../lib/format';
+import { useL } from '../i18n';
 import { useStore } from '../store/store';
 
 interface Props {
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export function BloodHoundUploader({ onDone }: Props) {
+  const L = useL();
   const settings = useStore((s) => s.settings);
   const importScanData = useStore((s) => s.importNmapResult);
   const notify = useStore((s) => s.notify);
@@ -96,7 +98,7 @@ export function BloodHoundUploader({ onDone }: Props) {
       setResult(parsed);
       setEngineUsed('local');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al procesar el archivo JSON de BloodHound.');
+      setError(err instanceof Error ? err.message : L('Error al procesar el archivo JSON de BloodHound.', 'Error processing the BloodHound JSON file.'));
     } finally {
       setLoading(false);
     }
@@ -110,7 +112,7 @@ export function BloodHoundUploader({ onDone }: Props) {
       edges: result.edges,
     });
     notify(
-      `Ingestados ${result.assets.length} objetos AD, ${result.findings.length} hallazgos y ${result.edges.length} aristas de ataque.`,
+      L(`Ingestados ${result.assets.length} objetos AD, ${result.findings.length} hallazgos y ${result.edges.length} aristas de ataque.`, `Imported ${result.assets.length} AD objects, ${result.findings.length} findings and ${result.edges.length} attack edges.`),
       'ok',
     );
     if (onDone) onDone();
@@ -126,18 +128,18 @@ export function BloodHoundUploader({ onDone }: Props) {
           </div>
           <div>
             <h3 className="text-sm font-semibold text-ink">
-              Topología y Rutas de Active Directory · BloodHound / SharpHound
+              {L('Topología y rutas de Active Directory · BloodHound / SharpHound', 'Active Directory topology and paths · BloodHound / SharpHound')}
             </h3>
             <p className="mt-1 text-xs text-ink-3 leading-relaxed">
-              Carga un archivo de exportación JSON de BloodHound (ejemplo:{' '}
+              {L('Carga un archivo de exportación JSON de BloodHound (ejemplo:', 'Load a BloodHound JSON export file (example:')}{' '}
               <code className="rounded bg-surface-3 px-1.5 py-0.5 font-mono text-ink">
                 *_computers.json
               </code>{' '}
-              o{' '}
+              {L('o', 'or')}{' '}
               <code className="rounded bg-surface-3 px-1.5 py-0.5 font-mono text-ink">
                 *_users.json
               </code>
-              ). CTEM-Nexus mapeará Controladores de Dominio, joyas de la corona, cuentas Kerberoastables y caminos de escalada hacia Domain Admins.
+              ). {L('CTEM-Nexus mapeará controladores de dominio, joyas de la corona, cuentas expuestas a Kerberoasting y caminos de escalada hacia Domain Admins.', 'CTEM-Nexus maps domain controllers, crown jewels, Kerberoastable accounts and escalation paths to Domain Admins.')}
             </p>
           </div>
         </div>
@@ -160,13 +162,13 @@ export function BloodHoundUploader({ onDone }: Props) {
             {file ? (
               <span className="font-semibold text-alta">{file.name} ({(file.size / 1024).toFixed(1)} KB)</span>
             ) : (
-              'Arrastra aquí tu archivo JSON de BloodHound o haz clic para seleccionarlo'
+              L('Arrastra aquí tu archivo JSON de BloodHound o haz clic para seleccionarlo', 'Drop your BloodHound JSON file here or click to choose it')
             )}
           </div>
-          <p className="mt-1 text-[0.6875rem] text-ink-3">Soporta exportaciones JSON de SharpHound / BloodHound CE</p>
+          <p className="mt-1 text-[0.6875rem] text-ink-3">{L('Soporta exportaciones JSON de SharpHound / BloodHound CE', 'Supports SharpHound / BloodHound CE JSON exports')}</p>
 
           <label className="mt-3.5 inline-flex cursor-pointer focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-accent items-center justify-center rounded-full bg-surface-3 px-4 py-1.5 text-xs font-medium text-ink transition hover:bg-surface-2 active:scale-95">
-            <span>{file ? 'Cambiar archivo' : 'Explorar archivos'}</span>
+            <span>{file ? L('Cambiar archivo', 'Change file') : L('Explorar archivos', 'Browse files')}</span>
             <input type="file" accept=".json,application/json" className="sr-only" onChange={handleFileChange} />
           </label>
         </div>
@@ -180,7 +182,7 @@ export function BloodHoundUploader({ onDone }: Props) {
             disabled={!file || loading}
           >
             <Upload className="size-4" />
-            {loading ? 'Analizando BloodHound...' : 'Analizar BloodHound'}
+            {loading ? L('Analizando BloodHound…', 'Analyzing BloodHound…') : L('Analizar BloodHound', 'Analyze BloodHound')}
           </button>
         </div>
 
@@ -199,9 +201,9 @@ export function BloodHoundUploader({ onDone }: Props) {
             <div className="flex items-center gap-2">
               <CheckCircle2 className="size-5 text-ok" />
               <div>
-                <span className="font-semibold text-ink">Estructura Active Directory parseada</span>
+                <span className="font-semibold text-ink">{L('Estructura de Active Directory analizada', 'Active Directory structure parsed')}</span>
                 <span className="ml-2 text-xs text-ink-3">
-                  (Motor {engineUsed === 'api' ? 'FastAPI' : 'Navegador TS'})
+                  ({L('Motor', 'Engine')} {engineUsed === 'api' ? 'FastAPI' : L('Navegador TS', 'Browser TS')})
                 </span>
               </div>
             </div>
@@ -210,13 +212,13 @@ export function BloodHoundUploader({ onDone }: Props) {
                 {result.summary.domainControllers} DCs
               </span>
               <span className="rounded-full bg-surface-3 px-2.5 py-1 text-ink font-mono">
-                {result.summary.totalComputers} Equipos
+                {result.summary.totalComputers} {L('equipos', 'computers')}
               </span>
               <span className="rounded-full bg-surface-3 px-2.5 py-1 text-ink font-mono">
-                {result.summary.totalUsers} Usuarios
+                {result.summary.totalUsers} {L('usuarios', 'users')}
               </span>
               <span className="rounded-full bg-surface-3 px-2.5 py-1 text-ink font-mono">
-                {result.summary.edgesCreated} Aristas
+                {result.summary.edgesCreated} {L('aristas', 'edges')}
               </span>
             </div>
           </div>
@@ -236,7 +238,7 @@ export function BloodHoundUploader({ onDone }: Props) {
               </div>
             </div>
             <div className="rounded-xl border border-hairline bg-surface p-3">
-              <div className="text-[0.6875rem] text-ink-3">Delegación libre</div>
+              <div className="text-[0.6875rem] text-ink-3">{L('Delegación sin restricciones', 'Unconstrained delegation')}</div>
               <div className="mt-1 font-mono text-base font-semibold text-critica">
                 {result.summary.unconstrainedDelegation}
               </div>
@@ -245,14 +247,14 @@ export function BloodHoundUploader({ onDone }: Props) {
 
           <div className="space-y-2">
             <h4 className="text-xs font-semibold uppercase tracking-wider text-ink-3">
-              Objetos AD identificados ({result.assets.length})
+              {L('Objetos AD identificados', 'Identified AD objects')} ({result.assets.length})
             </h4>
             <div tabIndex={0} className="max-h-52 divide-y divide-hairline overflow-y-auto rounded-xl border border-hairline bg-surface">
               {result.assets.slice(0, 6).map((a) => (
                 <div key={a.id} className="flex items-center justify-between px-3.5 py-2.5 text-xs">
                   <div className="flex items-center gap-2.5">
                     {a.criticality === 5 ? (
-                      <span title="Controlador de Dominio / Joya de la Corona">
+                      <span title={L('Controlador de dominio / joya de la corona', 'Domain controller / crown jewel')}>
                         <Crown className="size-3.5 text-accent" />
                       </span>
                     ) : (
@@ -260,7 +262,7 @@ export function BloodHoundUploader({ onDone }: Props) {
                     )}
                     <span className="font-semibold text-ink">{a.name}</span>
                     <span className="rounded bg-surface-2 px-1.5 py-0.5 text-[11px] text-ink-2">
-                      {ASSET_TYPE_LABEL[a.type]}
+                      {assetTypeLabel(a.type)}
                     </span>
                   </div>
                   <div className="flex items-center gap-1">
@@ -274,7 +276,7 @@ export function BloodHoundUploader({ onDone }: Props) {
               ))}
               {result.assets.length > 6 && (
                 <div className="px-3 py-2 text-center text-xs text-ink-3">
-                  ... y {result.assets.length - 6} objetos AD adicionales listos para incorporar.
+                  {L(`… y ${result.assets.length - 6} objetos AD adicionales listos para incorporar.`, `… and ${result.assets.length - 6} more AD objects ready to add.`)}
                 </div>
               )}
             </div>
@@ -283,7 +285,7 @@ export function BloodHoundUploader({ onDone }: Props) {
           {result.findings.length > 0 && (
             <div className="space-y-2">
               <h4 className="text-xs font-semibold uppercase tracking-wider text-ink-3">
-                Debilidades y vectores de escalada ({result.findings.length})
+                {L('Debilidades y vectores de escalada', 'Weaknesses and escalation vectors')} ({result.findings.length})
               </h4>
               <div tabIndex={0} className="max-h-40 divide-y divide-hairline overflow-y-auto rounded-xl border border-hairline bg-surface">
                 {result.findings.slice(0, 4).map((f) => (
@@ -305,7 +307,7 @@ export function BloodHoundUploader({ onDone }: Props) {
               className="btn btn-primary rounded-full px-5"
               onClick={handleApply}
             >
-              Mapear topología de AD en CTEM-Nexus
+              {L('Mapear topología de AD en CTEM-Nexus', 'Map AD topology into CTEM-Nexus')}
               <ChevronRight className="size-4" />
             </button>
           </div>

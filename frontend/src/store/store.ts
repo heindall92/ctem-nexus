@@ -4,6 +4,7 @@ import { DEMO_ANCHOR, DEMO_ASSETS, DEMO_EDGES, DEMO_FINDINGS, DEMO_RANGES } from
 import { daysBetween, shiftDate } from '../engine/sla';
 import type { Project } from '../engine/io';
 import type { Asset, Finding, FindingStatus, ManualEdge, NetworkRange } from '../engine/types';
+import { setFormatLang } from '../lib/format';
 import { load, remove, save } from '../lib/storage';
 
 export type View = 'panel' | 'alcance' | 'priorizacion' | 'rutas' | 'movilizacion' | 'ajustes';
@@ -106,6 +107,7 @@ export const applyChrome = (theme: 'dark' | 'light' | 'system', accent: Accent) 
 
 const initialAccent: Accent = ACCENT_IDS.includes(initial.settings.accent as Accent) ? (initial.settings.accent as Accent) : 'azul';
 applyChrome(initial.settings.theme ?? 'dark', initialAccent);
+setFormatLang(initial.settings.lang === 'en' ? 'en' : 'es');
 if (typeof document !== 'undefined') document.documentElement.lang = initial.settings.lang === 'en' ? 'en' : 'es';
 
 let toastId = 0;
@@ -137,6 +139,7 @@ export const useStore = create<State>()((set, get) => ({
     set((s) => ({ theme, settings: { ...s.settings, theme } }));
   },
   setLang: (lang) => {
+    setFormatLang(lang);
     if (typeof document !== 'undefined') document.documentElement.lang = lang;
     set((s) => ({ lang, settings: { ...s.settings, lang } }));
   },

@@ -4,7 +4,7 @@ import { slaInfo } from '../engine/sla';
 import type { Band } from '../engine/types';
 import { TopBar } from '../components/Shell';
 import { BandBadge, DemoBadge, Empty } from '../components/ui';
-import { screen } from '../i18n';
+import { screen, useL } from '../i18n';
 import { useResult } from '../lib/analysis';
 import { BAND_COLOR, n1 } from '../lib/format';
 import { useStore, type View } from '../store/store';
@@ -15,6 +15,7 @@ const BANDS: Band[] = ['critica', 'alta', 'media', 'baja'];
 export function Dashboard() {
   const lang = useStore((s) => s.lang);
   const c = screen[lang];
+  const L = useL();
   const stageLabel: Record<StageState, string> = { hecho: c.stageDone, en_curso: c.stageDoing, pendiente: c.stageTodo };
   const project = useStore((s) => s.project);
   const setView = useStore((s) => s.setView);
@@ -73,7 +74,7 @@ export function Dashboard() {
       />
       <div className="view-enter mx-auto flex max-w-[1240px] flex-col gap-5 px-4 pb-6 pt-2 sm:px-8">
         {/* Índice de exposición + indicadores, en un único panel con divisiones finas */}
-        <section className="panel grid grid-cols-1 overflow-hidden lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1.6fr)]" aria-label="Indicadores principales">
+        <section className="panel grid grid-cols-1 overflow-hidden lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1.6fr)]" aria-label={L('Indicadores principales', 'Key indicators')}>
           <div className="flex flex-col justify-between gap-6 p-6">
             <div>
               <div className="label">{c.exposure}</div>
@@ -139,7 +140,7 @@ export function Dashboard() {
 
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)]">
           {/* Módulos */}
-          <section className="panel overflow-hidden" aria-label="Módulos">
+          <section className="panel overflow-hidden" aria-label={c.modules}>
             <h2 className="title-md px-5 pb-2 pt-4">{c.modules}</h2>
             <ul className="divide-hair">
               <ModuleRow icon={<Crosshair />} title={c.modScope} statusLabel={stageLabel[stages[0].state]} status={stages[0].state} metric={c.modScopeMetric(assets.length, project.ranges.filter((r) => r.inScope).length)} onClick={() => setView('alcance')} />
@@ -150,7 +151,7 @@ export function Dashboard() {
           </section>
 
           {/* Riesgos principales */}
-          <section className="panel overflow-hidden" aria-label="Riesgos principales">
+          <section className="panel overflow-hidden" aria-label={c.topRisks}>
             <div className="flex items-baseline justify-between px-5 pb-2 pt-4">
               <h2 className="title-md">{c.topRisks}</h2>
               <button type="button" className="btn btn-ghost btn-sm" onClick={() => setView('priorizacion')}>{c.seeAll}<ArrowRight /></button>

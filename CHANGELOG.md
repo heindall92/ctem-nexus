@@ -2,11 +2,14 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico. La hoja de ruta está en [ROADMAP.md](ROADMAP.md).
 
-## [Sin publicar]
+## [0.3.0] - 2026-10-08
 
-Fase 1 de la hoja de ruta (en curso): accesibilidad AA verificada, controles sin duplicar y plazos visibles.
+Fase 1 de la hoja de ruta cerrada: accesibilidad AA verificada, controles sin duplicar, plazos visibles e inglés completo.
 
 ### Añadido
+- **Inglés completo.** Vistas, formularios, diálogos, ayuda, avisos, informe ejecutivo, tickets (Markdown y CSV) y las 16 guías de remediación (`engine/remediation-en.ts`). Los textos se escriben con sus dos idiomas en el punto de uso (`L('…', '…')`) y TypeScript exige ambos. Cifras y fechas siguen el idioma.
+- `engine/explain.ts`: la explicación y el desglose de la puntuación en inglés se reconstruyen a partir de los mismos datos. En español se devuelve exactamente lo que produce el motor, así que la paridad con Python no cambia.
+- Pruebas: paridad de claves y firmas de los diccionarios ES/EN, exportaciones en inglés, guías en inglés con los mismos comandos y, en el e2e, 14 pantallas en inglés sin texto de interfaz en español.
 - `tests/e2e_app.py`: 50 comprobaciones con Playwright sobre el HTML autocontenido. Cubre la CSP, la red bloqueada, la navegación, la ingesta de Nmap y BloodHound, el rechazo de XML con entidades, las rutas que se cortan al validar, los SLA vencidos, exportar y reimportar, los diálogos, el tema, el idioma y el móvil.
 - `tests/a11y_app.py`: axe-core (WCAG 2.2 A/AA) en 128 estados (vistas, diálogos, menús, formularios, resultados de ingesta, ayuda y búsqueda), en claro y oscuro, a 1440 y 390 px. Incluye un barrido de contraste propio para los casos que axe deja sin decidir. Ambas suites corren en la CI.
 - Plazos de SLA (`engine/sla.ts`): fecha límite, «vencido hace N d», «vence hoy» o «vence en N d» en cada ticket; recuento de tickets fuera de plazo en Movilización y en el panel; fecha límite en los tickets en Markdown.
@@ -22,6 +25,7 @@ Fase 1 de la hoja de ruta (en curso): accesibilidad AA verificada, controles sin
 - Las cifras no se parten (`94,4 %` con espacio duro).
 
 ### Corregido
+- **La ayuda mostraba una fórmula inexistente** («Criticidad × 0,35 + CVSS × 0,30 + Explotabilidad × 0,20 + Ruta × 0,15») y prometía un «porcentaje proyectado de reducción de riesgo» que no existe. Ahora la pestaña «Cálculo de riesgo» se genera con las constantes del motor (30 · 25 · 20 · 10 · 15, bonificación de validación, factor de no explotable, bandas y SLA), y el e2e comprueba que coincide.
 - Diálogos accesibles: ayuda, búsqueda, perfil, ventanas y paneles con `role="dialog"`, nombre, Escape y devolución del foco. Pestañas de la ayuda con `tablist` y flechas. Menú de cuenta con foco inicial, flechas y Escape. Selector de acento con Escape.
 - Los selectores de fichero de las ingestas (`display: none`) eran inalcanzables con el teclado.
 - Las zonas desplazables (paneles, listas de resultados) se pueden recorrer con el teclado.

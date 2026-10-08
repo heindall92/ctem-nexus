@@ -39,7 +39,7 @@ def states(page, mobile):
     page.get_by_role("button", name="Importar BloodHound").first.click(); yield "ingesta/bloodhound"
     page.locator('input[type="file"][accept=".json,application/json"]').last.set_input_files(str(ROOT / "shared" / "samples" / "bloodhound-ejemplo.json"))
     page.get_by_role("button", name="Analizar BloodHound").click()
-    page.get_by_text("Estructura Active Directory parseada").wait_for(); yield "ingesta/bloodhound-resultado"
+    page.get_by_text("Estructura de Active Directory analizada").wait_for(); yield "ingesta/bloodhound-resultado"
     page.get_by_role("button", name="Cerrar ventana").click()
     J(f"{S}.setView('alcance')")
     page.get_by_role("button", name="Añadir activo").first.click(); yield "formulario/activo"

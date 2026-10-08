@@ -14,9 +14,9 @@ export async function pingApi(url: string): Promise<{ ok: boolean; detail: strin
     clearTimeout(t);
     if (!r.ok) return { ok: false, detail: `HTTP ${r.status}` };
     const body = (await r.json()) as { version?: string; engine?: string };
-    return { ok: true, detail: `API ${body.version ?? ''} · motor ${body.engine ?? ''}`.trim() };
+    return { ok: true, detail: `API ${body.version ?? ''} · ${formatLang() === 'en' ? 'engine' : 'motor'} ${body.engine ?? ''}`.trim() };
   } catch (e) {
-    return { ok: false, detail: e instanceof Error && e.name === 'AbortError' ? 'Tiempo de espera agotado' : 'No se puede conectar' };
+    return { ok: false, detail: e instanceof Error && e.name === 'AbortError' ? (formatLang() === 'en' ? 'Timed out' : 'Tiempo de espera agotado') : (formatLang() === 'en' ? 'Cannot connect' : 'No se puede conectar') };
   }
 }
 
@@ -53,6 +53,7 @@ export function useAnalysis(): { result: EngineResult; status: EngineStatus } {
 }
 
 import { createContext, useContext } from 'react';
+import { formatLang } from './format';
 export const AnalysisContext = createContext<{ result: EngineResult; status: EngineStatus } | null>(null);
 export function useResult() {
   const v = useContext(AnalysisContext);

@@ -1,4 +1,10 @@
-import type { Accent, View } from './store/store';
+import { useStore, type Accent, type View } from './store/store';
+
+/** Texto bilingüe en el punto de uso: L('Importar', 'Import'). TypeScript obliga a dar los dos idiomas. */
+export const pick = (lang: 'es' | 'en') => (es: string, en: string) => (lang === 'en' ? en : es);
+export function useL() {
+  return pick(useStore((s) => s.lang));
+}
 
 type ChromeKey = View | 'search' | 'help' | 'expand' | 'collapse' | 'toggle' | 'more' | 'github' | 'accent' | 'themeDark' | 'themeLight' | 'map' | 'role' | 'noName' | 'noRole' | 'profile' | 'export' | 'accentColor' | 'settingsShort' | 'scopeShort' | 'exported' | 'save' | 'name' | 'roleField';
 
@@ -390,12 +396,12 @@ export function roleLabel(id: string, lang: 'es' | 'en') {
 const GH = 'https://github.com/heindall92';
 const WEB = 'https://heindall92.github.io';
 /** Ecosistema del autor. `web` solo cuando la herramienta tiene versión publicada en GitHub Pages. */
-export const ECOSYSTEM: ReadonlyArray<{ name: string; here: boolean; code: string; web: string | null; note: string }> = [
-  { name: 'Rosetta', here: false, code: `${GH}/rosetta_multinorma`, web: `${WEB}/rosetta_multinorma/`, note: 'Mapa multinorma: ENS, ISO/IEC 27001, NIS2 e ISO/IEC 42001 sobre 115 controles unificados, con equivalencias alineadas a la CCN-STIC 825.' },
-  { name: 'ENS Compliance Studio', here: false, code: `${GH}/grc_ens_compliance_studio`, web: `${WEB}/grc_ens_compliance_studio/`, note: 'Categorización del sistema, análisis de riesgos MAGERIT y declaración de aplicabilidad del ENS, que se importa en Rosetta.' },
-  { name: 'KAIROS', here: false, code: `${GH}/kairos`, web: `${WEB}/kairos/`, note: 'Continuidad de negocio: BIA, BCP y DRP, con la ruta crítica de recuperación de cada función.' },
-  { name: 'CTEM-Nexus', here: true, code: `${GH}/ctem-nexus`, web: `${WEB}/ctem-nexus/`, note: 'Prioriza la exposición técnica y las rutas de ataque hacia las joyas de la corona.' },
-  { name: 'ENS AD Auditor', here: false, code: `${GH}/ens_ad-auditor`, web: null, note: 'Revisa el directorio activo frente a las medidas del ENS.' },
-  { name: 'ARGOS', here: false, code: `${GH}/argos-grc`, web: `${WEB}/argos-grc/`, note: 'Laboratorio GRC al estilo Hack The Box: rutas de ENS, ISO/IEC 27001 y continuidad, máquinas con flags y simulacros con rangos y logros.' },
-  { name: 'Norvik', here: false, code: `${GH}/Norvik_Gobernanza`, web: null, note: 'Gobernanza: roles, políticas y el marco en el que encajan el resto de las herramientas.' },
+export const ECOSYSTEM: ReadonlyArray<{ name: string; here: boolean; code: string; web: string | null; note: string; noteEn: string }> = [
+  { name: 'Rosetta', here: false, code: `${GH}/rosetta_multinorma`, web: `${WEB}/rosetta_multinorma/`, note: 'Mapa multinorma: ENS, ISO/IEC 27001, NIS2 e ISO/IEC 42001 sobre 115 controles unificados, con equivalencias alineadas a la CCN-STIC 825.', noteEn: 'Multi-standard map: ENS, ISO/IEC 27001, NIS2 and ISO/IEC 42001 over 115 unified controls, with mappings aligned with CCN-STIC 825.' },
+  { name: 'ENS Compliance Studio', here: false, code: `${GH}/grc_ens_compliance_studio`, web: `${WEB}/grc_ens_compliance_studio/`, note: 'Categorización del sistema, análisis de riesgos MAGERIT y declaración de aplicabilidad del ENS, que se importa en Rosetta.', noteEn: 'System categorization, MAGERIT risk analysis and the ENS statement of applicability, which Rosetta imports.' },
+  { name: 'KAIROS', here: false, code: `${GH}/kairos`, web: `${WEB}/kairos/`, note: 'Continuidad de negocio: BIA, BCP y DRP, con la ruta crítica de recuperación de cada función.', noteEn: 'Business continuity: BIA, BCP and DRP, with the critical recovery path of each function.' },
+  { name: 'CTEM-Nexus', here: true, code: `${GH}/ctem-nexus`, web: `${WEB}/ctem-nexus/`, note: 'Prioriza la exposición técnica y las rutas de ataque hacia las joyas de la corona.', noteEn: 'Prioritizes technical exposure and the attack paths to the crown jewels.' },
+  { name: 'ENS AD Auditor', here: false, code: `${GH}/ens_ad-auditor`, web: null, note: 'Revisa el directorio activo frente a las medidas del ENS.', noteEn: 'Reviews Active Directory against the ENS measures.' },
+  { name: 'ARGOS', here: false, code: `${GH}/argos-grc`, web: `${WEB}/argos-grc/`, note: 'Laboratorio GRC al estilo Hack The Box: rutas de ENS, ISO/IEC 27001 y continuidad, máquinas con flags y simulacros con rangos y logros.', noteEn: 'Hack The Box–style GRC lab: ENS, ISO/IEC 27001 and continuity tracks, machines with flags and timed mock exams with ranks and badges.' },
+  { name: 'Norvik', here: false, code: `${GH}/Norvik_Gobernanza`, web: null, note: 'Gobernanza: roles, políticas y el marco en el que encajan el resto de las herramientas.', noteEn: 'Governance: roles, policies and the framework the other tools fit into.' },
 ];

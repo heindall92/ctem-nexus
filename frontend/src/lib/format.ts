@@ -1,19 +1,46 @@
 import type { AssetType, Band, FindingKind, FindingStatus } from '../engine/types';
 
+export type Lang = 'es' | 'en';
+
+/** Idioma activo para cifras y etiquetas. Lo fija el estado (store) al arrancar y al cambiar de idioma. */
+let LANG: Lang = 'es';
+export const setFormatLang = (lang: Lang) => { LANG = lang; };
+export const formatLang = () => LANG;
+const locale = () => (LANG === 'en' ? 'en-GB' : 'es-ES');
+
 export const BAND_COLOR: Record<Band, string> = {
   critica: 'var(--color-critica)', alta: 'var(--color-alta)', media: 'var(--color-media)', baja: 'var(--color-baja)',
 };
-export const STATUS_LABEL: Record<FindingStatus, string> = {
-  abierto: 'Abierto', validado: 'Validado', no_explotable: 'No explotable', mitigado: 'Mitigado',
+const STATUS: Record<Lang, Record<FindingStatus, string>> = {
+  es: { abierto: 'Abierto', validado: 'Validado', no_explotable: 'No explotable', mitigado: 'Mitigado' },
+  en: { abierto: 'Open', validado: 'Validated', no_explotable: 'Not exploitable', mitigado: 'Mitigated' },
 };
-export const KIND_LABEL: Record<FindingKind, string> = { cve: 'CVE', configuracion: 'Configuración', identidad: 'Identidad' };
-export const ASSET_TYPE_LABEL: Record<AssetType, string> = {
-  servidor: 'Servidor', estacion: 'Estaciones', aplicacion_web: 'Aplicación web', base_datos: 'Base de datos',
-  controlador_dominio: 'Controlador de dominio', pki: 'PKI / ADCS', perimetro: 'Perímetro', nube: 'Nube', identidad: 'Identidad',
+const KIND: Record<Lang, Record<FindingKind, string>> = {
+  es: { cve: 'CVE', configuracion: 'Configuración', identidad: 'Identidad' },
+  en: { cve: 'CVE', configuracion: 'Configuration', identidad: 'Identity' },
 };
-export const pct = (x: number | null | undefined) => (x == null ? '—' : `${(Math.round(x * 1000) / 10).toLocaleString('es-ES')}\u00a0%`);
-export const n1 = (x: number) => x.toLocaleString('es-ES', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
-export const plural = (n: number, one: string, many: string) => `${n.toLocaleString('es-ES')} ${n === 1 ? one : many}`;
+const ASSET_TYPE: Record<Lang, Record<AssetType, string>> = {
+  es: {
+    servidor: 'Servidor', estacion: 'Estaciones', aplicacion_web: 'Aplicación web', base_datos: 'Base de datos',
+    controlador_dominio: 'Controlador de dominio', pki: 'PKI / ADCS', perimetro: 'Perímetro', nube: 'Nube', identidad: 'Identidad',
+  },
+  en: {
+    servidor: 'Server', estacion: 'Workstations', aplicacion_web: 'Web application', base_datos: 'Database',
+    controlador_dominio: 'Domain controller', pki: 'PKI / ADCS', perimetro: 'Perimeter', nube: 'Cloud', identidad: 'Identity',
+  },
+};
+export const statusLabel = (s: FindingStatus) => STATUS[LANG][s];
+export const kindLabel = (k: FindingKind) => KIND[LANG][k];
+export const assetTypeLabel = (t: AssetType) => ASSET_TYPE[LANG][t];
+/** @deprecated Usa statusLabel/kindLabel/assetTypeLabel, que siguen el idioma activo. */
+export const STATUS_LABEL = STATUS.es;
+export const KIND_LABEL = KIND.es;
+export const ASSET_TYPE_LABEL = ASSET_TYPE.es;
+export const pct = (x: number | null | undefined) => (x == null ? '—' : `${(Math.round(x * 1000) / 10).toLocaleString(locale())}\u00a0%`);
+export const n1 = (x: number) => x.toLocaleString(locale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+/** Fecha larga en el idioma activo (p. ej. «8 de octubre de 2026» / «8 October 2026»). */
+export const longDate = (d: Date) => d.toLocaleDateString(locale(), { day: 'numeric', month: 'long', year: 'numeric' });
+export const plural = (n: number, one: string, many: string) => `${n.toLocaleString(locale())} ${n === 1 ? one : many}`;
 
 /** ¿La IPv4 (o el CIDR) cae dentro del CIDR IPv4? (comprobación sencilla para avisos de alcance) */
 export function ipv4InCidr(ipOrCidr: string, cidr: string): boolean | null {

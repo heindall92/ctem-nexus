@@ -1,7 +1,8 @@
 /* Importación, validación y exportación (sin DOM): CSV, JSON de proyecto, informe y tickets en Markdown/CSV. */
 import { BAND_LABEL } from './constants';
 import { fmt } from './engine';
-import { guideFor } from './remediation';
+import { explanationIn, reasonsIn, type Lang } from './explain';
+import { guideIn } from './remediation';
 import { slaInfo } from './sla';
 import type { Asset, AssetType, EngineResult, Finding, FindingKind, FindingStatus, ManualEdge, NetworkRange } from './types';
 
@@ -211,7 +212,11 @@ export function parseProject(text: string): Project | null {
 
 const mdEsc = (s: string) => s.replace(/[|\\`*_[\]<>]/g, (c) => `\\${c}`).replace(/\r?\n/g, ' ');
 
-export function buildTickets(findings: Finding[], assets: Asset[], result: EngineResult) {
+const BAND_EN: Record<string, string> = { critica: 'Critical', alta: 'High', media: 'Medium', baja: 'Low' };
+const bandName = (lang: Lang, b: keyof typeof BAND_LABEL) => (lang === 'en' ? BAND_EN[b] : BAND_LABEL[b]);
+const numIn = (lang: Lang, x: number) => (lang === 'en' ? fmt(x).replace(',', '.') : fmt(x));
+
+export function buildTickets(findings: Finding[], assets: Asset[], result: EngineResult, lang: Lang = 'es') {
   const fById = new Map(findings.map((f) => [f.id, f]));
   const aById = new Map(assets.map((a) => [a.id, a]));
   return result.scored
@@ -219,61 +224,68 @@ export function buildTickets(findings: Finding[], assets: Asset[], result: Engin
     .map((s) => {
       const f = fById.get(s.id)!;
       const a = aById.get(f.assetId);
-      const g = guideFor(f.remediation, f.kind);
-      return { finding: f, scored: s, asset: a, guide: g, owner: a?.owner ? `${g.owner} · ${a.owner}` : g.owner };
+      const g = guideIn(lang, f.remediation, f.kind);
+      return { finding: f, scored: s, asset: a, guide: g, owner: a?.owner ? `${g.owner} · ${a.owner}` : g.owner, explanation: explanationIn(lang, s, f, a), reasons: reasonsIn(lang, s, f, a) };
     });
 }
 
-export function ticketsCsv(findings: Finding[], assets: Asset[], result: EngineResult): string {
+/** Cabeceras en español y estables (las consume también la API); los valores siguen el idioma. */
+export function ticketsCsv(findings: Finding[], assets: Asset[], result: EngineResult, lang: Lang = 'es'): string {
   const rows: unknown[][] = [['id', 'titulo', 'cve', 'activo', 'responsable', 'prioridad', 'puntuacion', 'sla_dias', 'pasos', 'verificacion', 'explicacion']];
-  for (const t of buildTickets(findings, assets, result)) {
-    rows.push([t.finding.id, t.finding.title, t.finding.cve ?? '', t.asset?.name ?? t.finding.assetId, t.owner, BAND_LABEL[t.scored.band], t.scored.score, t.scored.slaDays, t.guide.steps.map((s, i) => `${i + 1}. ${s}`).join(' '), t.guide.verify, t.scored.explanation]);
+  for (const t of buildTickets(findings, assets, result, lang)) {
+    rows.push([t.finding.id, t.finding.title, t.finding.cve ?? '', t.asset?.name ?? t.finding.assetId, t.owner, bandName(lang, t.scored.band), t.scored.score, t.scored.slaDays, t.guide.steps.map((s, i) => `${i + 1}. ${s}`).join(' '), t.guide.verify, t.explanation]);
   }
   return toCsv(rows);
 }
 
-export function ticketsMarkdown(findings: Finding[], assets: Asset[], result: EngineResult): string {
-  const out: string[] = ['# Tickets de remediación · CTEM-Nexus', ''];
-  for (const t of buildTickets(findings, assets, result)) {
-    out.push(`## [${BAND_LABEL[t.scored.band]}] ${mdEsc(t.finding.id)} · ${mdEsc(t.finding.title)}`, '');
-    out.push(`- **Activo:** ${mdEsc(t.asset?.name ?? t.finding.assetId)}`);
+export function ticketsMarkdown(findings: Finding[], assets: Asset[], result: EngineResult, lang: Lang = 'es'): string {
+  const L = (es: string, en: string) => (lang === 'en' ? en : es);
+  const out: string[] = [L('# Tickets de remediación · CTEM-Nexus', '# Remediation tickets · CTEM-Nexus'), ''];
+  for (const t of buildTickets(findings, assets, result, lang)) {
+    out.push(`## [${bandName(lang, t.scored.band)}] ${mdEsc(t.finding.id)} · ${mdEsc(t.finding.title)}`, '');
+    out.push(`- **${L('Activo', 'Asset')}:** ${mdEsc(t.asset?.name ?? t.finding.assetId)}`);
     if (t.finding.cve) out.push(`- **CVE:** ${t.finding.cve}`);
-    out.push(`- **Responsable:** ${mdEsc(t.owner)}`, `- **Puntuación:** ${fmt(t.scored.score)}/100 · **SLA:** ${t.scored.slaDays} días · **Vence:** ${slaInfo(t.finding.detectedAt, t.scored.slaDays).due}`, `- **Motivo:** ${mdEsc(t.scored.explanation)}`, '');
-    out.push(`### ${mdEsc(t.guide.title)}`, '', ...t.guide.steps.map((s, i) => `${i + 1}. ${mdEsc(s)}`), '', '**Verificación:**', '', '```', t.guide.verify, '```', '');
+    out.push(
+      `- **${L('Responsable', 'Owner')}:** ${mdEsc(t.owner)}`,
+      `- **${L('Puntuación', 'Score')}:** ${numIn(lang, t.scored.score)}/100 · **SLA:** ${t.scored.slaDays} ${L('días', 'days')} · **${L('Vence', 'Due')}:** ${slaInfo(t.finding.detectedAt, t.scored.slaDays).due}`,
+      `- **${L('Motivo', 'Reason')}:** ${mdEsc(t.explanation)}`, '',
+    );
+    out.push(`### ${mdEsc(t.guide.title)}`, '', ...t.guide.steps.map((s, i) => `${i + 1}. ${mdEsc(s)}`), '', `**${L('Verificación', 'Verification')}:**`, '', '```', t.guide.verify, '```', '');
   }
   return out.join('\n');
 }
 
-export function reportMarkdown(project: { name: string; demo: boolean }, findings: Finding[], assets: Asset[], result: EngineResult, date = new Date(), author = ''): string {
+export function reportMarkdown(project: { name: string; demo: boolean }, findings: Finding[], assets: Asset[], result: EngineResult, date = new Date(), author = '', lang: Lang = 'es'): string {
+  const L = (es: string, en: string) => (lang === 'en' ? en : es);
   const s = result.summary;
   const fById = new Map(findings.map((f) => [f.id, f]));
   const aById = new Map(assets.map((a) => [a.id, a]));
   const top = result.scored.filter((x) => { const f = fById.get(x.id); return f && (f.status === 'abierto' || f.status === 'validado'); }).slice(0, 10);
   const out = [
-    `# Informe ejecutivo de exposición · ${mdEsc(project.name)}`, '',
-    `Fecha: ${date.toISOString().slice(0, 10)} · Motor ${result.engine === 'ts' ? 'local' : 'API'} v${result.version}${author ? ` · ${mdEsc(author)}` : ''}`, '',
+    `# ${L('Informe ejecutivo de exposición', 'Executive exposure report')} · ${mdEsc(project.name)}`, '',
+    `${L('Fecha', 'Date')}: ${date.toISOString().slice(0, 10)} · ${L('Motor', 'Engine')} ${result.engine === 'ts' ? L('local', 'local') : 'API'} v${result.version}${author ? ` · ${mdEsc(author)}` : ''}`, '',
   ];
-  if (project.demo) out.push('> **Datos de ejemplo.** Este informe se ha generado con el conjunto de demostración de CTEM-Nexus.', '');
-  out.push('## Indicadores', '',
-    '| Indicador | Valor |', '|---|---:|',
-    `| Índice de exposición | ${fmt(s.exposureIndex)}/100 |`,
-    `| Hallazgos abiertos | ${s.openFindings} |`,
-    `| Críticos / Altos / Medios / Bajos | ${s.byBand.critica} / ${s.byBand.alta} / ${s.byBand.media} / ${s.byBand.baja} |`,
-    `| En CISA KEV | ${s.kevOpen} |`,
-    `| Activos en riesgo | ${s.assetsAtRisk} |`,
-    `| Rutas de ataque hacia joyas de la corona | ${s.attackPaths} |`,
-    `| Puntos de estrangulamiento | ${s.chokePoints} |`,
-    `| MTTR (días) | ${s.mttrDays === null ? '—' : fmt(s.mttrDays)} |`, '',
-    '## Riesgos principales', '', '| # | Hallazgo | Activo | Prioridad | Puntuación | SLA |', '|---:|---|---|---|---:|---:|',
+  if (project.demo) out.push(L('> **Datos de ejemplo.** Este informe se ha generado con el conjunto de demostración de CTEM-Nexus.', '> **Sample data.** This report was generated with the CTEM-Nexus demo set.'), '');
+  out.push(`## ${L('Indicadores', 'Indicators')}`, '',
+    `| ${L('Indicador', 'Indicator')} | ${L('Valor', 'Value')} |`, '|---|---:|',
+    `| ${L('Índice de exposición', 'Exposure index')} | ${numIn(lang, s.exposureIndex)}/100 |`,
+    `| ${L('Hallazgos abiertos', 'Open findings')} | ${s.openFindings} |`,
+    `| ${L('Críticos / Altos / Medios / Bajos', 'Critical / High / Medium / Low')} | ${s.byBand.critica} / ${s.byBand.alta} / ${s.byBand.media} / ${s.byBand.baja} |`,
+    `| ${L('En CISA KEV', 'In CISA KEV')} | ${s.kevOpen} |`,
+    `| ${L('Activos en riesgo', 'Assets at risk')} | ${s.assetsAtRisk} |`,
+    `| ${L('Rutas de ataque hacia joyas de la corona', 'Attack paths to crown jewels')} | ${s.attackPaths} |`,
+    `| ${L('Puntos de estrangulamiento', 'Choke points')} | ${s.chokePoints} |`,
+    `| ${L('MTTR (días)', 'MTTR (days)')} | ${s.mttrDays === null ? '—' : numIn(lang, s.mttrDays)} |`, '',
+    `## ${L('Riesgos principales', 'Top risks')}`, '', `| # | ${L('Hallazgo', 'Finding')} | ${L('Activo', 'Asset')} | ${L('Prioridad', 'Priority')} | ${L('Puntuación', 'Score')} | SLA |`, '|---:|---|---|---|---:|---:|',
     ...top.map((x, i) => {
       const f = fById.get(x.id)!;
-      return `| ${i + 1} | ${mdEsc(f.id)} · ${mdEsc(f.title)}${f.cve ? ` (${f.cve})` : ''} | ${mdEsc(aById.get(f.assetId)?.name ?? f.assetId)} | ${BAND_LABEL[x.band]} | ${fmt(x.score)} | ${x.slaDays} d |`;
+      return `| ${i + 1} | ${mdEsc(f.id)} · ${mdEsc(f.title)}${f.cve ? ` (${f.cve})` : ''} | ${mdEsc(aById.get(f.assetId)?.name ?? f.assetId)} | ${bandName(lang, x.band)} | ${numIn(lang, x.score)} | ${x.slaDays} d |`;
     }), '',
-    '## Puntos de estrangulamiento', '',
+    `## ${L('Puntos de estrangulamiento', 'Choke points')}`, '',
     ...(result.graph.chokePoints.length
-      ? result.graph.chokePoints.map((c) => `- **${mdEsc(c.label)}** (${c.kind}): presente en ${c.paths} de ${s.attackPaths} rutas (${Math.round(c.share * 100)} %).`)
-      : ['- No se han identificado puntos de estrangulamiento.']), '',
-    '## Recomendación', '',
-    'Corregir primero los hallazgos que coinciden con puntos de estrangulamiento: cortan el mayor número de rutas hacia las joyas de la corona con el menor esfuerzo.', '');
+      ? result.graph.chokePoints.map((c) => `- **${mdEsc(c.label)}** (${c.kind === 'nodo' ? L('nodo', 'node') : L('arista', 'edge')}): ${L(`presente en ${c.paths} de ${s.attackPaths} rutas`, `present in ${c.paths} of ${s.attackPaths} paths`)} (${Math.round(c.share * 100)} %).`)
+      : [L('- No se han identificado puntos de estrangulamiento.', '- No choke points were identified.')]), '',
+    `## ${L('Recomendación', 'Recommendation')}`, '',
+    L('Corregir primero los hallazgos que coinciden con puntos de estrangulamiento: cortan el mayor número de rutas hacia las joyas de la corona con el menor esfuerzo.', 'Fix first the findings on choke points: they break the most paths to the crown jewels with the least effort.'), '');
   return out.join('\n');
 }

@@ -1,4 +1,5 @@
 /* Guías de remediación paso a paso por tipo de hallazgo (sin DOM). La clave es Finding.remediation. */
+import { GUIDES_EN } from './remediation-en';
 
 export interface RemediationGuide {
   key: string;
@@ -154,4 +155,10 @@ export const GUIDE_KEYS = Object.keys(GUIDES);
 export function guideFor(key: string | undefined, kind: 'cve' | 'configuracion' | 'identidad' = 'cve'): RemediationGuide {
   if (key && GUIDES[key]) return GUIDES[key];
   return kind === 'identidad' ? GUIDES.identity_generic : kind === 'configuracion' ? GUIDES.weak_config : GUIDES.patch_cve;
+}
+
+/** Guía en el idioma pedido: los textos en inglés salen de remediation-en.ts; la referencia es la misma. */
+export function guideIn(lang: 'es' | 'en', key: string | undefined, kind: 'cve' | 'configuracion' | 'identidad' = 'cve'): RemediationGuide {
+  const g = guideFor(key, kind);
+  return lang === 'en' && GUIDES_EN[g.key] ? { ...g, ...GUIDES_EN[g.key] } : g;
 }
