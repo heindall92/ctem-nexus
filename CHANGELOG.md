@@ -2,6 +2,13 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico. La hoja de ruta está en [ROADMAP.md](ROADMAP.md).
 
+## [0.4.1] - 2026-10-08
+
+### Cambiado
+- **Paleta de bandas en tema claro armonizada con el azul del acento.** El rojo, el naranja y el amarillo saturados chocaban con el azul eléctrico. Ahora hay una rampa ordinal por luminosidad: ocre `#eab84f`, coral `#dd6b3d` y carmesí `#a8234a` (también como color de texto de «Crítica»). Validada con el script de visualización: separación de visión normal 18,5 y de daltonismo 15,1.
+- Las zonas de las franjas ya no van tintadas (solo un toque en «Crítica») y las marcas claras llevan un borde fino para no perderse sobre blanco.
+- El anillo de CISA KEV pasa al color de tinta: en carmesí no se distinguía de una marca crítica.
+
 ## [0.4.0] - 2026-10-08
 
 Fase 2 de la hoja de ruta: diseño con identidad propia, sin repetir los anillos de Rosetta.

@@ -124,7 +124,7 @@ export function Dashboard() {
               <ExposureLanes items={openItems.map((x) => ({ scored: x, finding: fById.get(x.id)! }))} assets={assets} onOpen={openFinding} />
             </div>
             <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-ink-3">
-              <li className="flex items-center gap-1.5"><span className="h-3.5 w-2 rounded-full bg-[var(--color-ink-3)] shadow-[0_0_0_1.5px_var(--color-surface),0_0_0_3px_var(--color-critica)]" />CISA KEV</li>
+              <li className="flex items-center gap-1.5"><span className="h-3.5 w-2 rounded-full bg-[var(--color-ink-3)] shadow-[0_0_0_1.5px_var(--color-surface),0_0_0_3px_var(--color-ink)]" />CISA KEV</li>
               <li className="flex items-center gap-1.5"><Crown className="size-3.5 text-accent" />{c.crownJewel}</li>
               <li className="flex items-center gap-1.5"><Globe className="size-3.5" />{L('Expuesto a Internet', 'Internet-facing')}</li>
             </ul>

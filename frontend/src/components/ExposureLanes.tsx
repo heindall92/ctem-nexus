@@ -77,7 +77,7 @@ export function ExposureLanes({ items, assets, onOpen }: { items: LaneItem[]; as
             <div className="relative" style={{ height: Math.max(48, r.lanes * LANE + 12) }}>
               {ZONES.map((z) => (
                 <span key={z.band} aria-hidden className="absolute inset-y-0 border-l border-dashed border-hairline-strong first:border-l-0"
-                  style={{ left: `${z.from}%`, width: `${z.to - z.from}%`, background: `color-mix(in oklab, ${BAND_FILL[z.band]} ${z.band === 'critica' ? 9 : 5}%, transparent)` }} />
+                  style={{ left: `${z.from}%`, width: `${z.to - z.from}%`, background: z.band === 'critica' ? `color-mix(in oklab, ${BAND_FILL.critica} 6%, transparent)` : undefined }} />
               ))}
               {r.placed.map(({ it, lane }) => {
                 const s = it.scored;

@@ -101,7 +101,7 @@ pesadas de auditoría.
   </tbody>
   <tfoot>
     <tr>
-      <td colspan="2"><code>version: 0.4.0&nbsp;&nbsp;·&nbsp;&nbsp;motor: TS + FastAPI&nbsp;&nbsp;·&nbsp;&nbsp;Gartner CTEM&nbsp;&nbsp;·&nbsp;&nbsp;pruebas: Vitest 52 · Pytest 19 · e2e 75&nbsp;&nbsp;·&nbsp;&nbsp;licencia: GPLv2</code></td>
+      <td colspan="2"><code>version: 0.4.1&nbsp;&nbsp;·&nbsp;&nbsp;motor: TS + FastAPI&nbsp;&nbsp;·&nbsp;&nbsp;Gartner CTEM&nbsp;&nbsp;·&nbsp;&nbsp;pruebas: Vitest 52 · Pytest 19 · e2e 75&nbsp;&nbsp;·&nbsp;&nbsp;licencia: GPLv2</code></td>
     </tr>
   </tfoot>
 </table>
