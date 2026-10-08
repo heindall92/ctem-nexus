@@ -18,3 +18,7 @@
 - CTEM Nexus es el puente ofensivo ↔ GRC del ecosistema (Rosetta, Compliance Studio, KAIROS, ENS AD Auditor, ARGOS y Norvik). Toda integración se hace por **fichero JSON importado o exportado por el usuario**, nunca por peticiones de red.
 - Diseño: Lucide, guía apple-design de Emil Kowalski y acentos de Rosetta. **Sin anillos ni gráficos circulares** (son el sello de Rosetta): el panel usa franjas de exposición por activo. Los colores de gráficos se validan con el script de dataviz. Cada cambio visual se verifica con axe (WCAG 2.2 AA) en claro y oscuro, a 1440 y 390 px.
 - Contenido normativo: el BOE puede citarse literalmente; de ISO solo números de cláusula o control. NIST CSF y CISA KEV son de dominio público.
+
+## Estilo
+
+- Carga la skill `.claude/skills/estilo-yoandy/` antes de tocar la interfaz, el contenido o el repositorio. El original vive en `heindall92/rosetta_multinorma`.
