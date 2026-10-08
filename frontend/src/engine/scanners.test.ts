@@ -154,6 +154,7 @@ describe('deduplicación e incorporación (planImport)', () => {
     const plan = planImport(parseNuclei(sample('nuclei-ejemplo.jsonl')), { assets: DEMO_ASSETS, findings }, { today: '2026-10-08' });
     const h1 = plan.updatedFindings.find((f) => f.id === 'H-001')!;
     expect(plan.reopened).toBe(1);
+    expect(plan.reopenedIds).toEqual(['H-001']);
     expect(h1).toMatchObject({ status: 'abierto', resolvedAt: null });
     expect(h1.evidence).toMatch(/Reaparece tras la mitigación/);
   });

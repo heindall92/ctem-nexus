@@ -90,6 +90,8 @@ export interface ImportPlan {
   updatedFindings: Finding[];
   /** De los actualizados, cuántos estaban mitigados y se reabren. */
   reopened: number;
+  /** Sus identificadores. */
+  reopenedIds: string[];
   /** Duplicados fundidos dentro del propio fichero. */
   duplicatesInFile: number;
   skipped: number;
@@ -180,7 +182,7 @@ export function planImport(parse: ScanParse, project: { assets: Asset[]; finding
   // 2) Contra el proyecto: misma clave o CVE coincidente (principal o relacionado) en el mismo activo.
   const updated = new Map<string, Finding>();
   const newFindings: Finding[] = [];
-  let reopened = 0;
+  const reopenedIds: string[] = [];
   const current = (id: string) => updated.get(id) ?? project.findings.find((f) => f.id === id)!;
   for (const f of incoming.values()) {
     const fCves = new Set(cvesOf(f));
@@ -190,7 +192,7 @@ export function planImport(parse: ScanParse, project: { assets: Asset[]; finding
     ));
     if (match) {
       const { merged, reopened: r } = mergeFinding(current(match.id), f);
-      if (r && !updated.has(match.id)) reopened++;
+      if (r && !updated.has(match.id)) reopenedIds.push(match.id);
       updated.set(match.id, merged);
     } else {
       newFindings.push({ ...f, id: nextFreeId(`${PREFIX[parse.source] ?? 'IMP'}-`, findingIds) });
@@ -203,7 +205,8 @@ export function planImport(parse: ScanParse, project: { assets: Asset[]; finding
     matchedAssets,
     newFindings,
     updatedFindings: [...updated.values()],
-    reopened,
+    reopened: reopenedIds.length,
+    reopenedIds,
     duplicatesInFile,
     skipped: parse.skipped,
   };

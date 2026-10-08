@@ -1,10 +1,11 @@
-import { ArrowRight, Crosshair, Crown, Globe, FileJson, LayoutDashboard, ListChecks, Radar, Route, Scissors, Sparkles } from 'lucide-react';
+import { ArrowRight, Crosshair, Crown, Globe, FileJson, LayoutDashboard, ListChecks, Radar, Route, Scissors, ShieldOff, Sparkles } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useState } from 'react';
 import { CycleArt } from '../components/CycleArt';
 import { ExposureLanes } from '../components/ExposureLanes';
 import { NmapUploader } from '../components/NmapUploader';
 import { pathsBrokenBy } from '../engine/impact';
+import { EXPIRY_WARNING_DAYS, expiringSoon, isoDay } from '../engine/exceptions';
 import { slaInfo } from '../engine/sla';
 import type { Band } from '../engine/types';
 import { Modal, TopBar } from '../components/Shell';
@@ -34,6 +35,7 @@ export function Dashboard() {
   const fById = new Map(findings.map((f) => [f.id, f]));
   const aById = new Map(assets.map((a) => [a.id, a]));
   const crown = assets.filter((a) => a.criticality === 5).length;
+  const expiring = expiringSoon(findings, isoDay(new Date()));
   const overdue = result.scored.filter((x) => {
     const f = fById.get(x.id);
     return f && (f.status === 'abierto' || f.status === 'validado') && slaInfo(f.detectedAt, x.slaDays).state === 'vencido';
@@ -194,6 +196,18 @@ export function Dashboard() {
           <Kpi label={c.chokes} value={s.chokePoints} note={c.chokesNote} tone={s.chokePoints ? 'var(--color-alta)' : undefined} />
           <Kpi label={c.mttr} value={s.mttrDays === null ? '—' : n1(s.mttrDays)} unit={s.mttrDays === null ? undefined : c.days} note={c.mttrNote} />
         </Reveal>
+
+        {expiring.length > 0 && (
+          <Reveal as="section" delay={0.18} className="panel flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-3.5 text-[0.8125rem]" aria-label={L('Aceptaciones de riesgo por caducar', 'Risk acceptances about to expire')}>
+            <span className="flex items-center gap-2 font-medium" style={{ color: 'var(--color-alta)' }}><ShieldOff className="size-4" />{L(`${expiring.length === 1 ? 'Una aceptación de riesgo caduca' : `${expiring.length} aceptaciones de riesgo caducan`} en ${EXPIRY_WARNING_DAYS} días o menos`, `${expiring.length === 1 ? 'One risk acceptance expires' : `${expiring.length} risk acceptances expire`} within ${EXPIRY_WARNING_DAYS} days`)}</span>
+            <ul className="flex flex-wrap gap-2">
+              {expiring.map((f) => (
+                <li key={f.id}><button type="button" className="chip transition-transform duration-150 active:scale-[0.97]" style={{ background: 'var(--color-surface-2)', color: 'var(--color-ink-2)' }} onClick={() => openFinding(f.id)}><span className="num">{f.id}</span>{f.exception!.expires}</button></li>
+              ))}
+            </ul>
+            <span className="text-xs text-ink-3">{L('Renueva o corrige antes de que vuelvan a abrirse.', 'Renew or fix them before they reopen.')}</span>
+          </Reveal>
+        )}
 
         {/* Ciclo CTEM */}
         <Reveal as="section" delay={0.2} className="panel p-5">

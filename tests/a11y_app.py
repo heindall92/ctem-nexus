@@ -50,6 +50,18 @@ def states(page, mobile):
     page.locator("[data-testid=ruta]").first.click(); yield "rutas/seleccionada"
     page.get_by_role("button", name="Solo esta ruta").click(); yield "rutas/solo-esta-ruta"
     page.get_by_role("button", name="Acercar").click(); yield "rutas/zoom"
+    J(f"{S}.setView('priorizacion')"); J(f"{S}.selectFinding('H-019')"); yield "detalle/riesgo-aceptado"
+    J(f"{S}.selectFinding('H-008')")
+    page.get_by_role("dialog").get_by_role("button", name="Aceptar riesgo").click()
+    page.get_by_test_id("form-aceptacion").get_by_label("Responsable del riesgo").fill("")
+    page.get_by_test_id("form-aceptacion").get_by_role("button", name="Aceptar riesgo").click(); yield "riesgo/formulario-errores"
+    page.keyboard.press("Escape"); J(f"{S}.selectFinding(null)")
+    page.get_by_role("button", name="Importar escáner").first.click()
+    page.get_by_test_id("importador-escaner").locator('input[type="file"]').set_input_files(str(ROOT / "shared" / "samples" / "nessus-ejemplo.nessus"))
+    page.get_by_test_id("plan-importacion").wait_for(); yield "ingesta/escaner-plan"
+    page.get_by_test_id("importador-escaner").locator('input[type="file"]').set_input_files(str(ROOT / "shared" / "samples" / "epss-ejemplo.csv"))
+    page.get_by_test_id("plan-inteligencia").wait_for(); yield "ingesta/epss-plan"
+    page.get_by_role("button", name="Cerrar ventana").click()
     J(f"{S}.setView('mitre')")
     page.locator("[data-testid^=tecnica-]:visible").first.click(); yield "attack/ficha-tecnica"
     page.keyboard.press("Escape")

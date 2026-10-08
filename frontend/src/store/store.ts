@@ -2,8 +2,11 @@
 import { create } from 'zustand';
 import { DEMO_ANCHOR, DEMO_ASSETS, DEMO_EDGES, DEMO_FINDINGS, DEMO_RANGES } from '../data/demo';
 import { daysBetween, shiftDate } from '../engine/sla';
-import type { Project } from '../engine/io';
-import type { Asset, Finding, FindingStatus, ManualEdge, NetworkRange } from '../engine/types';
+import { acceptRisk, expireExceptions, isoDay, revokeRisk, type ExceptionInput } from '../engine/exceptions';
+import { applyIntel, type EpssCatalog, type IntelMeta, type KevCatalog } from '../engine/intel';
+import { MAX_IMPORTS, MAX_SNAPSHOTS, type ImportLog, type Project, type Snapshot } from '../engine/io';
+import type { ImportPlan } from '../engine/merge';
+import type { Asset, Finding, FindingStatus, ManualEdge, NetworkRange, ProfileId } from '../engine/types';
 import { setFormatLang } from '../lib/format';
 import { load, remove, save } from '../lib/storage';
 
@@ -61,6 +64,16 @@ interface State extends Persisted {
   replaceProject: (p: Project) => void;
   reset: () => void;
   setSettings: (s: Partial<Settings>) => void;
+  /** Incorpora un plan de importación de escáner (activos nuevos, hallazgos nuevos y actualizados) y lo registra. */
+  applyImport: (plan: ImportPlan, file: string) => void;
+  /** Aplica catálogos KEV/EPSS; devuelve cuántos hallazgos cambian. */
+  applyIntelCatalogs: (intel: { kev?: KevCatalog | null; epss?: EpssCatalog | null }) => { kevAdded: string[]; epssUpdated: string[]; epssMissing: number };
+  setProfile: (p: ProfileId) => void;
+  acceptRisk: (id: string, input: ExceptionInput) => void;
+  revokeRisk: (id: string) => void;
+  /** Guarda una instantánea de cierre de ciclo (sustituye la del mismo día). */
+  addSnapshot: (snap: Snapshot) => void;
+  deleteSnapshot: (at: string) => void;
 }
 
 const KEY = 'ctem-nexus:v1';
@@ -81,8 +94,11 @@ export const demoProject = (today: Date = new Date()): Project => {
 const defaults: Settings = { useApi: false, apiUrl: 'http://127.0.0.1:8000', theme: 'dark', lang: 'es', accent: 'azul', profile: { nombre: '', rol: '', organizacion: '', correo: '' } };
 
 const stored = load<Partial<Persisted>>(KEY);
+const today = () => isoDay(new Date());
+const storedProject = stored?.project && stored.project.format === 'ctem-nexus' ? { ...emptyProject(), ...stored.project } : emptyProject();
+const expiredAtStart = expireExceptions(storedProject.findings, today());
 const initial: Persisted = {
-  project: stored?.project && stored.project.format === 'ctem-nexus' ? { ...emptyProject(), ...stored.project } : emptyProject(),
+  project: expiredAtStart.expired.length ? { ...storedProject, findings: expiredAtStart.findings } : storedProject,
   settings: {
     ...defaults,
     ...(stored?.settings ?? {}),
@@ -214,10 +230,47 @@ export const useStore = create<State>()((set, get) => ({
   deleteEdge: (id) => set((s) => ({ project: { ...s.project, edges: s.project.edges.filter((e) => e.id !== id) } })),
   loadDemo: () => set({ project: demoProject(), selectedFinding: null }),
   startFresh: () => set({ project: { ...emptyProject(), name: 'Nuevo análisis de exposición' }, selectedFinding: null, view: 'alcance' }),
-  replaceProject: (project) => set({ project, selectedFinding: null }),
+  replaceProject: (project) => {
+    const { findings, expired } = expireExceptions(project.findings, today());
+    set({ project: expired.length ? { ...project, findings } : project, selectedFinding: null });
+    if (expired.length) get().notify(expiredText(expired, get().lang), 'info');
+  },
   reset: () => { remove(KEY); set({ project: emptyProject(), selectedFinding: null }); },
   setSettings: (p) => set((s) => ({ settings: { ...s.settings, ...p } })),
+  applyImport: (plan, file) => set((s) => {
+    let assets = s.project.assets;
+    for (const a of plan.newAssets) assets = upsert(assets, a);
+    let findings = s.project.findings;
+    for (const f of [...plan.updatedFindings, ...plan.newFindings]) findings = upsert(findings, f);
+    const log: ImportLog = {
+      at: today(), source: plan.source, tool: plan.tool.slice(0, 80), file: file.slice(0, 120),
+      newAssets: plan.newAssets.length, newFindings: plan.newFindings.length, updated: plan.updatedFindings.length, reopened: plan.reopened,
+    };
+    return { project: { ...s.project, assets, findings, imports: [log, ...(s.project.imports ?? [])].slice(0, MAX_IMPORTS) } };
+  }),
+  applyIntelCatalogs: (intel) => {
+    const r = applyIntel(get().project.findings, intel);
+    const at = today();
+    const meta: IntelMeta = { ...(get().project.intel ?? {}) };
+    if (intel.kev) meta.kev = { version: intel.kev.version, released: intel.kev.released, count: intel.kev.count, importedAt: at };
+    if (intel.epss) meta.epss = { model: intel.epss.model, scoreDate: intel.epss.scoreDate, count: intel.epss.count, importedAt: at };
+    set((s) => ({ project: { ...s.project, findings: r.findings, intel: meta } }));
+    return { kevAdded: r.kevAdded, epssUpdated: r.epssUpdated, epssMissing: r.epssMissing };
+  },
+  setProfile: (profile) => set((s) => ({ project: { ...s.project, profile } })),
+  acceptRisk: (id, input) => set((s) => ({ project: { ...s.project, findings: s.project.findings.map((f) => (f.id === id ? acceptRisk(f, input, today()) : f)) } })),
+  revokeRisk: (id) => set((s) => ({ project: { ...s.project, findings: s.project.findings.map((f) => (f.id === id ? revokeRisk(f) : f)) } })),
+  addSnapshot: (snap) => set((s) => ({
+    project: { ...s.project, snapshots: [...(s.project.snapshots ?? []).filter((x) => x.at !== snap.at), snap].sort((a, b) => a.at.localeCompare(b.at)).slice(-MAX_SNAPSHOTS) },
+  })),
+  deleteSnapshot: (at) => set((s) => ({ project: { ...s.project, snapshots: (s.project.snapshots ?? []).filter((x) => x.at !== at) } })),
 }));
+
+const expiredText = (ids: string[], lang: 'es' | 'en') => (lang === 'en'
+  ? `${ids.length} risk acceptance${ids.length === 1 ? '' : 's'} expired and reopened: ${ids.join(', ')}.`
+  : `${ids.length === 1 ? 'Ha caducado 1 aceptación de riesgo' : `Han caducado ${ids.length} aceptaciones de riesgo`} y ${ids.length === 1 ? 'vuelve' : 'vuelven'} a estar ${ids.length === 1 ? 'abierta' : 'abiertas'}: ${ids.join(', ')}.`);
+
+if (expiredAtStart.expired.length) setTimeout(() => useStore.getState().notify(expiredText(expiredAtStart.expired, useStore.getState().lang), 'info'), 600);
 
 // Persistencia: solo proyecto y ajustes, con un pequeño agrupado de escrituras.
 let timer: ReturnType<typeof setTimeout> | undefined;

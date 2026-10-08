@@ -23,7 +23,7 @@ export async function pingApi(url: string): Promise<{ ok: boolean; detail: strin
 export function useAnalysis(): { result: EngineResult; status: EngineStatus } {
   const project = useStore((s) => s.project);
   const { useApi, apiUrl } = useStore((s) => s.settings);
-  const input = useMemo(() => ({ assets: project.assets, findings: project.findings, edges: project.edges }), [project.assets, project.findings, project.edges]);
+  const input = useMemo(() => ({ assets: project.assets, findings: project.findings, edges: project.edges, profile: project.profile ?? 'defecto' as const }), [project.assets, project.findings, project.edges, project.profile]);
   const local = useMemo(() => prioritize(input), [input]);
   const [remote, setRemote] = useState<{ input: unknown; result: EngineResult } | null>(null);
   const [error, setError] = useState<string | null>(null);

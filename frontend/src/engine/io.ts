@@ -4,7 +4,9 @@ import { fmt } from './engine';
 import { explanationIn, reasonsIn, type Lang } from './explain';
 import { guideIn } from './remediation';
 import { slaInfo } from './sla';
-import type { Asset, AssetType, EngineResult, Finding, FindingKind, FindingSource, FindingStatus, ManualEdge, NetworkRange, RiskException } from './types';
+import { PROFILE_IDS } from './constants';
+import type { IntelMeta } from './intel';
+import type { Asset, AssetType, Band, EngineResult, Finding, FindingKind, FindingSource, FindingStatus, ManualEdge, NetworkRange, ProfileId, RiskException } from './types';
 
 export interface Project {
   format: 'ctem-nexus';
@@ -17,7 +19,44 @@ export interface Project {
   edges: ManualEdge[];
   /** Pasos de la guía de remediación marcados como hechos, por hallazgo (índices). Opcional. */
   progress?: Record<string, number[]>;
+  /** Perfil de ponderación del proyecto (por defecto, «defecto»). */
+  profile?: ProfileId;
+  /** Versión y fecha de los catálogos KEV y EPSS aplicados (para que el informe diga con qué datos se priorizó). */
+  intel?: IntelMeta;
+  /** Registro de importaciones de escáneres, de la más reciente a la más antigua (máximo 50). */
+  imports?: ImportLog[];
+  /** Instantáneas de cierre de ciclo, de la más antigua a la más reciente (máximo 104). */
+  snapshots?: Snapshot[];
 }
+
+export interface ImportLog {
+  at: string;
+  source: FindingSource;
+  tool: string;
+  file: string;
+  newAssets: number;
+  newFindings: number;
+  updated: number;
+  reopened: number;
+}
+
+export interface Snapshot {
+  /** Fecha AAAA-MM-DD. */
+  at: string;
+  label: string;
+  profile: ProfileId;
+  exposureIndex: number;
+  open: number;
+  byBand: Record<Band, number>;
+  kev: number;
+  attackPaths: number;
+  accepted: number;
+  overdue: number;
+  mttrDays: number | null;
+}
+
+export const MAX_IMPORTS = 50;
+export const MAX_SNAPSHOTS = 104;
 
 const ASSET_TYPES: AssetType[] = ['servidor', 'estacion', 'aplicacion_web', 'base_datos', 'controlador_dominio', 'pki', 'perimetro', 'nube', 'identidad'];
 const KINDS: FindingKind[] = ['cve', 'configuracion', 'identidad'];
@@ -251,7 +290,60 @@ export function parseProject(text: string): Project | null {
     const clean = [...new Set(steps.filter((n): n is number => Number.isInteger(n) && n >= 0 && n < 20))].sort((a, b) => a - b);
     if (clean.length) progress[id] = clean;
   }
-  return { format: 'ctem-nexus', version: 1, name: str(data.name, 120) || 'Proyecto importado', demo: data.demo === true, assets, ranges, findings, edges, progress };
+  const project: Project = { format: 'ctem-nexus', version: 1, name: str(data.name, 120) || 'Proyecto importado', demo: data.demo === true, assets, ranges, findings, edges, progress };
+  if (PROFILE_IDS.includes(data.profile as ProfileId)) project.profile = data.profile as ProfileId;
+  const intel = parseIntelMeta(data.intel);
+  if (intel) project.intel = intel;
+  const imports = arr('imports').map(parseImportLog).filter((x): x is ImportLog => !!x).slice(0, MAX_IMPORTS);
+  if (imports.length) project.imports = imports;
+  const snapshots = arr('snapshots').map(parseSnapshot).filter((x): x is Snapshot => !!x).sort((a, b) => a.at.localeCompare(b.at)).slice(-MAX_SNAPSHOTS);
+  if (snapshots.length) project.snapshots = snapshots;
+  return project;
+}
+
+function parseIntelMeta(v: unknown): IntelMeta | null {
+  if (!v || typeof v !== 'object') return null;
+  const o = v as Record<string, unknown>;
+  const out: IntelMeta = {};
+  const k = o.kev as Record<string, unknown> | undefined;
+  if (k && typeof k === 'object') {
+    out.kev = { version: str(k.version, 40), released: DATE_RE.test(str(k.released, 10)) ? str(k.released, 10) : '', count: Math.max(0, Math.round(num(k.count) ?? 0)), importedAt: DATE_RE.test(str(k.importedAt, 10)) ? str(k.importedAt, 10) : '' };
+  }
+  const e = o.epss as Record<string, unknown> | undefined;
+  if (e && typeof e === 'object') {
+    out.epss = { model: str(e.model, 40), scoreDate: DATE_RE.test(str(e.scoreDate, 10)) ? str(e.scoreDate, 10) : '', count: Math.max(0, Math.round(num(e.count) ?? 0)), importedAt: DATE_RE.test(str(e.importedAt, 10)) ? str(e.importedAt, 10) : '' };
+  }
+  return out.kev || out.epss ? out : null;
+}
+
+function parseImportLog(r: Record<string, unknown>): ImportLog | null {
+  const source = str(r.source, 20) as FindingSource;
+  const at = str(r.at, 10);
+  if (!SOURCES.includes(source) || !DATE_RE.test(at)) return null;
+  const n = (x: unknown) => Math.max(0, Math.round(num(x) ?? 0));
+  return { at, source, tool: str(r.tool, 80), file: str(r.file, 120), newAssets: n(r.newAssets), newFindings: n(r.newFindings), updated: n(r.updated), reopened: n(r.reopened) };
+}
+
+function parseSnapshot(r: Record<string, unknown>): Snapshot | null {
+  const at = str(r.at, 10);
+  if (!DATE_RE.test(at)) return null;
+  const n = (x: unknown) => Math.max(0, Math.round(num(x) ?? 0));
+  const bb = (r.byBand && typeof r.byBand === 'object' ? r.byBand : {}) as Record<string, unknown>;
+  const idx = num(r.exposureIndex);
+  const mttr = num(r.mttrDays);
+  return {
+    at,
+    label: str(r.label, 80),
+    profile: PROFILE_IDS.includes(r.profile as ProfileId) ? (r.profile as ProfileId) : 'defecto',
+    exposureIndex: idx === null ? 0 : Math.min(100, Math.max(0, Math.round(idx * 10) / 10)),
+    open: n(r.open),
+    byBand: { critica: n(bb.critica), alta: n(bb.alta), media: n(bb.media), baja: n(bb.baja) },
+    kev: n(r.kev),
+    attackPaths: n(r.attackPaths),
+    accepted: n(r.accepted),
+    overdue: n(r.overdue),
+    mttrDays: mttr === null ? null : Math.max(0, Math.round(mttr * 10) / 10),
+  };
 }
 
 /* ───────────── Informe y tickets ───────────── */

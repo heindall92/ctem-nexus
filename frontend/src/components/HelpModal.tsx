@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { BookOpen, Bug, ExternalLink, Calculator, FileCode, FolderGit2, HelpCircle, Keyboard, Layers, Mail, ShieldCheck, Terminal, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { BAND_THRESHOLDS, EXPLOIT_PUBLIC_FLOOR, NOT_EXPLOITABLE_FACTOR, PROXIMITY_HOPS, SLA_DAYS, VALIDATED_BONUS, WEIGHTS } from '../engine/constants';
+import { BAND_THRESHOLDS, EXPLOIT_PUBLIC_FLOOR, NOT_EXPLOITABLE_FACTOR, PROXIMITY_HOPS, SLA_DAYS, VALIDATED_BONUS, PROFILES } from '../engine/constants';
 import { ECOSYSTEM, screen, useL } from '../i18n';
 import { n1 } from '../lib/format';
 import { useStore } from '../store/store';
@@ -15,6 +15,8 @@ export function HelpModal() {
   const setOpen = useStore((s) => s.setHelpOpen);
   const c = screen[useStore((s) => s.lang)];
   const L = useL();
+  const profile = useStore((s) => s.project.profile ?? 'defecto');
+  const WEIGHTS = PROFILES[profile];
   const [tab, setTab] = useState<Tab>('ciclo');
   const box = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -155,7 +157,7 @@ export function HelpModal() {
                     {L('El cálculo es determinista y abierto: la misma fórmula en el navegador y en la API (paridad comprobada con un fichero dorado). Cada hallazgo suma cinco factores:', 'The calculation is deterministic and open: the same formula in the browser and in the API (parity checked against a golden file). Each finding adds up five factors:')}
                   </p>
                   <div className="overflow-x-auto rounded-2xl border border-hairline bg-surface-2/40 p-4 font-mono text-xs text-ink" data-testid="formula">
-                    {`${L('Puntuación', 'Score')} = CVSS/10 × ${WEIGHTS.severidad} + max(KEV, ${String(EXPLOIT_PUBLIC_FLOOR).replace(".", L(",", "."))} × exploit, EPSS) × ${WEIGHTS.explotabilidad} + (${L('criticidad', 'criticality')} − 1)/4 × ${WEIGHTS.criticidad} + ${L('expuesto', 'exposed')} × ${WEIGHTS.exposicion} + max(0, 1 − ${L('saltos', 'hops')}/${PROXIMITY_HOPS}) × ${WEIGHTS.proximidad}`}
+                    {`${L('Puntuación', 'Score')} (${L('perfil', 'profile')} ${{ defecto: L('general', 'general'), ot: 'OT', banca: L('banca', 'banking') }[profile]}) = CVSS/10 × ${WEIGHTS.severidad} + max(KEV, ${String(EXPLOIT_PUBLIC_FLOOR).replace(".", L(",", "."))} × exploit, EPSS) × ${WEIGHTS.explotabilidad} + (${L('criticidad', 'criticality')} − 1)/4 × ${WEIGHTS.criticidad} + ${L('expuesto', 'exposed')} × ${WEIGHTS.exposicion} + max(0, 1 − ${L('saltos', 'hops')}/${PROXIMITY_HOPS}) × ${WEIGHTS.proximidad}`}
                   </div>
                   <ul className="space-y-1.5 text-xs text-ink-3">
                     <li>{L(`Validado como explotable: +${VALIDATED_BONUS} puntos (máximo 100).`, `Validated as exploitable: +${VALIDATED_BONUS} points (capped at 100).`)}</li>

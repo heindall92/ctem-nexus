@@ -1,8 +1,10 @@
-import { ExternalLink, FileSpreadsheet, Flame, Pencil, Plus, Radar, Search, Sparkles, Trash2, Upload, Users, Zap } from 'lucide-react';
+import { ExternalLink, FileSearch, FileSpreadsheet, Flame, Pencil, ShieldOff, Undo2, Plus, Radar, Search, Sparkles, Trash2, Upload, Users, Zap } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 import { BloodHoundUploader } from '../components/BloodHoundUploader';
 import { NmapUploader } from '../components/NmapUploader';
+import { ScanUploader } from '../components/ScanUploader';
 import { techniqueById, techniquesOf } from '../engine/attack';
+import { addDays, exceptionState, isoDay, MAX_ACCEPT_DAYS, validateException, type ExceptionError, type ExceptionInput } from '../engine/exceptions';
 import { CSV_TEMPLATE, importFindings } from '../engine/io';
 import { GUIDE_KEYS, guideIn } from '../engine/remediation';
 import type { Band, Finding, FindingKind, FindingStatus } from '../engine/types';
@@ -31,7 +33,9 @@ export function Prioritization() {
   const [band, setBand] = useState<BandFilter>('todas');
   const [showClosed, setShowClosed] = useState(true);
   const [editing, setEditing] = useState<Finding | 'nuevo' | null>(null);
+  const [accepting, setAccepting] = useState<Finding | null>(null);
   const [showNmap, setShowNmap] = useState(false);
+  const [showScan, setShowScan] = useState(false);
   const [showBloodhound, setShowBloodhound] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -75,6 +79,7 @@ export function Prioritization() {
           lead={L('Cada hallazgo con su puntuación de 0 a 100, explicada factor a factor: severidad, explotación real (KEV, EPSS), criticidad, exposición y cercanía a una joya de la corona.', 'Every finding with its 0–100 score, explained factor by factor: severity, real exploitation (KEV, EPSS), criticality, exposure and closeness to a crown jewel.')}
           actions={<>
             <input ref={fileRef} type="file" accept=".json,.csv,application/json,text/csv" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void onImport(f); e.target.value = ''; }} />
+            <button type="button" className="btn" onClick={() => setShowScan(true)}><FileSearch className="size-4" />{L('Importar escáner', 'Import scanner')}</button>
             <button type="button" className="btn" onClick={() => setShowNmap(true)}><Radar className="size-4" />{c.importNmap}</button>
             <button type="button" className="btn" onClick={() => setShowBloodhound(true)}><Users className="size-4" />{c.importBh}</button>
             <button type="button" className="btn" onClick={() => fileRef.current?.click()}><Upload className="size-4" />{L('Importar JSON/CSV', 'Import JSON/CSV')}</button>
@@ -86,6 +91,7 @@ export function Prioritization() {
           <div className="panel">
             <Empty icon={<Radar />} title={c.noFindings} text={c.noFindingsText}>
               <button type="button" className="btn btn-primary" onClick={() => setShowNmap(true)}><Radar />{c.importNmapScan}</button>
+              <button type="button" className="btn" onClick={() => setShowScan(true)}><FileSearch />{L('Importar escáner', 'Import scanner')}</button>
               <button type="button" className="btn" onClick={() => setShowBloodhound(true)}><Users />{c.importBh}</button>
               <button type="button" className="btn" onClick={() => { loadDemo(); notify(c.demoLoadedShort); }}><Sparkles />{c.loadDemo}</button>
               <button type="button" className="btn" onClick={() => download('plantilla-hallazgos.csv', CSV_TEMPLATE, 'text/csv;charset=utf-8')}><FileSpreadsheet />{L('Descargar plantilla CSV', 'Download CSV template')}</button>
@@ -185,7 +191,7 @@ export function Prioritization() {
       </div>
 
       <Drawer
-        open={!!(sel && selF) && !editing}
+        open={!!(sel && selF) && !editing && !accepting}
         onClose={() => select(null)}
         title={selF && sel ? (
           <div>
@@ -193,14 +199,22 @@ export function Prioritization() {
             <h2 className="title-md mt-1">{selF.title}</h2>
           </div>
         ) : ''}
-        footer={selF && <FindingActions finding={selF} onEdit={() => setEditing(selF)} />}
+        footer={selF && <FindingActions finding={selF} onEdit={() => setEditing(selF)} onAccept={() => setAccepting(selF)} />}
       >
         {sel && selF && <FindingDetail findingId={selF.id} />}
+      </Drawer>
+
+      <Drawer open={!!accepting} onClose={() => setAccepting(null)} title={accepting ? <div><div className="num text-xs text-ink-3">{accepting.id}</div><h2 className="title-md mt-1">{accepting.status === 'aceptado' ? L('Renovar la aceptación del riesgo', 'Renew the risk acceptance') : L('Aceptar el riesgo', 'Accept the risk')}</h2></div> : ''} width={500}>
+        {accepting && <AcceptForm finding={accepting} band={result.scored.find((x) => x.id === accepting.id)?.band ?? 'media'} onDone={() => setAccepting(null)} />}
       </Drawer>
 
       <Drawer open={!!editing} onClose={() => setEditing(null)} title={<h2 className="title-md">{editing === 'nuevo' ? L('Nuevo hallazgo', 'New finding') : L('Editar hallazgo', 'Edit finding')}</h2>} width={500}>
         {editing && <FindingForm initial={editing === 'nuevo' ? null : editing} onDone={() => setEditing(null)} />}
       </Drawer>
+
+      <Modal open={showScan} onClose={() => setShowScan(false)} title={L('Importar escáner o inteligencia', 'Import scanner or intelligence')} subtitle={L('Nessus, OpenVAS, Nuclei, Trivy, SARIF, CISA KEV y FIRST EPSS', 'Nessus, OpenVAS, Nuclei, Trivy, SARIF, CISA KEV and FIRST EPSS')} maxWidth={720}>
+        <ScanUploader onDone={() => setShowScan(false)} />
+      </Modal>
 
       <Modal open={showNmap} onClose={() => setShowNmap(false)} title={L('Ingesta de escaneo Nmap (XML)', 'Nmap scan intake (XML)')} maxWidth={680}>
         <NmapUploader onDone={() => setShowNmap(false)} />
@@ -252,6 +266,7 @@ function FindingDetail({ findingId }: { findingId: string }) {
         </div>
       </div>
       <p className="rounded-xl bg-ground px-3.5 py-3 text-[0.8125rem] leading-relaxed text-ink-2 shadow-[inset_0_0_0_1px_var(--color-hairline)]">{explanationIn(lang, s, f, asset)}</p>
+      {f.exception && <RiskCard finding={f} />}
       <div>
         <h3 className="label mb-2 font-medium">{L('Desglose de la puntuación', 'Score breakdown')}</h3>
         <ul className="flex flex-col gap-3">
@@ -323,9 +338,11 @@ function FindingDetail({ findingId }: { findingId: string }) {
   );
 }
 
-function FindingActions({ finding, onEdit }: { finding: Finding; onEdit: () => void }) {
+function FindingActions({ finding, onEdit, onAccept }: { finding: Finding; onEdit: () => void; onAccept: () => void }) {
   const L = useL();
   const setStatus = useStore((s) => s.setStatus);
+  const revoke = useStore((s) => s.revokeRisk);
+  const canAccept = finding.status === 'abierto' || finding.status === 'validado';
   const del = useStore((s) => s.deleteFinding);
   const notify = useStore((s) => s.notify);
   return (
@@ -337,9 +354,89 @@ function FindingActions({ finding, onEdit }: { finding: Finding; onEdit: () => v
       />
       <div className="flex gap-2">
         <button type="button" className="btn btn-sm" onClick={onEdit}><Pencil />{L('Editar', 'Edit')}</button>
+        {canAccept && <button type="button" className="btn btn-sm" onClick={onAccept}><ShieldOff />{L('Aceptar riesgo', 'Accept risk')}</button>}
+        {finding.status === 'aceptado' && <>
+          <button type="button" className="btn btn-sm" onClick={onAccept}><ShieldOff />{L('Renovar', 'Renew')}</button>
+          <button type="button" className="btn btn-sm" onClick={() => { revoke(finding.id); notify(L(`${finding.id}: aceptación retirada; vuelve a ${statusLabel(finding.exception?.previous ?? 'abierto').toLowerCase()}.`, `${finding.id}: acceptance withdrawn; back to ${statusLabel(finding.exception?.previous ?? 'abierto').toLowerCase()}.`), 'info'); }}><Undo2 />{L('Retirar', 'Withdraw')}</button>
+        </>}
         <button type="button" className="btn btn-sm btn-ghost btn-danger ml-auto" onClick={() => { del(finding.id); notify(L(`Hallazgo ${finding.id} eliminado.`, `Finding ${finding.id} deleted.`), 'info'); }}><Trash2 />{L('Eliminar', 'Delete')}</button>
       </div>
     </div>
+  );
+}
+
+function RiskCard({ finding: f }: { finding: Finding }) {
+  const L = useL();
+  const e = f.exception!;
+  const live = f.status === 'aceptado';
+  const { state, daysLeft } = exceptionState(e, isoDay(new Date()));
+  const tone = !live ? 'var(--color-ink-3)' : state === 'por_caducar' ? 'var(--color-alta)' : 'var(--color-media)';
+  const title = !live
+    ? (state === 'caducada' ? L('Aceptación caducada', 'Expired acceptance') : L('Aceptación retirada', 'Withdrawn acceptance'))
+    : state === 'por_caducar' ? L(`Riesgo aceptado · caduca en ${daysLeft} d`, `Risk accepted · expires in ${daysLeft} d`) : L('Riesgo aceptado', 'Risk accepted');
+  return (
+    <section className="rounded-xl px-3.5 py-3 text-[0.8125rem]" style={{ background: `color-mix(in oklab, ${tone} 9%, transparent)`, boxShadow: `inset 0 0 0 1px color-mix(in oklab, ${tone} 30%, transparent)` }} data-testid="ficha-riesgo" aria-label={title}>
+      <h3 className="flex items-center gap-2 font-semibold" style={{ color: tone }}><ShieldOff className="size-4" />{title}</h3>
+      <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-2">
+        <div><dt className="label">{L('Responsable', 'Owner')}</dt><dd>{e.owner || '—'}</dd></div>
+        <div><dt className="label">{L('Caduca', 'Expires')}</dt><dd className="num">{e.expires}</dd></div>
+        <div className="col-span-2"><dt className="label">{L('Motivo', 'Reason')}</dt><dd className="text-ink-2">{e.reason || '—'}</dd></div>
+        {e.compensating && <div className="col-span-2"><dt className="label">{L('Control compensatorio', 'Compensating control')}</dt><dd className="text-ink-2">{e.compensating}</dd></div>}
+      </dl>
+      <p className="mt-2 text-xs text-ink-3">{L(`Aprobada el ${e.approvedAt || '—'} · al caducar vuelve a «${statusLabel(e.previous)}»`, `Approved on ${e.approvedAt || '—'} · on expiry it returns to “${statusLabel(e.previous)}”`)}</p>
+    </section>
+  );
+}
+
+function AcceptForm({ finding, band, onDone }: { finding: Finding; band: Band; onDone: () => void }) {
+  const L = useL();
+  const project = useStore((s) => s.project);
+  const accept = useStore((s) => s.acceptRisk);
+  const notify = useStore((s) => s.notify);
+  const today = isoDay(new Date());
+  const prev = finding.status === 'aceptado' ? finding.exception : undefined;
+  const assetOwner = project.assets.find((a) => a.id === finding.assetId)?.owner ?? '';
+  const [v, setV] = useState<ExceptionInput>({ owner: prev?.owner ?? assetOwner, reason: prev?.reason ?? '', expires: addDays(today, 90), compensating: prev?.compensating ?? '' });
+  const [tried, setTried] = useState(false);
+  const errors = validateException(finding, v, today, band);
+  const MSG: Record<ExceptionError, string> = {
+    estado: L('Solo se acepta el riesgo de hallazgos abiertos o validados.', 'Only open or validated findings can be accepted.'),
+    responsable: L('Indica quién asume el riesgo (persona o área).', 'Say who owns the risk (person or area).'),
+    motivo: L('Explica el motivo con al menos 10 caracteres.', 'Explain the reason in at least 10 characters.'),
+    fecha: L('Fecha no válida.', 'Invalid date.'),
+    pasada: L('La caducidad debe ser posterior a hoy.', 'The expiry must be after today.'),
+    lejana: L(`Como mucho ${MAX_ACCEPT_DAYS} días: una aceptación se revisa al menos una vez al año.`, `At most ${MAX_ACCEPT_DAYS} days: an acceptance is reviewed at least once a year.`),
+    compensatorio: L('En prioridad crítica o alta hace falta un control compensatorio.', 'Critical or high priority needs a compensating control.'),
+  };
+  const err = (k: ExceptionError) => (tried && errors.includes(k) ? MSG[k] : null);
+  const set = <K extends keyof ExceptionInput>(k: K, val: string) => setV((p) => ({ ...p, [k]: val }));
+  return (
+    <form className="flex flex-col gap-4" data-testid="form-aceptacion" noValidate onSubmit={(e) => {
+      e.preventDefault();
+      setTried(true);
+      if (errors.length) return;
+      accept(finding.id, v);
+      notify(L(`${finding.id}: riesgo aceptado hasta el ${v.expires}.`, `${finding.id}: risk accepted until ${v.expires}.`));
+      onDone();
+    }}>
+      <p className="rounded-xl bg-ground px-3.5 py-3 text-[0.8125rem] leading-relaxed text-ink-2 shadow-[inset_0_0_0_1px_var(--color-hairline)]">
+        <span className="font-medium text-ink">{finding.title}</span><br />
+        {L('El hallazgo sale de los abiertos y del SLA, pero sus rutas de ataque siguen en el grafo y su técnica en el mapa ATT&CK. Al caducar vuelve solo a su estado anterior.', 'The finding leaves the open list and the SLA, but its attack paths stay in the graph and its technique on the ATT&CK map. On expiry it returns to its previous state by itself.')}
+      </p>
+      {errors.includes('estado') && <p role="alert" className="text-[0.8125rem] text-critica">{MSG.estado}</p>}
+      <Field label={L('Responsable del riesgo', 'Risk owner')} error={err('responsable')}><input className="field" value={v.owner} aria-invalid={!!err('responsable')} onChange={(e) => set('owner', e.target.value)} placeholder={L('p. ej. Dirección financiera', 'e.g. Finance department')} /></Field>
+      <Field label={L('Motivo', 'Reason')} error={err('motivo')}><textarea className="field" rows={3} value={v.reason} aria-invalid={!!err('motivo')} onChange={(e) => set('reason', e.target.value)} placeholder={L('Por qué no se corrige ahora y qué lo impide', 'Why it is not fixed now and what prevents it')} /></Field>
+      <Field label={L('Caduca el', 'Expires on')} error={err('fecha') ?? err('pasada') ?? err('lejana')} hint={L(`Entre mañana y ${addDays(today, MAX_ACCEPT_DAYS)}`, `Between tomorrow and ${addDays(today, MAX_ACCEPT_DAYS)}`)}>
+        <input className="field num" type="date" min={addDays(today, 1)} max={addDays(today, MAX_ACCEPT_DAYS)} value={v.expires} aria-invalid={!!(err('fecha') ?? err('pasada') ?? err('lejana'))} onChange={(e) => set('expires', e.target.value)} />
+      </Field>
+      <Field label={(band === 'critica' || band === 'alta') ? L('Control compensatorio (obligatorio en crítica y alta)', 'Compensating control (required for critical and high)') : L('Control compensatorio (recomendado)', 'Compensating control (recommended)')} error={err('compensatorio')}>
+        <textarea className="field" rows={2} value={v.compensating} aria-invalid={!!err('compensatorio')} onChange={(e) => set('compensating', e.target.value)} placeholder={L('p. ej. Segmentación y monitorización reforzada del servicio', 'e.g. Segmentation and stepped-up monitoring of the service')} />
+      </Field>
+      <div className="flex justify-end gap-2 pt-1">
+        <button type="button" className="btn btn-ghost" onClick={onDone}>{L('Cancelar', 'Cancel')}</button>
+        <button type="submit" className="btn btn-primary">{finding.status === 'aceptado' ? L('Renovar aceptación', 'Renew acceptance') : L('Aceptar riesgo', 'Accept risk')}</button>
+      </div>
+    </form>
   );
 }
 

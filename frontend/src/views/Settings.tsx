@@ -1,8 +1,14 @@
-import { Download, PlugZap, SlidersHorizontal, RotateCcw, Sparkles, Upload } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { Download, FileSearch, PlugZap, SlidersHorizontal, RotateCcw, Sparkles, Upload } from 'lucide-react';
+import { useMemo, useRef, useState } from 'react';
+import { ScanUploader } from '../components/ScanUploader';
+import { PROFILE_IDS, PROFILES, type Weights } from '../engine/constants';
+import { prioritize } from '../engine/engine';
+import { SOURCE_LABEL } from '../engine/scanners';
+import type { ProfileId } from '../engine/types';
+import { n1 } from '../lib/format';
 import { parseProject } from '../engine/io';
-import { TopBar } from '../components/Shell';
-import { Field, PageHeader, SectionTitle, Toggle } from '../components/ui';
+import { Modal, TopBar } from '../components/Shell';
+import { Field, PageHeader, ScoreBar, SectionTitle, Segmented, Toggle } from '../components/ui';
 import { pingApi } from '../lib/analysis';
 import { download, readFile, stamp } from '../lib/download';
 import { storageBackend } from '../lib/storage';
@@ -25,6 +31,28 @@ export function Settings() {
   const [testing, setTesting] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const setProfile = useStore((s) => s.setProfile);
+  const [showIntel, setShowIntel] = useState(false);
+  const profile: ProfileId = project.profile ?? 'defecto';
+  const PROFILE_LABEL: Record<ProfileId, string> = { defecto: L('General', 'General'), ot: L('OT / industrial', 'OT / industrial'), banca: L('Banca y finanzas', 'Banking and finance') };
+  const PROFILE_NOTE: Record<ProfileId, string> = {
+    defecto: L('Equilibrio entre severidad, explotación real y negocio.', 'Balance between severity, real exploitation and business.'),
+    ot: L('Pesa más la criticidad del proceso y la cercanía a la zona de control que el CVSS: en planta, parar la línea importa más que la nota del fallo.', 'Process criticality and closeness to the control zone weigh more than CVSS: on the plant floor, stopping the line matters more than the flaw’s rating.'),
+    banca: L('Amenaza dirigida (DORA, pruebas TLPT): pesan más la explotación real y la exposición a Internet.', 'Targeted threat (DORA, TLPT testing): real exploitation and Internet exposure weigh more.'),
+  };
+  const FACTOR: Record<keyof Weights, string> = { severidad: L('Severidad', 'Severity'), explotabilidad: L('Explotabilidad', 'Exploitability'), criticidad: L('Criticidad', 'Criticality'), exposicion: L('Exposición', 'Exposure'), proximidad: L('Proximidad', 'Proximity') };
+  const byProfile = useMemo(() => {
+    if (!project.findings.length) return null;
+    const out = {} as Record<ProfileId, ReturnType<typeof prioritize>>;
+    for (const p of PROFILE_IDS) out[p] = prioritize({ assets: project.assets, findings: project.findings, edges: project.edges, profile: p });
+    return out;
+  }, [project.assets, project.findings, project.edges]);
+  const bandShift = (p: ProfileId) => {
+    if (!byProfile || p === profile) return 0;
+    const cur = new Map(byProfile[profile].scored.map((x) => [x.id, x.band]));
+    return byProfile[p].scored.filter((x) => cur.get(x.id) !== x.band).length;
+  };
+  const intel = project.intel;
   const urlErr = settings.apiUrl && !/^https?:\/\/[^\s/]+(:\d+)?\/?$/.test(settings.apiUrl) ? L('URL no válida (p. ej. http://127.0.0.1:8000)', 'Invalid URL (e.g. http://127.0.0.1:8000)') : null;
 
   return (
@@ -55,6 +83,67 @@ export function Settings() {
           </div>
         </section>
 
+        <section className="panel overflow-hidden" data-testid="perfil-ponderacion">
+          <SectionTitle title={L('Perfil de ponderación', 'Weighting profile')} detail={L('Cuánto pesa cada factor en la puntuación de 0 a 100. Se guarda en el proyecto y sale en el informe.', 'How much each factor weighs in the 0–100 score. Stored in the project and shown in the report.')} />
+          <div className="flex flex-col gap-4 border-t border-hairline px-5 py-4">
+            <Segmented<ProfileId> label={L('Perfil de ponderación', 'Weighting profile')} value={profile} onChange={(p) => { setProfile(p); notify(L(`Perfil «${PROFILE_LABEL[p]}» aplicado.`, `“${PROFILE_LABEL[p]}” profile applied.`)); }} options={PROFILE_IDS.map((p) => ({ value: p, label: PROFILE_LABEL[p] }))} />
+            <p className="text-[0.8125rem] leading-relaxed text-ink-2">{PROFILE_NOTE[profile]}</p>
+            <dl className="grid gap-2.5">
+              {(Object.keys(FACTOR) as Array<keyof Weights>).map((k) => (
+                <div key={k} className="grid grid-cols-[7.5rem_1fr_2.5rem] items-center gap-3 text-[0.8125rem]">
+                  <dt className="text-ink-2">{FACTOR[k]}</dt>
+                  <dd><ScoreBar value={PROFILES[profile][k]} max={30} color="var(--color-accent)" /></dd>
+                  <dd className="num text-right">{PROFILES[profile][k]}</dd>
+                </div>
+              ))}
+            </dl>
+            {byProfile && (
+              <ul className="grid gap-2 sm:grid-cols-3" aria-label={L('Efecto de cada perfil en este proyecto', 'Effect of each profile on this project')}>
+                {PROFILE_IDS.map((p) => (
+                  <li key={p} className="rounded-xl px-3 py-2.5 text-xs shadow-[inset_0_0_0_1px_var(--color-hairline)]" style={p === profile ? { boxShadow: 'inset 0 0 0 1.5px var(--color-accent)' } : undefined}>
+                    <div className="font-medium text-ink">{PROFILE_LABEL[p]}</div>
+                    <div className="mt-1 text-ink-3">{L('Índice', 'Index')} <span className="num text-ink">{n1(byProfile[p].summary.exposureIndex)}</span> · {L('críticos', 'critical')} <span className="num text-ink">{byProfile[p].scored.filter((x) => x.band === 'critica').length}</span></div>
+                    <div className="mt-0.5 text-ink-3">{p === profile ? L('En uso', 'In use') : L(`${bandShift(p)} hallazgos cambian de banda`, `${bandShift(p)} findings change band`)}</div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </section>
+
+        <section className="panel overflow-hidden" data-testid="inteligencia">
+          <SectionTitle
+            title={L('Inteligencia e importaciones', 'Intelligence and imports')}
+            detail={L('Catálogos CISA KEV y FIRST EPSS que descargas tú: la app nunca los pide por red. Su versión queda en el proyecto y en el informe.', 'CISA KEV and FIRST EPSS catalogs you download yourself: the app never fetches them. Their version is stored in the project and the report.')}
+            actions={<button type="button" className="btn btn-sm" onClick={() => setShowIntel(true)}><FileSearch />{L('Importar escáner o catálogo', 'Import scanner or catalog')}</button>}
+          />
+          <dl className="divide-hair border-t border-hairline text-[0.8125rem]">
+            <div className="flex flex-wrap items-baseline justify-between gap-2 px-5 py-3">
+              <dt className="font-medium">CISA KEV</dt>
+              <dd className="text-ink-2">{intel?.kev ? L(`versión ${intel.kev.version} · ${intel.kev.count.toLocaleString()} CVE · aplicado el ${intel.kev.importedAt}`, `version ${intel.kev.version} · ${intel.kev.count.toLocaleString()} CVEs · applied on ${intel.kev.importedAt}`) : L('Sin catálogo: cuentan las marcas del escáner o del analista', 'No catalog: scanner or analyst flags apply')}</dd>
+            </div>
+            <div className="flex flex-wrap items-baseline justify-between gap-2 px-5 py-3">
+              <dt className="font-medium">FIRST EPSS</dt>
+              <dd className="text-ink-2">{intel?.epss ? L(`${intel.epss.scoreDate || intel.epss.model} · ${intel.epss.count.toLocaleString()} puntuaciones · aplicado el ${intel.epss.importedAt}`, `${intel.epss.scoreDate || intel.epss.model} · ${intel.epss.count.toLocaleString()} scores · applied on ${intel.epss.importedAt}`) : L('Sin catálogo: cuentan los valores del escáner o del analista', 'No catalog: scanner or analyst values apply')}</dd>
+            </div>
+          </dl>
+          {project.imports?.length ? (
+            <div className="border-t border-hairline px-5 py-4">
+              <h3 className="label mb-2 font-medium">{L('Últimas importaciones', 'Latest imports')}</h3>
+              <ul className="flex flex-col gap-1.5 text-xs" data-testid="registro-importaciones">
+                {project.imports.slice(0, 8).map((im, i) => (
+                  <li key={`${im.at}-${i}`} className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                    <span className="num text-ink-3">{im.at}</span>
+                    <span className="font-medium text-ink">{im.tool || SOURCE_LABEL[im.source]}</span>
+                    <span className="truncate text-ink-3">{im.file}</span>
+                    <span className="text-ink-2">· +{im.newFindings} {L('nuevos', 'new')} · {im.updated} {L('actualizados', 'updated')}{im.reopened ? ` · ${im.reopened} ${L('reabiertos', 'reopened')}` : ''}{im.newAssets ? ` · +${im.newAssets} ${L('activos', 'assets')}` : ''}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </section>
+
         <section className="panel overflow-hidden">
           <SectionTitle title={L('Datos', 'Data')} detail={L('Formato JSON propio (format: ctem-nexus). Al importar se validan y sanean todos los campos.', 'Own JSON format (format: ctem-nexus). Every field is validated and sanitized on import.')} />
           <div className="flex flex-wrap gap-2 border-t border-hairline px-5 py-4">
@@ -79,6 +168,9 @@ export function Settings() {
           </div>
         </section>
       </div>
+      <Modal open={showIntel} onClose={() => setShowIntel(false)} title={L('Importar escáner o inteligencia', 'Import scanner or intelligence')} subtitle={L('Nessus, OpenVAS, Nuclei, Trivy, SARIF, CISA KEV y FIRST EPSS', 'Nessus, OpenVAS, Nuclei, Trivy, SARIF, CISA KEV and FIRST EPSS')} maxWidth={720}>
+        <ScanUploader onDone={() => setShowIntel(false)} />
+      </Modal>
     </>
   );
 }
