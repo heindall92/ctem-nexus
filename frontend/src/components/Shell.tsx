@@ -663,7 +663,7 @@ function UserMenu({
 }
 
 /** Barra superior ovalada flotante estilo Rosetta y ENS Compliance */
-export function TopBar({ title, subtitle, actions }: { title: string; subtitle?: ReactNode; actions?: ReactNode }) {
+export function TopBar({ title, actions }: { title: string; subtitle?: ReactNode; actions?: ReactNode }) {
   const toggleSidebar = useStore((s) => s.toggleSidebar);
   const setSearchOpen = useStore((s) => s.setSearchOpen);
   const setHelpOpen = useStore((s) => s.setHelpOpen);
@@ -674,8 +674,11 @@ export function TopBar({ title, subtitle, actions }: { title: string; subtitle?:
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const userBtnRef = useRef<HTMLButtonElement>(null);
+  // Título de la pestaña por vista (WCAG 2.4.2). El h1 visible lo pone PageHeader en cada vista.
+  useEffect(() => { document.title = `${title} · CTEM-Nexus`; }, [title]);
 
   return (
+    <>
     <div className="no-print sticky top-0 z-30 mx-auto w-full max-w-[1280px] px-3 pt-2 sm:px-6">
       <header className="flex h-14 w-full min-w-0 items-center gap-2 rounded-full border border-hairline bg-surface/90 px-2.5 shadow-lg shadow-black/5 backdrop-blur-xl transition dark:shadow-black/20 sm:px-4">
         <div className="flex min-w-0 flex-1 items-center gap-2">
@@ -692,8 +695,6 @@ export function TopBar({ title, subtitle, actions }: { title: string; subtitle?:
             <Logo />
             <span className="shrink-0 text-sm font-bold tracking-tight text-ink">CTEM-Nexus</span>
           </div>
-          <h1 className="sr-only">{title}</h1>
-          {subtitle && <p className="sr-only">{subtitle}</p>}
         </div>
 
         {actions && (
@@ -751,8 +752,10 @@ export function TopBar({ title, subtitle, actions }: { title: string; subtitle?:
           {profileOpen && <ProfileDialog onClose={() => setProfileOpen(false)} />}
         </div>
       </header>
-      <DemoBanner />
     </div>
+    {/* El aviso de datos de ejemplo se desplaza con el contenido: fijo arriba ocupaba demasiado en móvil. */}
+    <div className="no-print mx-auto w-full max-w-[1280px] px-3 sm:px-6"><DemoBanner /></div>
+    </>
   );
 }
 

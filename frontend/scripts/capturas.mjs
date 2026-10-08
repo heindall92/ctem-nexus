@@ -76,7 +76,8 @@ async function runSet({ width, height, theme, prefix, mobile }) {
   for (const [file, target] of shots) {
     if (target === 'detalle') {
       await go('Priorización');
-      await page.locator('tbody tr').first().click();
+      // En móvil la tabla pasa a tarjetas: se pulsa la primera fila o tarjeta visible.
+      await page.locator('tbody tr:visible, [data-testid=tarjetas-hallazgos] button:visible').first().click();
       await page.getByRole('dialog').waitFor();
     } else if (target) {
       await go(target);
@@ -97,6 +98,19 @@ await runSet({ width: 1440, height: 900, theme: 'dark', prefix: '', mobile: fals
 await runSet({ width: 1440, height: 900, theme: 'light', prefix: 'claro', mobile: false });
 await runSet({ width: 390, height: 844, theme: 'dark', prefix: 'movil', mobile: true });
 await runSet({ width: 390, height: 844, theme: 'light', prefix: 'movil-claro', mobile: true });
+
+// Informe ejecutivo de ejemplo en PDF (A4, tal como sale al imprimir desde Movilización).
+{
+  const page = await browser.newPage({ viewport: { width: 1280, height: 900 }, reducedMotion: 'reduce' });
+  await page.goto(pathToFileURL(html).href);
+  await page.getByRole('button', { name: 'Cargar datos de demo' }).first().click();
+  await page.getByRole('navigation', { name: 'Secciones' }).getByRole('button', { name: 'Movilización' }).click();
+  await page.waitForTimeout(400);
+  await page.emulateMedia({ media: 'print' });
+  await page.pdf({ path: resolve(here, '../../docs/informe-ejemplo.pdf'), format: 'A4', printBackground: true });
+  console.log('✓ informe-ejemplo.pdf');
+  await page.close();
+}
 
 await browser.close();
 if (problems.length) { console.error('Problemas detectados:\n' + [...new Set(problems)].join('\n')); process.exit(1); }

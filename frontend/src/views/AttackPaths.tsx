@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { AttackGraph } from '../components/AttackGraph';
 import { BloodHoundUploader } from '../components/BloodHoundUploader';
 import { Modal, TopBar } from '../components/Shell';
-import { BandBadge, DemoBadge, Empty, SectionTitle } from '../components/ui';
+import { BandBadge, DemoBadge, Empty, PageHeader, SectionTitle } from '../components/ui';
 import { useResult } from '../lib/analysis';
 import { BAND_COLOR, n1 } from '../lib/format';
 import { screen, useL } from '../i18n';
@@ -48,19 +48,24 @@ export function AttackPaths() {
   if (project.assets.length === 0) {
     return (
       <>
-        <TopBar title={c.pathsTitle} subtitle={c.pathsSub} />
-        <div className="view-enter mx-auto max-w-[1240px] px-8 pb-8 pt-2"><div className="panel"><Empty icon={<Route />} title={c.noGraph} text={c.noGraphText}><button type="button" className="btn btn-primary" onClick={() => setView('alcance')}>{c.goScope}</button></Empty></div></div>
+        <TopBar title={c.pathsTitle} />
+        <div className="mx-auto max-w-[1240px] px-4 pb-8 sm:px-8"><PageHeader icon={<Route />} eyebrow={L('Fase 4 · Validación', 'Stage 4 · Validation')} title={c.pathsTitle} lead={c.pathsSub} /><div className="panel mt-5"><Empty icon={<Route />} title={c.noGraph} text={c.noGraphText}><button type="button" className="btn btn-primary" onClick={() => setView('alcance')}>{c.goScope}</button></Empty></div></div>
       </>
     );
   }
 
   return (
     <>
-      <TopBar
-        title={c.pathsTitle}
-        subtitle={<><span>{c.pathsCount(g.paths.length)}</span>{project.demo && <DemoBadge />}</>}
-      />
-      <div className="view-enter mx-auto flex max-w-[1240px] flex-col gap-5 px-4 pb-6 pt-2 sm:px-8">
+      <TopBar title={c.pathsTitle} />
+      <div className="mx-auto flex max-w-[1240px] flex-col gap-5 px-4 pb-6 sm:px-8">
+        <PageHeader
+          icon={<Route />}
+          eyebrow={L('Fase 4 · Validación', 'Stage 4 · Validation')}
+          title={c.pathsTitle}
+          badge={project.demo ? <DemoBadge /> : undefined}
+          lead={L(`${g.paths.length} rutas desde Internet hasta las joyas de la corona y ${g.chokePoints.length} puntos de estrangulamiento. Valida cada hallazgo para confirmar o descartar sus rutas.`, `${g.paths.length} paths from the Internet to the crown jewels and ${g.chokePoints.length} choke points. Validate each finding to confirm or rule out its paths.`)}
+          actions={<button type="button" className="btn" onClick={() => setShowBloodhound(true)}><Users className="size-4" />{L('Importar BloodHound (AD)', 'Import BloodHound (AD)')}</button>}
+        />
         <div className="flex flex-col gap-5">
           <section className="panel overflow-hidden">
             <SectionTitle
@@ -68,7 +73,6 @@ export function AttackPaths() {
               detail={L('Aristas derivadas de los hallazgos y de las aristas manuales. Pulsa un nodo o una ruta para resaltarla.', 'Edges derived from findings and manual edges. Select a node or a path to highlight it.')}
               actions={
                 <div className="flex items-center gap-2 flex-wrap">
-                  <button type="button" className="btn btn-sm" onClick={() => setShowBloodhound(true)}><Users className="size-3.5" />{L('Importar BloodHound (AD)', 'Import BloodHound (AD)')}</button>
                   {(selPath !== null || focusNode) && <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setSelPath(null); setFocusNode(null); }}>{L('Quitar resaltado', 'Clear highlight')}</button>}
                 </div>
               }

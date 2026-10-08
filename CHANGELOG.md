@@ -2,6 +2,26 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico. La hoja de ruta está en [ROADMAP.md](ROADMAP.md).
 
+## [0.4.0] - 2026-10-08
+
+Fase 2 de la hoja de ruta: diseño con identidad propia, sin repetir los anillos de Rosetta.
+
+### Añadido
+- **Franjas de exposición por activo** en el panel: una fila por activo y una marca por hallazgo abierto sobre la escala 0–100, con las bandas como zonas rotuladas (la banda se lee por posición, no solo por color), anillo para CISA KEV, corona para las joyas y globo para lo expuesto a Internet. Ficha al pasar el ratón o al enfocar con el teclado; cada marca abre su hallazgo. Marcas cercanas en carriles, con objetivos de 24 × 24 px.
+- **Tres acciones para hoy:** las correcciones que más rutas hacia las joyas de la corona rompen (`engine/impact.ts`, comprobado contra el recálculo completo del grafo en los 20 hallazgos del ejemplo).
+- **Grafo:** zoom (botones, Ctrl + rueda, pellizco), desplazamiento arrastrando, modo «solo esta ruta» que la encuadra y flujo animado sobre la ruta seleccionada.
+- **Detalle y tickets:** pasos de remediación con casillas que se guardan en el proyecto (`progress`), se exportan y se sanean al importar; enlaces a NVD, CISA KEV, FIRST EPSS y a la guía del fabricante.
+- **Cabecera de página** común con la fase CTEM, título y entradilla; título de la pestaña por vista.
+- **Estado vacío** con tres entradas (demo, Nmap sin salir del panel, alcance manual) y el ciclo CTEM como flujo con retorno.
+- **Informe imprimible** con portada, siempre en tonos de tema claro y con tablas que caben en A4; `npm run capturas` genera `docs/informe-ejemplo.pdf`.
+- **Móvil:** Priorización en tarjetas por debajo de 640 px.
+- Pruebas: e2e 75/75 (franjas, acciones, zoom, «solo esta ruta», casillas, impresión a PDF, tarjetas, movimiento reducido, un h1 por vista) y axe en 144 estados.
+
+### Cambiado
+- Rellenos de gráficos por banda (`--color-*-fill`), validados con el script de visualización: separación de visión normal ≥ 15 y CVD en ambos temas.
+- El aviso de datos de ejemplo se desplaza con el contenido (fijo arriba ocupaba un 20 % de la pantalla en móvil).
+- Aparición escalonada con muelle sin rebote; con movimiento reducido, solo fundido y sin animaciones de flujo.
+
 ## [0.3.0] - 2026-10-08
 
 Fase 1 de la hoja de ruta cerrada: accesibilidad AA verificada, controles sin duplicar, plazos visibles e inglés completo.

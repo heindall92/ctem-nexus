@@ -19,7 +19,7 @@
   <img alt="Tailwind CSS 4" src="https://img.shields.io/badge/Tailwind%20CSS-4-06B6D4?style=flat&logo=tailwindcss&logoColor=white"/>
   <img alt="FastAPI opcional" src="https://img.shields.io/badge/API-FastAPI%20(opcional)-009688?style=flat&logo=fastapi&logoColor=white"/>
   <img alt="Un solo HTML" src="https://img.shields.io/badge/un%20solo-HTML%20sin%20servidor-2E8B57?style=flat"/>
-  <img alt="Pruebas 100% OK" src="https://img.shields.io/badge/pruebas-Vitest%2049%20%C2%B7%20Pytest%2019%20%C2%B7%20e2e%2053-2E8B57?style=flat"/>
+  <img alt="Pruebas 100% OK" src="https://img.shields.io/badge/pruebas-Vitest%2052%20%C2%B7%20Pytest%2019%20%C2%B7%20e2e%2075-2E8B57?style=flat"/>
   <img alt="Iconos Lucide" src="https://img.shields.io/badge/iconos-Lucide-F56565?style=flat&logo=lucide&logoColor=white"/>
 </p>
 
@@ -91,7 +91,7 @@ pesadas de auditoría.
       <td valign="top"><code>├─</code> <img src="docs/assets/icons/check-check.svg" width="16" height="16" alt="" valign="middle"/> <code>pruebas_calidad:</code><br><br>
         <img src="docs/assets/stack/vitest.svg" height="48" alt="Vitest">
         <img src="docs/assets/stack/pytest.svg" height="48" alt="Pytest"><br>
-        <sub><code>Vitest 49 pruebas · Pytest 19 pruebas · e2e 53 · axe-core 0 infracciones · Paridad exacta TS ↔ Python (golden-demo)</code></sub>
+        <sub><code>Vitest 52 pruebas · Pytest 19 pruebas · e2e 75 · axe-core 0 infracciones · Paridad exacta TS ↔ Python (golden-demo)</code></sub>
       </td>
       <td valign="top"><code>╰─</code> <img src="docs/assets/icons/shield-check.svg" width="16" height="16" alt="" valign="middle"/> <code>seguridad_privacidad:</code><br><br>
         <img src="docs/assets/stack/csp.svg" height="48" alt="CSP estricta"><br>
@@ -101,7 +101,7 @@ pesadas de auditoría.
   </tbody>
   <tfoot>
     <tr>
-      <td colspan="2"><code>version: 0.3.0&nbsp;&nbsp;·&nbsp;&nbsp;motor: TS + FastAPI&nbsp;&nbsp;·&nbsp;&nbsp;Gartner CTEM&nbsp;&nbsp;·&nbsp;&nbsp;pruebas: Vitest 49 · Pytest 19 · e2e 53&nbsp;&nbsp;·&nbsp;&nbsp;licencia: GPLv2</code></td>
+      <td colspan="2"><code>version: 0.4.0&nbsp;&nbsp;·&nbsp;&nbsp;motor: TS + FastAPI&nbsp;&nbsp;·&nbsp;&nbsp;Gartner CTEM&nbsp;&nbsp;·&nbsp;&nbsp;pruebas: Vitest 52 · Pytest 19 · e2e 75&nbsp;&nbsp;·&nbsp;&nbsp;licencia: GPLv2</code></td>
     </tr>
   </tfoot>
 </table>
@@ -179,11 +179,11 @@ mindmap
 
 | | Vista | Contenido y propósito |
 |---|---|---|
-| <img src="docs/assets/icons/orbit.svg" width="18"/> | **Panel** | Tablero unificado con el índice global de exposición, indicadores clave (KEV abiertos, activos en riesgo, rutas activas, MTTR), estado de las 5 fases CTEM y resumen de amenazas prioritarias. |
+| <img src="docs/assets/icons/orbit.svg" width="18"/> | **Panel** | **Franjas de exposición por activo** (cada hallazgo situado por su puntuación sobre las bandas), índice de exposición, **tres acciones para hoy** ordenadas por las rutas que rompen, indicadores clave, ciclo CTEM y riesgos principales. |
 | <img src="docs/assets/icons/crosshair.svg" width="18"/> | **Alcance y activos** | Inventario de activos críticos, asignación de responsabilidades, rangos de subred y botón de ingesta de escaneos Nmap XML para alta automatizada de infraestructura. |
 | <img src="docs/assets/icons/flame.svg" width="18"/> | **Descubrimiento y priorización** | Tabla dinámica con filtrado por severidad, búsqueda, importación (Nmap XML / CSV / JSON) y cajón lateral con desglose exhaustivo de puntuación y SLA. |
-| <img src="docs/assets/icons/waypoints.svg" width="18"/> | **Rutas de ataque** | Visualizador de grafo de ataque, resaltado de cadenas de compromiso, catálogo de cuellos de botella defensivos (*choke points*) y validación de explotabilidad. |
-| <img src="docs/assets/icons/file-text.svg" width="18"/> | **Movilización** | Informe ejecutivo listo para impresión/PDF y guías de remediación técnica con responsable asignado, pasos detallados, comandos de verificación y exportación de tickets. |
+| <img src="docs/assets/icons/waypoints.svg" width="18"/> | **Rutas de ataque** | Grafo de ataque con zoom, desplazamiento y modo «solo esta ruta», puntos de estrangulamiento, rutas enumeradas y validación de explotabilidad. |
+| <img src="docs/assets/icons/file-text.svg" width="18"/> | **Movilización** | Informe ejecutivo con portada para imprimir o guardar en PDF ([ejemplo](docs/informe-ejemplo.pdf)), tickets con responsable, pasos con casillas, comando de verificación y fecha límite, y exportación en CSV y Markdown. |
 | <img src="docs/assets/icons/settings.svg" width="18"/> | **Ajustes y datos** | Configuración del proyecto, selección del motor de cálculo (local en navegador o API FastAPI), exportación/importación completa en JSON y borrado seguro de datos. |
 
 ## <img src="docs/assets/icons/camera.svg" width="20" height="20" valign="middle"/> Capturas
@@ -330,10 +330,11 @@ Detalles completos y ejemplo resuelto en [`docs/SCORING.md`](docs/SCORING.md).
 
 ## <img src="docs/assets/icons/shield-check.svg" width="20" height="20" valign="middle"/> Calidad y pruebas
 
-- **Motor TypeScript:** 49 pruebas con Vitest (fórmulas, clasificaciones, grafo, rutas, estrangulamientos, parseador Nmap XML, BloodHound, importaciones CSV/JSON, fichero dorado, rechazo de XML con entidades, plazos de SLA, ficheros de ejemplo, explicaciones, guías y exportaciones en inglés, paridad de los diccionarios ES/EN y coherencia del repositorio).
+- **Motor TypeScript:** 52 pruebas con Vitest (fórmulas, clasificaciones, grafo, rutas, estrangulamientos, parseador Nmap XML, BloodHound, importaciones CSV/JSON, fichero dorado, rechazo de XML con entidades, plazos de SLA, impacto de cada corrección sobre las rutas, progreso de remediación, ficheros de ejemplo, explicaciones, guías y exportaciones en inglés, paridad de los diccionarios ES/EN y coherencia del repositorio).
 - **Motor Python y API:** 19 pruebas con Pytest (endpoints de FastAPI, carga multipart de Nmap, rechazo de XML con entidades, neutralización de fórmulas CSV y paridad con `shared/golden-demo.json`).
-- **Navegador (e2e):** 53 comprobaciones con Playwright sobre el HTML autocontenido (`tests/e2e_app.py`): CSP, red bloqueada, navegación, ingesta de Nmap real y con entidades, BloodHound, rutas que se cortan al validar, SLA vencidos, exportar y reimportar, diálogos con Escape y foco, fórmula de la ayuda igual a la del motor, tema, inglés completo en 14 pantallas y móvil.
-- **Accesibilidad:** axe-core (WCAG 2.2 A/AA) en 128 estados (32 por combinación: vistas, diálogos, menús, formularios, resultados de ingesta, ayuda y búsqueda, en claro y oscuro, a 1440 y 390 px), más un barrido de contraste propio para lo que axe deja sin decidir: **0 infracciones** (`tests/a11y_app.py`). Ambas suites se ejecutan en la CI.
+- **Navegador (e2e):** 75 comprobaciones con Playwright sobre el HTML autocontenido (`tests/e2e_app.py`): CSP, red bloqueada, navegación, ingesta de Nmap real y con entidades, BloodHound, rutas que se cortan al validar, SLA vencidos, exportar y reimportar, diálogos con Escape y foco, fórmula de la ayuda igual a la del motor, franjas de exposición y tres acciones para hoy, zoom y «solo esta ruta» en el grafo, pasos con casillas, informe impreso en PDF, tema, inglés completo en 14 pantallas y móvil con tarjetas.
+- **Accesibilidad:** axe-core (WCAG 2.2 A/AA) en 144 estados (36 por combinación: vistas, diálogos, menús, formularios, resultados de ingesta, ayuda y búsqueda, en claro y oscuro, a 1440 y 390 px), más un barrido de contraste propio para lo que axe deja sin decidir: **0 infracciones** (`tests/a11y_app.py`), incluido el tamaño mínimo de 24 × 24 px de los objetivos táctiles. Ambas suites se ejecutan en la CI.
+- **Lighthouse** (servido con gzip, como en GitHub Pages): rendimiento 97 · accesibilidad 100 · buenas prácticas 100 · SEO 100.
 - **Compilación e integridad:** TypeScript en modo estricto (`tsc -b`). La CSP del archivo único prohíbe scripts externos y evalúa hashes criptográficos.
 
 ## <img src="docs/assets/icons/shield-alert.svg" width="20" height="20" valign="middle"/> Seguridad y privacidad

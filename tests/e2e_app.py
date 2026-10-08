@@ -81,8 +81,14 @@ def escritorio(b, tmp):
     csp = page.locator('meta[http-equiv="Content-Security-Policy"]').get_attribute("content") or ""
     check("CSP estricta: default-src 'none' y scripts solo por hash", "default-src 'none'" in csp and "script-src 'sha256-" in csp and "unsafe" not in csp, csp[:120])
 
-    expect(page.get_by_text("Todavía no hay datos")).to_be_visible()
-    check("estado vacío con las tres entradas", page.get_by_role("button", name="Cargar datos de demo").is_visible() and page.get_by_role("button", name="Definir el alcance").is_visible())
+    expect(page.get_by_role("heading", level=1, name="Todavía no hay datos")).to_be_visible()
+    check("estado vacío con las tres entradas", all(page.get_by_role("button", name=n).is_visible() for n in ("Cargar datos de demo", "Importar escaneo Nmap", "Definir el alcance")))
+    page.get_by_role("button", name="Importar escaneo Nmap").click()
+    check("la entrada «Importar escaneo Nmap» abre la ingesta sin salir del panel", page.get_by_role("dialog", name=re.compile("Nmap")).count() == 1)
+    page.keyboard.press("Escape")
+    flujo = page.locator(".cycle-flow").first
+    check("con movimiento reducido, la ilustración del ciclo no se anima", flujo.evaluate("e => getComputedStyle(e).animationName") == "none")
+    check("el título de la pestaña sigue a la vista", page.title().startswith("Panel de exposición"), page.title())
 
     # Controles únicos: búsqueda, idioma, tema y ayuda solo en la barra superior
     check("un solo botón de búsqueda visible", page.get_by_role("button", name=re.compile("^Buscar")).count() == 1, page.get_by_role("button", name=re.compile("^Buscar")).count())
@@ -103,13 +109,35 @@ def escritorio(b, tmp):
 
     check("el panel avisa de los tickets fuera de plazo", page.get_by_text(re.compile(r"\d+ fuera de plazo \(SLA\)")).count() == 1)
 
+    # Panel: franjas de exposición, tres acciones para hoy y un solo h1 por vista
+    franjas = page.get_by_role("group", name="Franjas de exposición por activo")
+    marcas = franjas.locator(".lane-mark")
+    abiertos = J(f"{S}.project.findings.filter(f => f.status === 'abierto' || f.status === 'validado').length")
+    check("una marca por hallazgo abierto en las franjas", marcas.count() == abiertos, f"{marcas.count()} de {abiertos}")
+    anillos = J("[...document.querySelectorAll('main svg circle')].filter(c => Number(c.getAttribute('r')) > 30).length")
+    check("el panel no usa anillos ni gráficos circulares", anillos == 0, anillos)
+    marcas.first.focus()
+    expect(franjas.get_by_role("tooltip")).to_be_visible()
+    check("enfocar una marca muestra su ficha (teclado incluido)", len(franjas.get_by_role("tooltip").inner_text()) > 10)
+    acciones = page.get_by_test_id("acciones-hoy").locator("li")
+    check("tres acciones para hoy, con las rutas que rompe cada una", acciones.count() == 3 and "Rompe" in acciones.first.inner_text(), acciones.first.inner_text()[:80])
+    acciones.first.get_by_role("button").click()
+    check("una acción abre su hallazgo en Priorización", J(f"{S}.view") == "priorizacion" and J(f"{S}.selectedFinding") is not None)
+    page.keyboard.press("Escape")
+    for nombre in ["Inicio", "Alcance y activos", "Priorización", "Rutas de ataque", "Movilización", "Ajustes y datos"]:
+        nav(page, nombre)
+        h1 = page.locator("h1")
+        if h1.count() != 1:
+            check(f"un solo h1 en {nombre}", False, h1.count())
+    check("cada vista tiene exactamente un h1 visible", True)
+
     # Priorización: EPSS en una sola línea y detalle del hallazgo
     nav(page, "Priorización")
     celda = page.locator("td", has_text="94,4").first
     alto = celda.locator("xpath=.").bounding_box()["height"]
     texto = celda.inner_text()
     check("EPSS «94,4 %» con espacio duro y en una línea", " %" in texto and alto < 60, f"{texto!r} alto={alto}")
-    page.get_by_text("Log4Shell en Apache Log4j 2").first.click()
+    page.locator("tr", has_text="Log4Shell en Apache Log4j 2").click()
     dialogo = page.get_by_role("dialog")
     expect(dialogo).to_be_visible()
     check("el detalle se abre como diálogo con nombre accesible", dialogo.count() == 1 and (dialogo.get_attribute("aria-labelledby") or "") != "")
@@ -171,6 +199,18 @@ def escritorio(b, tmp):
     check("marcar «No explotable» corta las rutas que dependían del hallazgo", rutas2 < rutas, f"{rutas} → {rutas2}")
     page.locator("[data-testid=ruta]").first.click()
     check("seleccionar una ruta la marca como pulsada", page.locator("[data-testid=ruta]").first.get_attribute("aria-pressed") == "true")
+    zoom = page.locator("[data-zoom]")
+    page.get_by_role("button", name="Acercar").click()
+    check("el grafo se acerca con el botón", float(zoom.get_attribute("data-zoom")) > 1)
+    page.get_by_role("button", name="Ajustar a la vista").click()
+    check("«Ajustar a la vista» vuelve al encuadre completo", zoom.get_attribute("data-zoom") == "1.00")
+    nodos = page.locator("svg g.g-node").count()
+    page.get_by_role("button", name="Solo esta ruta").click()
+    ruta_nodos = page.locator("svg g.g-node").count()
+    check("«Solo esta ruta» oculta lo ajeno a la ruta y la encuadra", ruta_nodos < nodos and float(zoom.get_attribute("data-zoom")) >= 1, f"{nodos} → {ruta_nodos}")
+    check("la ruta seleccionada se anima como flujo", page.locator("path.path-flow").count() >= 1)
+    page.get_by_role("button", name="Solo esta ruta").click()
+    check("al salir de «Solo esta ruta» vuelven todos los nodos", page.locator("svg g.g-node").count() == nodos)
 
     # Movilización: SLA vencidos visibles e informe con versión
     nav(page, "Movilización")
@@ -183,6 +223,25 @@ def escritorio(b, tmp):
     md = pathlib.Path(d.value.path()).read_text(encoding="utf-8")
     check("los tickets en Markdown incluyen la fecha límite", "**Vence:** 20" in md)
 
+    # Pasos de remediación con casillas: se guardan en el proyecto
+    J(f"{S}.setView('priorizacion')"); J(f"{S}.selectFinding('H-001')")
+    detalle = page.get_by_role("dialog")
+    detalle.locator("input[type=checkbox]").first.check()
+    check("marcar un paso actualiza el progreso del hallazgo", detalle.get_by_test_id("pasos-hechos").inner_text().startswith("1/") and J(f"{S}.project.progress['H-001']") == [0])
+    check("el detalle enlaza NVD, CISA KEV y FIRST EPSS sin consultarlos", all(detalle.get_by_role("link", name=re.compile(n)).count() == 1 for n in ("NVD", "CISA KEV", "FIRST EPSS")))
+    page.keyboard.press("Escape")
+
+    # Informe imprimible: portada y nada de la interfaz
+    nav(page, "Movilización")
+    page.emulate_media(media="print")
+    check("al imprimir aparece la portada del informe", page.locator(".print-cover").is_visible())
+    check("al imprimir no salen barra lateral, cabecera ni tickets", not page.locator("aside").first.is_visible() and not page.locator("header.no-print, .no-print header").first.is_visible())
+    pdf = tmp / "informe.pdf"
+    page.pdf(path=str(pdf), format="A4", print_background=True)
+    paginas = pdf.read_bytes().count(b"/Type /Page") - pdf.read_bytes().count(b"/Type /Pages")
+    check("el informe en PDF ocupa entre 2 y 5 páginas A4", 2 <= paginas <= 5, paginas)
+    page.emulate_media(media="screen")
+
     # Exportar e importar el proyecto
     nav(page, "Ajustes y datos")
     with page.expect_download() as d:
@@ -194,6 +253,7 @@ def escritorio(b, tmp):
     page.locator('input[type="file"][accept=".json,application/json"]').set_input_files(str(exportado))
     esperar(page, f"{S}.project.assets.length === {len(datos['assets'])}")
     check("exportar y reimportar conserva activos y hallazgos", J(f"{S}.project.findings.length") == len(datos["findings"]))
+    check("exportar y reimportar conserva el progreso de remediación", J(f"{S}.project.progress?.['H-001']") == [0], J(f"{S}.project.progress"))
 
     # Ayuda: diálogo con pestañas, Escape y foco de vuelta
     ayuda = page.get_by_role("button", name="Ayuda").first
@@ -264,6 +324,11 @@ def movil(b):
     check("barra inferior con cinco destinos", barra.get_by_role("button").count() == 5)
     barra.get_by_role("button", name="Priorización").click()
     check("la barra inferior navega", page.evaluate(f"{S}.view") == "priorizacion")
+    check("en móvil, Priorización muestra tarjetas y no la tabla", page.get_by_test_id("tarjetas-hallazgos").is_visible() and not page.locator("table").first.is_visible())
+    page.evaluate("document.getElementById('contenido').scrollTop = 600")
+    page.wait_for_timeout(200)
+    aviso = page.get_by_text("Caso de ejemplo con datos ficticios.")
+    check("el aviso de datos de ejemplo no se queda fijo al desplazar", aviso.bounding_box() is None or aviso.bounding_box()["y"] < 0, aviso.bounding_box())
     cuenta = page.get_by_role("button", name=re.compile("^Cuenta"))
     check("en móvil la cuenta está en la barra superior", cuenta.count() == 1)
     ancho = page.evaluate("document.documentElement.scrollWidth")

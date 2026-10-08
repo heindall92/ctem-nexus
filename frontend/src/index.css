@@ -47,6 +47,12 @@
 
   --color-critica: #ff5d5d;
   --color-on-critica: #2a0606; /* texto sobre fondo crítico (≥ 4,5:1) */
+  /* Rellenos de gráficos por banda, validados con el script de dataviz (separación CVD y de visión normal ≥ 15).
+     Nunca van solos: la posición en el eje y las zonas rotuladas también dicen la banda. */
+  --color-critica-fill: #f03e5a;
+  --color-alta-fill: #ff9f43;
+  --color-media-fill: #ffe36e;
+  --color-baja-fill: #8f9aa6;
   --color-alta: #ff9f43;
   --color-media: #e3c45a;
   --color-baja: #8f9aa6;
@@ -89,6 +95,10 @@
   /* Bandas en claro: los tonos del oscuro no llegan a 4,5:1 sobre blanco. */
   --color-critica: #b3141a;
   --color-on-critica: #ffffff;
+  --color-critica-fill: #b51d24;
+  --color-alta-fill: #f76707;
+  --color-media-fill: #f2c200;
+  --color-baja-fill: #868e96;
   --color-alta: #9c3d08;
   --color-media: #7a5600;
   --color-baja: #5c6773;
@@ -185,6 +195,28 @@
 
   .title-xl { font-size: 1.625rem; line-height: 1.15; letter-spacing: -0.025em; font-weight: 600; }
   .title-md { font-size: 1rem; line-height: 1.3; letter-spacing: -0.012em; font-weight: 600; }
+  .lanes-grid { display: grid; grid-template-columns: minmax(0, 13rem) minmax(0, 1fr); align-items: center; }
+  @media (max-width: 640px) { .lanes-grid { grid-template-columns: minmax(0, 7.5rem) minmax(0, 1fr); } }
+  /* Objetivo de 24 × 24 px con la píldora visible dentro (::before). */
+  .lane-mark { position: absolute; z-index: 1; width: 1.5rem; height: 1.5rem; margin: -0.75rem 0 0 -0.75rem; border-radius: 8px; transition: transform 160ms var(--ease-out), opacity 160ms ease; }
+  .lane-mark::before { content: ''; position: absolute; inset: 0 0.4375rem; border-radius: 999px; background: var(--mark); box-shadow: 0 0 0 2px var(--color-surface); }
+  .lane-mark-kev::before { box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 3.5px var(--color-critica); }
+  .lane-mark:hover, .lane-mark:focus-visible { transform: scale(1.18); z-index: 2; }
+  .lane-mark:active { transform: scale(0.97); }
+  .lane-tip { position: absolute; bottom: calc(100% + 10px); z-index: 30; width: max-content; max-width: 17rem; padding: 0.5rem 0.75rem; border-radius: 12px; text-align: left; font-size: 0.8125rem; line-height: 1.3; background: var(--color-surface); box-shadow: var(--sh-overlay), inset 0 0 0 1px var(--color-hairline-strong); pointer-events: none; }
+  .graph-tool { display: inline-flex; height: 1.75rem; width: 1.75rem; align-items: center; justify-content: center; border-radius: 999px; color: var(--color-ink-2); transition: transform 120ms var(--ease-out), background-color 120ms ease; }
+  .graph-tool:hover:not(:disabled) { background: var(--color-surface-2); color: var(--color-ink); }
+  .graph-tool:active:not(:disabled) { transform: scale(0.97); }
+  .graph-tool:disabled { opacity: 0.4; }
+  .graph-tool[aria-pressed='true'] { background: color-mix(in oklab, var(--color-accent) 16%, transparent); color: var(--color-ink); }
+  .step-row { display: flex; gap: 0.625rem; align-items: flex-start; padding: 0.375rem 0.5rem; margin: 0 -0.5rem; border-radius: 10px; font-size: 0.8125rem; line-height: 1.45; cursor: pointer; transition: background-color 120ms ease; }
+  @media (hover: hover) and (pointer: fine) { .step-row:hover { background: var(--color-surface-2); } }
+  .entry-card { display: flex; height: 100%; width: 100%; flex-direction: column; align-items: flex-start; border-radius: 18px; padding: 1rem; text-align: left; background: var(--color-surface); box-shadow: inset 0 0 0 1px var(--color-hairline-strong); transition: transform 160ms var(--ease-out), box-shadow 160ms ease; }
+  .entry-card:active { transform: scale(0.97); }
+  .entry-card-primary { box-shadow: inset 0 0 0 1.5px var(--color-accent); }
+  @media (hover: hover) and (pointer: fine) { .entry-card:hover { box-shadow: inset 0 0 0 1.5px var(--color-accent); } }
+  .page-title { font-size: clamp(1.75rem, 1.2rem + 1.6vw, 2.5rem); line-height: 1.05; letter-spacing: -0.035em; font-weight: 700; color: var(--color-ink); }
+  .eyebrow { font-family: var(--font-mono); font-size: 0.75rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-accent); }
   .label { font-size: 0.75rem; line-height: 1.3; color: var(--color-ink-3); letter-spacing: 0.005em; }
 
   /* Superficie unificada: un panel con divisiones finas, no tarjetas fragmentadas */
@@ -236,7 +268,7 @@
   .table td { padding: 0.625rem 0.75rem; border-bottom: 1px solid var(--color-hairline); vertical-align: middle; }
   .table tr:last-child td { border-bottom: 0; }
   .row-interactive { cursor: pointer; transition: background-color 120ms ease; }
-  .row-interactive[aria-selected='true'] { background: color-mix(in oklab, var(--color-accent) 8%, transparent); }
+  .row-interactive[aria-selected='true'], .row-interactive[aria-current='true'] { background: color-mix(in oklab, var(--color-accent) 8%, transparent); }
   @media (hover: hover) and (pointer: fine) { .row-interactive:hover { background: rgb(255 255 255 / 0.025); } }
 
   /* Control segmentado */
@@ -301,11 +333,17 @@
 }
 
 /* Accesibilidad: movimiento reducido → fundidos, sin desplazamientos ni escalas */
+.cycle-flow { animation: cycle-flow 14s linear infinite; }
+@keyframes cycle-flow { to { stroke-dashoffset: -400; } }
+.path-flow { stroke-dasharray: 7 7; animation: path-flow 0.9s linear infinite; }
+@keyframes path-flow { to { stroke-dashoffset: -14; } }
+
 @media (prefers-reduced-motion: reduce) {
-  .btn:active:not(:disabled), .seg button:active { transform: none; }
+  .btn:active:not(:disabled), .seg button:active, .entry-card:active, .lane-mark:hover, .lane-mark:focus-visible, .lane-mark:active { transform: none; }
   .view-enter, .toast { transition: opacity 160ms ease; transform: none !important; }
   @starting-style { .view-enter, .toast { transform: none; } }
   .bar-fill { transition: none; }
+  .cycle-flow, .path-flow { animation: none; }
 }
 @media (prefers-reduced-transparency: reduce) {
   .glass, .glass-thick { background: var(--color-surface); backdrop-filter: none; }
@@ -316,14 +354,33 @@
 }
 
 /* Impresión: solo el informe, en claro */
+/* Portada del informe: oculta en pantalla. */
+.print-cover { display: none; }
+
 @media print {
-  @page { size: A4; margin: 14mm; }
-  html, body { background: #fff !important; color: #111 !important; }
+  @page { size: A4; margin: 16mm 14mm; }
+  /* Impresión siempre en claro, con los tonos de banda AA del tema claro y colores exactos. */
+  html, html[data-theme] {
+    color-scheme: light;
+    --color-ground: #fff !important; --color-surface: #fff !important; --color-surface-2: #f3f5f7 !important; --color-surface-3: #e9ecef !important;
+    --color-ink: #101418 !important; --color-ink-2: #2c3440 !important; --color-ink-3: #5c6773 !important;
+    --color-hairline: rgb(0 0 0 / 0.12) !important; --color-hairline-strong: rgb(0 0 0 / 0.18) !important;
+    --color-critica: #b3141a !important; --color-alta: #9c3d08 !important; --color-media: #7a5600 !important; --color-baja: #5c6773 !important; --color-ok: #146c38 !important;
+    --color-accent: #1a4fe0 !important; --color-accent-ink: #fff !important;
+    print-color-adjust: exact; -webkit-print-color-adjust: exact;
+  }
+  html, body { background: #fff !important; }
   .no-print { display: none !important; }
-  .print-area { box-shadow: none !important; background: #fff !important; color: #111 !important; }
-  .print-area * { color: #111 !important; border-color: #ccc !important; box-shadow: none !important; }
-  .print-area .print-muted { color: #555 !important; }
-  .print-area table { page-break-inside: auto; }
-  .print-area tr { page-break-inside: avoid; }
+  .print-area { box-shadow: none !important; background: #fff !important; border: 0 !important; }
+  .print-area .print-muted { color: #5c6773 !important; }
+  .print-cover { display: flex; flex-direction: column; justify-content: space-between; min-height: 250mm; padding: 4mm 2mm; break-after: page; }
+  .print-area section, .print-area header { break-inside: avoid; }
+  .print-area table { break-inside: auto; }
+  .print-area tr { break-inside: avoid; }
+  .print-area table { width: 100%; table-layout: auto; font-size: 11px; }
+  .print-area td, .print-area th { padding: 5px 6px !important; }
+  .print-area .truncate { overflow: visible; white-space: normal; text-overflow: clip; }
+  .print-area [class*='max-w-'] { max-width: none !important; }
   main { overflow: visible !important; height: auto !important; }
+  .h-dvh { height: auto !important; overflow: visible !important; }
 }

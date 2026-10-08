@@ -15,6 +15,8 @@ export interface Project {
   ranges: NetworkRange[];
   findings: Finding[];
   edges: ManualEdge[];
+  /** Pasos de la guía de remediación marcados como hechos, por hallazgo (índices). Opcional. */
+  progress?: Record<string, number[]>;
 }
 
 const ASSET_TYPES: AssetType[] = ['servidor', 'estacion', 'aplicacion_web', 'base_datos', 'controlador_dominio', 'pki', 'perimetro', 'nube', 'identidad'];
@@ -205,7 +207,15 @@ export function parseProject(text: string): Project | null {
   const findings = arr('findings').map((f, i) => normalizeFinding(f, i, assets)).filter((f): f is Finding => !!f);
   const ranges: NetworkRange[] = arr('ranges').map((r, i) => ({ id: str(r.id, 40) || `r${i + 1}`, cidr: str(r.cidr, 60), label: str(r.label, 120), inScope: r.inScope !== false })).filter((r) => r.cidr);
   const edges: ManualEdge[] = arr('edges').map((e, i) => ({ id: str(e.id, 40) || `e${i + 1}`, from: str(e.from, 40), to: str(e.to, 40), technique: str(e.technique, 160) || 'Movimiento lateral' })).filter((e) => e.from && e.to);
-  return { format: 'ctem-nexus', version: 1, name: str(data.name, 120) || 'Proyecto importado', demo: data.demo === true, assets, ranges, findings, edges };
+  const progress: Record<string, number[]> = {};
+  const rawProgress = data.progress && typeof data.progress === 'object' ? (data.progress as Record<string, unknown>) : {};
+  const ids = new Set(findings.map((f) => f.id));
+  for (const [id, steps] of Object.entries(rawProgress)) {
+    if (!ids.has(id) || !Array.isArray(steps)) continue;
+    const clean = [...new Set(steps.filter((n): n is number => Number.isInteger(n) && n >= 0 && n < 20))].sort((a, b) => a - b);
+    if (clean.length) progress[id] = clean;
+  }
+  return { format: 'ctem-nexus', version: 1, name: str(data.name, 120) || 'Proyecto importado', demo: data.demo === true, assets, ranges, findings, edges, progress };
 }
 
 /* ───────────── Informe y tickets ───────────── */

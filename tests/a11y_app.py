@@ -27,7 +27,9 @@ def states(page, mobile):
     J(f"{S}.loadDemo()")
     for v in VIEWS:
         J(f"{S}.setView('{v}')"); yield f"demo/{v}"
+    J(f"{S}.setView('panel')"); page.locator(".lane-mark").first.focus(); yield "panel/ficha-franja"
     J(f"{S}.setView('priorizacion')"); J(f"{S}.selectFinding('H-001')"); yield "detalle/H-001"
+    page.get_by_role("dialog").locator("input[type=checkbox]").first.check(); yield "detalle/paso-hecho"
     page.keyboard.press("Escape"); J(f"{S}.selectFinding(null)")
     page.get_by_role("button", name="Añadir hallazgo").first.click(); yield "formulario/hallazgo"
     page.get_by_role("button", name="Cerrar panel").click()
@@ -46,6 +48,8 @@ def states(page, mobile):
     page.get_by_role("button", name="Cerrar panel").click()
     J(f"{S}.setView('rutas')")
     page.locator("[data-testid=ruta]").first.click(); yield "rutas/seleccionada"
+    page.get_by_role("button", name="Solo esta ruta").click(); yield "rutas/solo-esta-ruta"
+    page.get_by_role("button", name="Acercar").click(); yield "rutas/zoom"
     J(f"{S}.setView('movilizacion')")
     J(f"{S}.setHelpOpen(true)")
     for t in HELP_TABS:

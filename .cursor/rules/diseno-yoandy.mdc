@@ -20,3 +20,5 @@ Los colores de severidad (crítica, alta, media, baja) no son acentos de marca.
 ## Referencias
 
 Rosetta (`heindall92/rosetta_multinorma`) es la referencia visual. El ecosistema que debe aparecer en Acerca de y en el README: Compliance Studio, Rosetta, KAIROS, CTEM-Nexus, ENS AD Auditor, ARGOS y Norvik, todos bajo `heindall92`.
+
+CTEM-Nexus no usa anillos ni gráficos circulares (los de Rosetta): su firma visual son las **franjas de exposición por activo** y el grafo de rutas. Los objetivos táctiles miden al menos 24 × 24 px (WCAG 2.2 · 2.5.8).

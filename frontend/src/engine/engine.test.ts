@@ -135,3 +135,14 @@ describe('importación y exportación', () => {
     expect(md).toContain('Puntos de estrangulamiento');
   });
 });
+
+describe('progreso de remediación en el proyecto', () => {
+  it('se conserva al reimportar y se sanea: ids desconocidos, índices no válidos y duplicados fuera', () => {
+    const p = parseProject(JSON.stringify({
+      format: 'ctem-nexus', name: 'P', assets: [{ id: 'a1', name: 'A', type: 'servidor', criticality: 3 }],
+      findings: [{ id: 'H-1', title: 'T', assetId: 'a1', cvss: 5 }],
+      progress: { 'H-1': [2, 0, 2, -1, 1.5, 'x', 99], 'H-9': [0], __proto__: { x: [1] } },
+    }));
+    expect(p?.progress).toEqual({ 'H-1': [0, 2] });
+  });
+});

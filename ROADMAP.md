@@ -81,14 +81,17 @@ Pruebas que se añaden en esta fase:
 
 Referencias: **Rosetta** (la herramienta del ecosistema con mejor acogida), la guía **apple-design** de Emil Kowalski y **Lucide** como única familia de iconos.
 
-- [ ] **Movimiento con intención:** escala 0,97 al pulsar (`pointer-down`), *springs* interrumpibles en paneles y modales (sin duraciones fijas), entrada escalonada de las tarjetas del panel y, con `prefers-reduced-motion`, fundido simple.
-- [ ] **Panel ejecutivo** al estilo de Rosetta: anillo del índice de exposición, distribución por banda en barra apilada, «tres cosas que corregir hoy» (las de mayor puntuación en puntos de estrangulamiento) y mini tendencia (fase 3).
-- [ ] **Grafo de ataque:** zoom y desplazamiento con rueda o pellizco, modo «solo esta ruta», animación del camino seleccionado de Internet a la joya y leyenda con iconos Lucide (`Globe`, `DoorOpen`, `Crown`, `Flame`).
-- [ ] **Detalle del hallazgo** como hoja lateral (*sheet*) con desglose visual de los 6 factores en barras proporcionales a su máximo, enlaces CVE/KEV/EPSS de referencia (texto, sin peticiones) y guía de remediación paso a paso con casillas.
-- [ ] **Estado vacío** con las 3 rutas de entrada (demo, Nmap, alcance manual) y una ilustración del ciclo CTEM en SVG.
-- [ ] **Móvil:** tabla de priorización convertida en tarjetas por debajo de 640 px, barra inferior con 5 destinos y el resto en «Más».
-- [ ] **Informe imprimible** con portada, índice y saltos de página limpios, y opción «Guardar como PDF» del navegador con estilos `@media print` cuidados.
-- [ ] Capturas regeneradas (claro, oscuro y móvil) con `npm run capturas`.
+- [x] **Movimiento con intención:** escala 0,97 al pulsar, aparición escalonada con muelle sin rebote (`Reveal`), grafo con transiciones interrumpibles y, con `prefers-reduced-motion`, solo fundido (el flujo animado se detiene; lo comprueba el e2e).
+- [x] **Panel ejecutivo con identidad propia.** *Decisión de diseño:* sin anillos ni gráficos circulares (Rosetta ya usa ese lenguaje). En su lugar, **franjas de exposición por activo**: una fila por activo y una marca por hallazgo sobre la escala 0–100, con las bandas como zonas, anillo para KEV y ficha al pasar o enfocar. Además, banda apilada, índice y **tres acciones para hoy**, ordenadas por las rutas que rompe cada corrección (`engine/impact.ts`, comprobado contra el recálculo completo del grafo). La mini tendencia queda para la fase 3.
+- [x] **Grafo de ataque:** zoom con botones, Ctrl + rueda y pellizco; desplazamiento arrastrando; modo «solo esta ruta», que encuadra la ruta; flujo animado sobre la ruta seleccionada.
+- [x] **Detalle del hallazgo:** desglose de factores, enlaces a NVD, CISA KEV, FIRST EPSS y a la guía del fabricante (solo enlaces, sin peticiones), y pasos de remediación con casillas que se guardan en el proyecto, se exportan y se sanean al importar.
+- [x] **Estado vacío** con tres entradas (demo, Nmap, alcance manual) y el ciclo CTEM dibujado como flujo con retorno.
+- [x] **Móvil:** tarjetas en lugar de tabla por debajo de 640 px; el aviso de datos de ejemplo ya no queda fijo arriba.
+- [x] **Informe imprimible** con portada, tonos de tema claro aunque se use el oscuro, tablas que caben en A4 e informe de ejemplo en `docs/informe-ejemplo.pdf`.
+- [x] Cabecera de página común (antetítulo con la fase CTEM, título y entradilla) y título de pestaña por vista.
+- [x] Capturas regeneradas (claro, oscuro y móvil) con `npm run capturas`.
+
+**Estado: cerrada en 0.4.0.** axe-core 0 infracciones en 144 estados; e2e 75/75; Lighthouse (servido con gzip, como en GitHub Pages): rendimiento 97, accesibilidad 100, buenas prácticas 100, SEO 100.
 
 **Aceptación:** axe mantiene 0 infracciones, la prueba de movimiento reducido pasa y Lighthouse da ≥ 95 en accesibilidad y buenas prácticas.
 

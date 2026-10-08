@@ -1,9 +1,9 @@
-import { AlarmClock, Check, ChevronDown, Copy, FileDown, FileSpreadsheet, FileText, ListChecks, Printer } from 'lucide-react';
+import { AlarmClock, Check, Waypoints, ChevronDown, Copy, FileDown, FileSpreadsheet, FileText, ListChecks, Printer } from 'lucide-react';
 import { useState } from 'react';
 import { buildTickets, reportMarkdown, ticketsCsv, ticketsMarkdown } from '../engine/io';
 import { slaInfo, type SlaState } from '../engine/sla';
 import { TopBar } from '../components/Shell';
-import { BandBadge, DemoBadge, Empty } from '../components/ui';
+import { BandBadge, DemoBadge, Empty, PageHeader } from '../components/ui';
 import { useResult } from '../lib/analysis';
 import { download, stamp } from '../lib/download';
 import { BAND_COLOR, longDate, n1 } from '../lib/format';
@@ -33,6 +33,7 @@ export function Mobilization() {
   const profile = useStore((s) => s.settings.profile);
   const author = [profile?.nombre, roleLabel(profile?.rol ?? '', lang), profile?.organizacion].map((part) => part?.trim()).filter(Boolean).join(' · ');
   const notify = useStore((s) => s.notify);
+  const toggleStep = useStore((s) => s.toggleStep);
   const { result } = useResult();
   const s = result.summary;
   const tickets = buildTickets(project.findings, project.assets, result, lang);
@@ -43,17 +44,48 @@ export function Mobilization() {
 
   return (
     <>
-      <TopBar
-        title={c.mobTitle}
-        subtitle={<><span>{c.mobSub}</span>{project.demo && <DemoBadge />}</>}
-      />
-      <div className="view-enter mx-auto flex max-w-[1240px] flex-col gap-5 px-4 pb-6 pt-2 sm:px-8">
+      <TopBar title={c.mobTitle} />
+      <div className="mx-auto flex max-w-[1240px] flex-col gap-5 px-4 pb-6 sm:px-8">
+        <div className="no-print">
+          <PageHeader
+            icon={<ListChecks />}
+            eyebrow={L('Fase 5 · Movilización', 'Stage 5 · Mobilization')}
+            title={L('Plan de remediación', 'Remediation plan')}
+            badge={project.demo ? <DemoBadge /> : undefined}
+            lead={L('Informe ejecutivo para la dirección y tickets para cada equipo, con pasos, verificación y fecha límite según el SLA.', 'An executive report for leadership and tickets for each team, with steps, verification and a due date from the SLA.')}
+          />
+        </div>
         {project.findings.length === 0 ? (
           <div className="panel"><Empty icon={<ListChecks />} title={c.nothingToMove} text={c.nothingToMoveText} /></div>
         ) : (
           <>
             {/* Informe ejecutivo (imprimible) */}
             <article className="panel print-area overflow-hidden" aria-label={L('Informe ejecutivo', 'Executive report')}>
+              {/* Portada: solo al imprimir o guardar en PDF */}
+              <section className="print-cover" aria-hidden>
+                <div className="flex items-center gap-2.5">
+                  <span className="grid size-9 place-items-center rounded-lg bg-accent text-[var(--color-accent-ink)]"><Waypoints className="size-5" /></span>
+                  <span className="text-lg font-bold tracking-tight">CTEM-Nexus</span>
+                </div>
+                <div>
+                  <p className="eyebrow">{L('Informe ejecutivo de exposición', 'Executive exposure report')}</p>
+                  <h2 className="mt-3 text-[2.75rem] font-bold leading-[1.05] tracking-[-0.035em]">{project.name}</h2>
+                  <p className="print-muted mt-3 text-base">{longDate(new Date())}{author ? ` · ${author}` : ''}</p>
+                  <div className="mt-14 flex items-end gap-4">
+                    <span className="display-num text-[6rem] leading-none" style={{ color: BAND_COLOR[s.exposureIndex >= 80 ? 'critica' : s.exposureIndex >= 60 ? 'alta' : s.exposureIndex >= 40 ? 'media' : 'baja'] }}>{n1(s.exposureIndex)}</span>
+                    <span className="print-muted pb-3 text-lg">/100 · {c.exposure.toLowerCase()}</span>
+                  </div>
+                  <dl className="mt-10 grid grid-cols-4 gap-6 border-t pt-6">
+                    {[[c.openFindings, s.openFindings], [c.kev, s.kevOpen], [c.paths, s.attackPaths], [c.chokes, s.chokePoints]].map(([k, v]) => (
+                      <div key={String(k)}><dt className="print-muted text-sm">{k}</dt><dd className="display-num mt-1 text-3xl">{v}</dd></div>
+                    ))}
+                  </dl>
+                </div>
+                <p className="print-muted text-xs">
+                  CTEM-Nexus {__APP_VERSION__} · {L('motor', 'engine')} v{result.version}. {L('Herramienta de apoyo a la priorización: no sustituye a un test de intrusión ni a una auditoría.', 'A prioritization aid: it does not replace a penetration test or an audit.')}
+                  {project.demo ? ` ${L('Datos de ejemplo ficticios.', 'Fictional sample data.')}` : ''}
+                </p>
+              </section>
               <header className="flex flex-wrap items-end justify-between gap-3 px-6 pb-4 pt-5">
                 <div>
                   <h2 className="text-xl font-semibold tracking-[-0.02em]">{L('Informe ejecutivo de exposición', 'Executive exposure report')}</h2>
@@ -141,6 +173,7 @@ export function Mobilization() {
                           <span className="block truncate text-xs text-ink-3"><span className="num">{t.finding.id}</span> · {t.finding.title} · {t.asset?.name ?? t.finding.assetId}</span>
                         </span>
                         <span className="hidden text-xs text-ink-3 md:block">{t.owner}</span>
+                        <span className="num hidden text-xs text-ink-3 sm:block" title={L('Pasos hechos', 'Steps done')}>{(project.progress?.[t.finding.id] ?? []).length}/{t.guide.steps.length}</span>
                         <SlaChip detectedAt={t.finding.detectedAt} slaDays={t.scored.slaDays} />
                         <ChevronDown className={`size-4 text-ink-3 transition-transform duration-200 ease-[var(--ease-out)] ${isOpen ? 'rotate-180' : ''}`} />
                       </button>
@@ -148,7 +181,19 @@ export function Mobilization() {
                         <div className="view-enter grid grid-cols-1 gap-5 px-5 pb-5 pl-[4.75rem] lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
                           <div>
                             <div className="label mb-2 font-medium">{L('Pasos', 'Steps')}</div>
-                            <ol className="list-decimal space-y-1.5 pl-5 text-[0.8125rem] text-ink-2 marker:text-ink-3">{t.guide.steps.map((st) => <li key={st}>{st}</li>)}</ol>
+                            <ol className="flex flex-col gap-1">
+                              {t.guide.steps.map((st, i) => {
+                                const hecho = (project.progress?.[t.finding.id] ?? []).includes(i);
+                                return (
+                                  <li key={st}>
+                                    <label className="step-row">
+                                      <input type="checkbox" className="mt-0.5 size-4 shrink-0 accent-[var(--color-accent)]" checked={hecho} onChange={() => toggleStep(t.finding.id, i)} />
+                                      <span className={hecho ? 'text-ink-3 line-through decoration-ink-3/60' : 'text-ink-2'}>{st}</span>
+                                    </label>
+                                  </li>
+                                );
+                              })}
+                            </ol>
                           </div>
                           <div className="flex flex-col gap-3">
                             <dl className="grid grid-cols-2 gap-3 text-[0.8125rem]">

@@ -1,5 +1,5 @@
-import { AppWindow, Cloud, Crown, Database, Globe, KeyRound, Monitor, Network, Server, ShieldCheck, User } from 'lucide-react';
-import { useMemo, type ComponentType } from 'react';
+import { AppWindow, Cloud, Crown, Database, Focus, Globe, KeyRound, Maximize2, Monitor, Network, Server, ShieldCheck, User, ZoomIn, ZoomOut } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState, type ComponentType, type PointerEvent as RPointerEvent, type WheelEvent as RWheelEvent } from 'react';
 import type { GraphAnalysis, GraphNode } from '../engine/types';
 import { useL } from '../i18n';
 import { wrapLabel } from '../lib/format';
@@ -50,8 +50,76 @@ export function AttackGraph({ graph, highlight, focusNode, onNode }: {
   const chokeNodes = new Set(graph.chokePoints.filter((c) => c.kind === 'nodo').map((c) => c.id));
   const chokeEdges = new Set(graph.chokePoints.filter((c) => c.kind === 'arista').map((c) => c.id));
   const dim = (id: string) => (highlight ? !highlight.has(id) : focusNode ? false : false);
+  // «Solo esta ruta»: oculta lo que no pertenece a la ruta o al nodo resaltado.
+  const [only, setOnly] = useState(false);
+  const hide = (id: string) => only && !!highlight && !highlight.has(id);
+
+  // Zoom y desplazamiento: botones, Ctrl + rueda (y el pellizco del trackpad, que llega como Ctrl + rueda),
+  // arrastre con el puntero y pellizco táctil con dos dedos.
+  const [view, setView] = useState({ k: 1, x: 0, y: 0 });
+  const box = useRef<HTMLDivElement>(null);
+  const pointers = useRef(new Map<number, { x: number; y: number }>());
+  const pinch = useRef<number | null>(null);
+  const clampK = (k: number) => Math.min(3, Math.max(1, k));
+  const zoomAt = (factor: number, cx = 0.5, cy = 0.5) => setView((v) => {
+    const k = clampK(v.k * factor);
+    if (k === 1) return { k: 1, x: 0, y: 0 };
+    // Mantiene fijo el punto (cx, cy) de la ventana, en unidades del viewBox.
+    const px = cx * layout.width, py = cy * layout.height;
+    return { k, x: px - ((px - v.x) * k) / v.k, y: py - ((py - v.y) * k) / v.k };
+  });
+  const toUnits = (dx: number) => (box.current ? (dx * layout.width) / box.current.clientWidth : dx);
+  const onWheel = (e: RWheelEvent) => {
+    if (!e.ctrlKey && !e.metaKey) return;
+    e.preventDefault();
+    const r = box.current!.getBoundingClientRect();
+    zoomAt(e.deltaY < 0 ? 1.15 : 1 / 1.15, (e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height);
+  };
+  const onPointerDown = (e: RPointerEvent) => { pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY }); if (pointers.current.size === 2) pinch.current = null; };
+  const onPointerMove = (e: RPointerEvent) => {
+    const prev = pointers.current.get(e.pointerId);
+    if (!prev) return;
+    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointers.current.size === 2) {
+      const [a, b] = [...pointers.current.values()];
+      const d = Math.hypot(a.x - b.x, a.y - b.y);
+      if (pinch.current) zoomAt(d / pinch.current);
+      pinch.current = d;
+    } else if (view.k > 1 && (e.buttons & 1)) {
+      if (Math.abs(e.clientX - prev.x) + Math.abs(e.clientY - prev.y) > 0) box.current?.setPointerCapture?.(e.pointerId);
+      setView((v) => ({ ...v, x: v.x + toUnits(e.clientX - prev.x), y: v.y + toUnits(e.clientY - prev.y) }));
+    }
+  };
+  // Encuadre de la ruta resaltada: caja de sus nodos con margen, sin pasar de 3×.
+  const fitTo = (ids: Set<string>) => {
+    const ps = [...ids].map((id) => layout.pos.get(id)).filter((p): p is { x: number; y: number } => !!p);
+    if (!ps.length) return { k: 1, x: 0, y: 0 };
+    const x0 = Math.min(...ps.map((p) => p.x)) - PAD, x1 = Math.max(...ps.map((p) => p.x)) + NW + PAD;
+    const y0 = Math.min(...ps.map((p) => p.y)) - PAD, y1 = Math.max(...ps.map((p) => p.y)) + NH + PAD;
+    const k = clampK(Math.min(layout.width / (x1 - x0), layout.height / (y1 - y0)));
+    return { k, x: (layout.width - (x0 + x1) * k) / 2, y: (layout.height - (y0 + y1) * k) / 2 };
+  };
+  // Al cambiar la ruta resaltada con «solo esta ruta» activo, se reencuadra; sin resaltado, se sale del modo.
+  useEffect(() => {
+    if (!highlight) { setOnly(false); setView({ k: 1, x: 0, y: 0 }); return; }
+    if (only) setView(fitTo(highlight));
+  }, [highlight]); // eslint-disable-line react-hooks/exhaustive-deps
+  const onPointerUp = (e: RPointerEvent) => { pointers.current.delete(e.pointerId); pinch.current = null; };
 
   return (
+    <div className="relative pt-11">
+    <div className="absolute right-0 top-0 z-[2] flex items-center gap-1 rounded-full bg-surface p-1 shadow-sm ring-1 ring-hairline-strong">
+      {highlight && (
+        <button type="button" className="graph-tool w-auto gap-1.5 px-2.5 text-xs font-medium" aria-pressed={only} onClick={() => { const next = !only; setOnly(next); setView(next ? fitTo(highlight) : { k: 1, x: 0, y: 0 }); }}>
+          <Focus className="size-3.5" />{L('Solo esta ruta', 'This path only')}
+        </button>
+      )}
+      <button type="button" className="graph-tool" aria-label={L('Acercar', 'Zoom in')} title={L('Acercar (Ctrl + rueda)', 'Zoom in (Ctrl + wheel)')} disabled={view.k >= 3} onClick={() => zoomAt(1.3)}><ZoomIn className="size-4" /></button>
+      <button type="button" className="graph-tool" aria-label={L('Alejar', 'Zoom out')} title={L('Alejar', 'Zoom out')} disabled={view.k <= 1} onClick={() => zoomAt(1 / 1.3)}><ZoomOut className="size-4" /></button>
+      <button type="button" className="graph-tool" aria-label={L('Ajustar a la vista', 'Fit to view')} title={L('Ajustar a la vista', 'Fit to view')} disabled={view.k === 1} onClick={() => setView({ k: 1, x: 0, y: 0 })}><Maximize2 className="size-4" /></button>
+    </div>
+    <div ref={box} className={`touch-pan-y overflow-hidden ${view.k > 1 ? 'cursor-grab active:cursor-grabbing' : ''}`} style={{ touchAction: view.k > 1 ? 'none' : 'pan-y' }}
+      onWheel={onWheel} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp} data-zoom={view.k.toFixed(2)}>
     <svg viewBox={`0 0 ${layout.width} ${layout.height}`} className="h-auto w-full select-none" role="group" aria-label={L(`Grafo de ataque: ${graph.nodes.length} nodos, ${graph.edges.length} aristas, ${graph.paths.length} rutas`, `Attack graph: ${graph.nodes.length} nodes, ${graph.edges.length} edges, ${graph.paths.length} paths`)}>
       <defs>
         <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 1 L9 5 L0 9 z" fill="var(--color-ink-4)" /></marker>
@@ -61,8 +129,9 @@ export function AttackGraph({ graph, highlight, focusNode, onNode }: {
       {layout.unreachableCol !== null && (
         <text x={PAD + layout.unreachableCol * COL} y={14} fill="var(--color-ink-3)" fontSize={11}>{L('Sin ruta desde Internet', 'No path from the Internet')}</text>
       )}
+      <g transform={`translate(${view.x} ${view.y}) scale(${view.k})`} style={{ transition: pointers.current.size ? 'none' : 'transform 220ms cubic-bezier(0.32, 0.72, 0, 1)' }}>
       <g fill="none">
-        {graph.edges.map((e) => {
+        {graph.edges.filter((e) => !hide(e.id)).map((e) => {
           const a = layout.pos.get(e.from)!, b = layout.pos.get(e.to)!;
           const x1 = a.x + NW, y1 = a.y + NH / 2, x2 = b.x, y2 = b.y + NH / 2;
           let d: string;
@@ -78,14 +147,14 @@ export function AttackGraph({ graph, highlight, focusNode, onNode }: {
           const hot = chokeEdges.has(e.id);
           const stroke = sel ? 'var(--color-accent)' : hot ? 'var(--color-alta)' : 'var(--color-ink-4)';
           return (
-            <path key={e.id} d={d} className="g-edge" stroke={stroke} strokeWidth={sel ? 2.25 : hot ? 1.75 : 1.25} strokeDasharray={e.manual ? '4 4' : undefined}
+            <path key={e.id} d={d} className={`g-edge ${sel ? 'path-flow' : ''}`} stroke={stroke} strokeWidth={sel ? 2.25 : hot ? 1.75 : 1.25} strokeDasharray={e.manual ? '4 4' : undefined}
               markerEnd={`url(#${sel ? 'arr-sel' : hot ? 'arr-hot' : 'arr'})`} opacity={dim(e.id) ? 0.14 : 1}>
               <title>{e.techniques.join(' · ')}{e.manual ? L(' (arista manual)', ' (manual edge)') : ''}</title>
             </path>
           );
         })}
       </g>
-      {graph.nodes.map((n) => {
+      {graph.nodes.filter((n) => !hide(n.id)).map((n) => {
         const p = layout.pos.get(n.id)!;
         const Icon = ICON[n.type] ?? Server;
         const choke = chokeNodes.has(n.id);
@@ -116,6 +185,9 @@ export function AttackGraph({ graph, highlight, focusNode, onNode }: {
           </g>
         );
       })}
+      </g>
     </svg>
+    </div>
+    </div>
   );
 }

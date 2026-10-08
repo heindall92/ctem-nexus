@@ -1,8 +1,8 @@
-import { Download, PlugZap, RotateCcw, Sparkles, Upload } from 'lucide-react';
+import { Download, PlugZap, SlidersHorizontal, RotateCcw, Sparkles, Upload } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { parseProject } from '../engine/io';
 import { TopBar } from '../components/Shell';
-import { Field, SectionTitle, Toggle } from '../components/ui';
+import { Field, PageHeader, SectionTitle, Toggle } from '../components/ui';
 import { pingApi } from '../lib/analysis';
 import { download, readFile, stamp } from '../lib/download';
 import { storageBackend } from '../lib/storage';
@@ -29,8 +29,9 @@ export function Settings() {
 
   return (
     <>
-      <TopBar title={c.settingsTitle} subtitle={c.settingsSub} />
-      <div className="view-enter mx-auto flex max-w-[860px] flex-col gap-5 px-4 pb-6 pt-2 sm:px-8">
+      <TopBar title={c.settingsTitle} />
+      <div className="mx-auto flex max-w-[860px] flex-col gap-5 px-4 pb-6 sm:px-8">
+        <PageHeader icon={<SlidersHorizontal />} eyebrow={L('Ajustes · datos locales', 'Settings · local data')} title={c.settingsTitle} lead={c.settingsSub} />
         <section className="panel overflow-hidden">
           <SectionTitle title={L('Proyecto', 'Project')} />
           <div className="border-t border-hairline px-5 py-4">

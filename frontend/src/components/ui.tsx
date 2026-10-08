@@ -101,3 +101,27 @@ export function Empty({ icon, title, text, children }: { icon: ReactNode; title:
 export function DemoBadge() {
   return <span className="chip" style={{ color: 'var(--color-media)', background: 'color-mix(in oklab, var(--color-media) 12%, transparent)' }}>{screen[useStore((s) => s.lang)].demoBadge}</span>;
 }
+
+/** Cabecera de página al estilo de Rosetta: antetítulo con icono, título grande, entradilla y acciones. */
+export function PageHeader({ icon, eyebrow, title, lead, actions, badge }: { icon: ReactNode; eyebrow: string; title: string; lead?: ReactNode; actions?: ReactNode; badge?: ReactNode }) {
+  return (
+    <Reveal as="header" className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4 pb-1 pt-3">
+      <div className="min-w-0 max-w-[68ch]">
+        <p className="eyebrow flex items-center gap-2 [&_svg]:size-3.5">{icon}<span className="truncate">{eyebrow}</span></p>
+        <h1 className="page-title mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">{title}{badge}</h1>
+        {lead && <p className="mt-2 text-[0.9375rem] leading-relaxed text-ink-2">{lead}</p>}
+      </div>
+      {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+    </Reveal>
+  );
+}
+
+/** Aparición con muelle (Kowalski: sin rebote, interrumpible). Con movimiento reducido, MotionConfig deja solo el fundido. */
+export function Reveal({ children, delay = 0, className, as = 'div' }: { children: ReactNode; delay?: number; className?: string; as?: 'div' | 'section' | 'header' }) {
+  const Tag = motion[as];
+  return (
+    <Tag className={className} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ ...SPRING, delay }}>
+      {children}
+    </Tag>
+  );
+}

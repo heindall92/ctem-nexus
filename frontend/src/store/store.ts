@@ -50,6 +50,7 @@ interface State extends Persisted {
   importNmapResult: (data: { assets?: Asset[]; findings?: Finding[]; ranges?: NetworkRange[]; edges?: ManualEdge[] }) => void;
   deleteFinding: (id: string) => void;
   setStatus: (id: string, status: FindingStatus) => void;
+  toggleStep: (findingId: string, step: number) => void;
   addEdge: (e: ManualEdge) => void;
   deleteEdge: (id: string) => void;
   loadDemo: () => void;
@@ -193,6 +194,11 @@ export const useStore = create<State>()((set, get) => ({
       findings: s.project.findings.map((f) => (f.id === id ? { ...f, status, resolvedAt: status === 'mitigado' ? f.resolvedAt ?? new Date().toISOString().slice(0, 10) : null } : f)),
     },
   })),
+  toggleStep: (findingId, step) => set((s) => {
+    const cur = s.project.progress?.[findingId] ?? [];
+    const next = cur.includes(step) ? cur.filter((n) => n !== step) : [...cur, step].sort((a, b) => a - b);
+    return { project: { ...s.project, progress: { ...(s.project.progress ?? {}), [findingId]: next } } };
+  }),
   addEdge: (e) => set((s) => ({ project: { ...s.project, edges: [...s.project.edges, e] } })),
   deleteEdge: (id) => set((s) => ({ project: { ...s.project, edges: s.project.edges.filter((e) => e.id !== id) } })),
   loadDemo: () => set({ project: demoProject(), selectedFinding: null }),

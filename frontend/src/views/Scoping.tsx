@@ -5,7 +5,7 @@ import { NmapUploader } from '../components/NmapUploader';
 import { isIpOrCidr } from '../engine/io';
 import type { Asset, AssetType, NetworkRange } from '../engine/types';
 import { Drawer, Modal, TopBar } from '../components/Shell';
-import { DemoBadge, Empty, Field, SectionTitle, Toggle } from '../components/ui';
+import { DemoBadge, PageHeader, Empty, Field, SectionTitle, Toggle } from '../components/ui';
 import { ipv4InCidr } from '../lib/format';
 import { screen, useL } from '../i18n';
 import { nextId, useStore } from '../store/store';
@@ -28,23 +28,20 @@ export function Scoping() {
 
   return (
     <>
-      <TopBar
-        title={c.scopeTitle}
-        subtitle={<><span>{c.scopeSub}</span>{project.demo && <DemoBadge />}</>}
-      />
-      <div className="view-enter mx-auto flex max-w-[1240px] flex-col gap-5 px-4 pb-6 pt-2 sm:px-8">
-        {/* Cabecera de la vista con acciones principales */}
-        <div className="flex flex-wrap items-center justify-between gap-4 py-1">
-          <div>
-            <h2 className="text-lg sm:text-xl font-bold tracking-tight text-ink">{c.surfaceTitle}</h2>
-            <p className="text-xs text-ink-3">{c.surfaceLead}</p>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
+      <TopBar title={c.scopeTitle} />
+      <div className="mx-auto flex max-w-[1240px] flex-col gap-5 px-4 pb-6 sm:px-8">
+        <PageHeader
+          icon={<Crosshair />}
+          eyebrow={L('Fase 1 · Alcance', 'Stage 1 · Scoping')}
+          title={c.surfaceTitle}
+          badge={project.demo ? <DemoBadge /> : undefined}
+          lead={c.surfaceLead}
+          actions={<>
             <button type="button" className="btn" onClick={() => setShowNmap(true)}><Radar className="size-4" />{c.importNmap}</button>
             <button type="button" className="btn" onClick={() => setShowBloodhound(true)}><Users className="size-4" />{c.importBh}</button>
             <button type="button" className="btn btn-primary" onClick={() => setEditing('nuevo')}><Plus className="size-4" />{c.addAsset}</button>
-          </div>
-        </div>
+          </>}
+        />
         <section className="panel overflow-hidden">
           <SectionTitle
             title={c.assetsTitle}

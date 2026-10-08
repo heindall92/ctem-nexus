@@ -8,6 +8,10 @@ export const setFormatLang = (lang: Lang) => { LANG = lang; };
 export const formatLang = () => LANG;
 const locale = () => (LANG === 'en' ? 'en-GB' : 'es-ES');
 
+/** Relleno de gráficos por banda (no para texto: en claro no llega a 4,5:1). */
+export const BAND_FILL: Record<Band, string> = {
+  critica: 'var(--color-critica-fill)', alta: 'var(--color-alta-fill)', media: 'var(--color-media-fill)', baja: 'var(--color-baja-fill)',
+};
 export const BAND_COLOR: Record<Band, string> = {
   critica: 'var(--color-critica)', alta: 'var(--color-alta)', media: 'var(--color-media)', baja: 'var(--color-baja)',
 };

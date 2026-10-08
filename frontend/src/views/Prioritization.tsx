@@ -1,4 +1,4 @@
-import { FileSpreadsheet, Flame, Pencil, Plus, Radar, Search, Sparkles, Trash2, Upload, Users, Zap } from 'lucide-react';
+import { ExternalLink, FileSpreadsheet, Flame, Pencil, Plus, Radar, Search, Sparkles, Trash2, Upload, Users, Zap } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 import { BloodHoundUploader } from '../components/BloodHoundUploader';
 import { NmapUploader } from '../components/NmapUploader';
@@ -6,7 +6,7 @@ import { CSV_TEMPLATE, importFindings } from '../engine/io';
 import { GUIDE_KEYS, guideIn } from '../engine/remediation';
 import type { Band, Finding, FindingKind, FindingStatus } from '../engine/types';
 import { Drawer, Modal, TopBar } from '../components/Shell';
-import { BandBadge, DemoBadge, Empty, Field, Score, ScoreBar, Segmented } from '../components/ui';
+import { BandBadge, DemoBadge, Empty, PageHeader, Field, Score, ScoreBar, Segmented } from '../components/ui';
 import { useResult } from '../lib/analysis';
 import { download, readFile } from '../lib/download';
 import { explanationIn, factorsIn } from '../engine/explain';
@@ -64,25 +64,23 @@ export function Prioritization() {
 
   return (
     <>
-      <TopBar
-        title={c.prioTitle}
-        subtitle={<><span>{c.prioSub}</span>{project.demo && <DemoBadge />}</>}
-      />
-      <div className="view-enter mx-auto max-w-[1240px] px-4 pb-6 pt-2 sm:px-8">
-        {/* Cabecera de la sección con acciones */}
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-4 py-1">
-          <div>
-            <h2 className="text-lg sm:text-xl font-bold tracking-tight text-ink">{L('Catálogo de exposición y hallazgos', 'Exposure and findings catalog')}</h2>
-            <p className="text-xs text-ink-3">{L('Priorización multidimensional basada en explotabilidad activa (KEV), impacto y rutas de ataque', 'Multi-factor prioritization based on active exploitation (KEV), impact and attack paths')}</p>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
+      <TopBar title={c.prioTitle} />
+      <div className="mx-auto max-w-[1240px] px-4 pb-6 sm:px-8">
+        <PageHeader
+          icon={<Radar />}
+          eyebrow={L('Fases 2 y 3 · Descubrimiento y priorización', 'Stages 2 & 3 · Discovery and prioritization')}
+          title={L('Catálogo de exposición', 'Exposure catalog')}
+          badge={project.demo ? <DemoBadge /> : undefined}
+          lead={L('Cada hallazgo con su puntuación de 0 a 100, explicada factor a factor: severidad, explotación real (KEV, EPSS), criticidad, exposición y cercanía a una joya de la corona.', 'Every finding with its 0–100 score, explained factor by factor: severity, real exploitation (KEV, EPSS), criticality, exposure and closeness to a crown jewel.')}
+          actions={<>
             <input ref={fileRef} type="file" accept=".json,.csv,application/json,text/csv" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void onImport(f); e.target.value = ''; }} />
             <button type="button" className="btn" onClick={() => setShowNmap(true)}><Radar className="size-4" />{c.importNmap}</button>
             <button type="button" className="btn" onClick={() => setShowBloodhound(true)}><Users className="size-4" />{c.importBh}</button>
             <button type="button" className="btn" onClick={() => fileRef.current?.click()}><Upload className="size-4" />{L('Importar JSON/CSV', 'Import JSON/CSV')}</button>
             <button type="button" className="btn btn-primary" onClick={() => setEditing('nuevo')} disabled={project.assets.length === 0}><Plus className="size-4" />{L('Añadir hallazgo', 'Add finding')}</button>
-          </div>
-        </div>
+          </>}
+        />
+        <div className="mt-5" />
         {project.findings.length === 0 ? (
           <div className="panel">
             <Empty icon={<Radar />} title={c.noFindings} text={c.noFindingsText}>
@@ -95,7 +93,7 @@ export function Prioritization() {
         ) : (
           <section className="panel overflow-hidden">
             <div className="flex flex-wrap items-center gap-3 border-b border-hairline px-4 py-3">
-              <div className="relative w-[280px]">
+              <div className="relative w-full sm:w-[280px]">
                 <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-3" />
                 <input className="field pl-9" placeholder={L('Buscar por ID, CVE, título o activo', 'Search by ID, CVE, title or asset')} value={q} onChange={(e) => setQ(e.target.value)} aria-label={L('Buscar hallazgos', 'Search findings')} />
               </div>
@@ -109,7 +107,32 @@ export function Prioritization() {
               </label>
               <button type="button" className="btn btn-ghost btn-sm" onClick={() => download('plantilla-hallazgos.csv', CSV_TEMPLATE, 'text/csv;charset=utf-8')}><FileSpreadsheet />{L('Plantilla CSV', 'CSV template')}</button>
             </div>
-            <div className="max-h-[calc(100dvh-14rem)] overflow-auto">
+            {/* Móvil: tarjetas en lugar de tabla */}
+            <ul className="divide-hair sm:hidden" data-testid="tarjetas-hallazgos">
+              {rows.map((sc) => {
+                const f = fById.get(sc.id)!;
+                const closed = f.status === 'mitigado' || f.status === 'no_explotable';
+                return (
+                  <li key={sc.id}>
+                    <button type="button" className={`row-interactive flex w-full items-start gap-3 px-4 py-3 text-left ${closed ? 'opacity-55' : ''}`} aria-current={selected === sc.id ? 'true' : undefined} onClick={() => select(sc.id)}>
+                      <Score score={sc.score} band={sc.band} />
+                      <span className="min-w-0 flex-1">
+                        <span className="line-clamp-2 font-medium">{f.title}</span>
+                        <span className="mt-0.5 block truncate text-xs text-ink-3"><span className="num">{f.cve ?? f.id}</span> · {aById.get(f.assetId)?.name ?? f.assetId}</span>
+                        <span className="mt-1.5 flex flex-wrap items-center gap-1">
+                          {f.kev && <span className="chip" style={{ color: 'var(--color-critica)' }}><Flame />KEV</span>}
+                          {f.exploitPublic && <span className="chip"><Zap />Exploit</span>}
+                          {sc.onAttackPath && <span className="chip" style={{ color: 'var(--color-accent)' }}>{L('Ruta', 'Path')}</span>}
+                          <StatusPill status={f.status} />
+                        </span>
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+              {rows.length === 0 && <li className="px-4 py-10 text-center text-ink-3">{L('Ningún hallazgo coincide con el filtro.', 'No finding matches the filter.')}</li>}
+            </ul>
+            <div className="hidden max-h-[calc(100dvh-14rem)] overflow-auto sm:block">
               <table className="table">
                 <thead>
                   <tr>
@@ -204,6 +227,17 @@ function FindingDetail({ findingId }: { findingId: string }) {
   const f = project.findings.find((x) => x.id === findingId)!;
   const asset = project.assets.find((a) => a.id === f.assetId);
   const g = guideIn(lang, f.remediation, f.kind);
+  const done = project.progress?.[f.id] ?? [];
+  const toggleStep = useStore((st) => st.toggleStep);
+  const cve = f.cve && /^CVE-\d{4}-\d{4,7}$/i.test(f.cve) ? f.cve.toUpperCase() : null;
+  const refs = [
+    ...(cve ? [
+      { label: `NVD · ${cve}`, href: `https://nvd.nist.gov/vuln/detail/${cve}` },
+      { label: 'CISA KEV', href: `https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search_api_fulltext=${cve}` },
+      { label: 'FIRST EPSS', href: 'https://www.first.org/epss/' },
+    ] : []),
+    ...(g.reference ? [{ label: L('Guía del fabricante', 'Vendor guidance'), href: g.reference }] : []),
+  ];
   return (
     <div className="flex flex-col gap-5">
       <div className="flex items-center gap-4">
@@ -238,8 +272,31 @@ function FindingDetail({ findingId }: { findingId: string }) {
         {f.description && <div className="col-span-2"><dt className="label">{L('Descripción', 'Description')}</dt><dd className="text-ink-2">{f.description}</dd></div>}
       </dl>
       <div>
-        <h3 className="label mb-2 font-medium">{L('Remediación', 'Remediation')} · {g.owner}</h3>
-        <ol className="list-decimal space-y-1.5 pl-5 text-[0.8125rem] text-ink-2 marker:text-ink-3">{g.steps.map((st) => <li key={st}>{st}</li>)}</ol>
+        <div className="mb-2 flex items-baseline justify-between gap-3">
+          <h3 className="label font-medium">{L('Remediación', 'Remediation')} · {g.owner}</h3>
+          <span className="num text-xs text-ink-3" data-testid="pasos-hechos">{done.length}/{g.steps.length}</span>
+        </div>
+        <ol className="flex flex-col gap-1">
+          {g.steps.map((st, i) => (
+            <li key={st}>
+              <label className="step-row">
+                <input type="checkbox" className="mt-0.5 size-4 shrink-0 accent-[var(--color-accent)]" checked={done.includes(i)} onChange={() => toggleStep(f.id, i)} />
+                <span className={done.includes(i) ? 'text-ink-3 line-through decoration-ink-3/60' : 'text-ink-2'}>{st}</span>
+              </label>
+            </li>
+          ))}
+        </ol>
+      </div>
+      <div>
+        <h3 className="label mb-2 font-medium">{L('Referencias', 'References')}</h3>
+        <ul className="flex flex-wrap gap-2">
+          {refs.map((r) => (
+            <li key={r.href}>
+              <a className="btn btn-sm" href={r.href} target="_blank" rel="noopener noreferrer"><ExternalLink />{r.label}</a>
+            </li>
+          ))}
+        </ul>
+        <p className="mt-2 text-xs text-ink-3">{L('Se abren en una pestaña nueva. CTEM-Nexus no consulta estas fuentes por su cuenta.', 'They open in a new tab. CTEM-Nexus never queries these sources by itself.')}</p>
       </div>
     </div>
   );
