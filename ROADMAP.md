@@ -166,6 +166,7 @@ Tareas:
 - [ ] `docs/GUIA.md`: «De un Nmap a un plan de remediación con SLA en 10 minutos», con capturas. Sirve de base para el artículo de LinkedIn.
 - [ ] `docs/SCORING.md` y `docs/ARCHITECTURE.md` actualizados con los factores nuevos y el formato de intercambio.
 - [ ] Ficheros de ejemplo descargables (Nmap, BloodHound, Nessus, Nuclei, KAIROS) desde la ayuda de la app.
+- [ ] **Recuperar ≥ 95 de rendimiento en Lighthouse** (93 en la 0.5.1, 97 en la 0.4.2): cargar bajo demanda los importadores, el mapa ATT&CK y la simulación (`React.lazy`, evaluados solo al abrirlos) y medir con gzip, como en Pages.
 - [ ] Publicación en Pages y una *release* en GitHub con el HTML autocontenido adjunto y sus notas.
 - [ ] Lanzamiento escalonado (3–4 días entre publicaciones): primero la herramienta, después la guía práctica y por último la integración con el ecosistema.
 
