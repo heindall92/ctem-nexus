@@ -7,7 +7,7 @@ import type { Asset, Finding, FindingStatus, ManualEdge, NetworkRange } from '..
 import { setFormatLang } from '../lib/format';
 import { load, remove, save } from '../lib/storage';
 
-export type View = 'panel' | 'alcance' | 'priorizacion' | 'rutas' | 'movilizacion' | 'ajustes';
+export type View = 'panel' | 'alcance' | 'priorizacion' | 'rutas' | 'movilizacion' | 'mitre' | 'ajustes';
 
 export type Accent = 'rosa' | 'solar' | 'glaciar' | 'orquidea' | 'verde' | 'azul' | 'rojo';
 export const ACCENT_IDS: Accent[] = ['rosa', 'solar', 'glaciar', 'orquidea', 'verde', 'azul', 'rojo'];
@@ -22,6 +22,9 @@ interface State extends Persisted {
   view: View;
   toasts: Toast[];
   selectedFinding: string | null;
+  /** Técnica ATT&CK que la matriz debe abrir al entrar (desde la ficha de un hallazgo). */
+  focusTechnique: string | null;
+  setFocusTechnique: (id: string | null) => void;
   sidebarCollapsed: boolean;
   helpOpen: boolean;
   searchOpen: boolean;
@@ -124,6 +127,8 @@ export const useStore = create<State>()((set, get) => ({
   view: 'panel' as View,
   toasts: [],
   selectedFinding: null,
+  focusTechnique: null,
+  setFocusTechnique: (focusTechnique) => set({ focusTechnique }),
   theme: initial.settings.theme ?? 'dark',
   lang: initial.settings.lang ?? 'es',
   accent: initialAccent,
@@ -147,7 +152,8 @@ export const useStore = create<State>()((set, get) => ({
   setLang: (lang) => {
     setFormatLang(lang);
     if (typeof document !== 'undefined') document.documentElement.lang = lang;
-    set((s) => ({ lang, settings: { ...s.settings, lang } }));
+    // Los avisos pendientes están en el idioma anterior: se descartan.
+    set((s) => ({ lang, settings: { ...s.settings, lang }, toasts: [] }));
   },
   setAccent: (accent) => {
     applyChrome(get().theme, accent);

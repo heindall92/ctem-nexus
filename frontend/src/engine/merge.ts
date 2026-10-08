@@ -72,6 +72,8 @@ export function mergeFinding(base: Finding, incoming: Finding): { merged: Findin
     ...(reopened ? { status: 'abierto' as const, resolvedAt: null } : {}),
   };
   if (!merged.relatedCves?.length) delete merged.relatedCves;
+  const attack = [...new Set([...(base.attack ?? []), ...(incoming.attack ?? [])])];
+  if (attack.length) merged.attack = attack; else delete merged.attack;
   return { merged, reopened };
 }
 

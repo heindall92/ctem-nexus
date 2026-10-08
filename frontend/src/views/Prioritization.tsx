@@ -2,6 +2,7 @@ import { ExternalLink, FileSpreadsheet, Flame, Pencil, Plus, Radar, Search, Spar
 import { useMemo, useRef, useState } from 'react';
 import { BloodHoundUploader } from '../components/BloodHoundUploader';
 import { NmapUploader } from '../components/NmapUploader';
+import { techniqueById, techniquesOf } from '../engine/attack';
 import { CSV_TEMPLATE, importFindings } from '../engine/io';
 import { GUIDE_KEYS, guideIn } from '../engine/remediation';
 import type { Band, Finding, FindingKind, FindingStatus } from '../engine/types';
@@ -229,6 +230,9 @@ function FindingDetail({ findingId }: { findingId: string }) {
   const g = guideIn(lang, f.remediation, f.kind);
   const done = project.progress?.[f.id] ?? [];
   const toggleStep = useStore((st) => st.toggleStep);
+  const setFocusTechnique = useStore((st) => st.setFocusTechnique);
+  const setView = useStore((st) => st.setView);
+  const techs = techniquesOf(f);
   const cve = f.cve && /^CVE-\d{4}-\d{4,7}$/i.test(f.cve) ? f.cve.toUpperCase() : null;
   const refs = [
     ...(cve ? [
@@ -268,9 +272,26 @@ function FindingDetail({ findingId }: { findingId: string }) {
         <div><dt className="label">IP / CIDR</dt><dd className="num">{asset?.ip || '—'}</dd></div>
         <div><dt className="label">{L('Tipo', 'Type')}</dt><dd>{kindLabel(f.kind)}</dd></div>
         <div><dt className="label">{L('Detectado', 'Detected')}</dt><dd className="num">{f.detectedAt ?? '—'}</dd></div>
-        {f.technique && <div className="col-span-2"><dt className="label">{L('Técnica que habilita', 'Technique it enables')}</dt><dd>{f.technique}</dd></div>}
+        {f.technique && <div className="col-span-2"><dt className="label">{L('Movimiento que habilita', 'Movement it enables')}</dt><dd>{f.technique}</dd></div>}
         {f.description && <div className="col-span-2"><dt className="label">{L('Descripción', 'Description')}</dt><dd className="text-ink-2">{f.description}</dd></div>}
       </dl>
+      <div data-testid="attack-hallazgo">
+        <h3 className="label mb-2 font-medium">MITRE ATT&amp;CK <span className="font-normal text-ink-3">· {f.attack?.length ? L('fijadas por el analista', 'pinned by the analyst') : L('inferidas', 'inferred')}</span></h3>
+        {techs.length ? (
+          <ul className="flex flex-wrap gap-1.5">
+            {techs.map((id) => {
+              const t = techniqueById(id)!;
+              return (
+                <li key={id}>
+                  <button type="button" className="chip transition-transform duration-150 ease-[var(--ease-out)] hover:bg-surface-3 active:scale-[0.97]" style={{ background: 'var(--color-surface-2)', color: 'var(--color-ink-2)' }} onClick={() => { setFocusTechnique(id); setView('mitre'); }} aria-label={L(`Ver ${id} ${t.nameEs} en el mapa ATT&CK`, `Show ${id} ${t.name} on the ATT&CK map`)}>
+                    <span className="num">{id}</span><span>{lang === 'es' ? t.nameEs : t.name}</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        ) : <p className="text-xs text-ink-3">{L('Sin técnica identificable. Puedes fijarla al editar el hallazgo.', 'No identifiable technique. You can pin one when editing the finding.')}</p>}
+      </div>
       <div>
         <div className="mb-2 flex items-baseline justify-between gap-3">
           <h3 className="label font-medium">{L('Remediación', 'Remediation')} · {g.owner}</h3>
@@ -336,15 +357,22 @@ function FindingForm({ initial, onDone }: { initial: Finding | null; onDone: () 
     assetId: project.assets[0]?.id ?? '', status: 'abierto', remediation: 'patch_cve', detectedAt: new Date().toISOString().slice(0, 10), leadsTo: [], technique: '', edgeFrom: null,
   });
   const set = <K extends keyof Finding>(k: K, v: Finding[K]) => setF((p) => ({ ...p, [k]: v }));
+  const [attackText, setAttackText] = useState(() => (initial?.attack ?? []).join(', '));
+  const attackIds = [...new Set(attackText.split(/[\s,;]+/).map((x) => x.trim().toUpperCase()).filter(Boolean))];
+  const unknownAttack = attackIds.filter((id) => !techniqueById(id));
+  const attackErr = unknownAttack.length ? L(`No están en el catálogo: ${unknownAttack.join(', ')}`, `Not in the catalogue: ${unknownAttack.join(', ')}`) : null;
+  const inferred = techniquesOf({ ...f, attack: [] });
   const cveErr = f.cve && !CVE_RE.test(f.cve) ? L('Formato esperado: CVE-AAAA-NNNN', 'Expected format: CVE-YYYY-NNNN') : null;
   const titleErr = !f.title.trim() ? L('Obligatorio', 'Required') : null;
   const dupErr = !initial && project.findings.some((x) => x.id === f.id) ? L('Ese ID ya existe', 'That ID already exists') : null;
-  const valid = !cveErr && !titleErr && !dupErr && f.assetId;
+  const valid = !cveErr && !titleErr && !dupErr && !attackErr && f.assetId;
   return (
     <form className="flex flex-col gap-4" onSubmit={(e) => {
       e.preventDefault();
       if (!valid) return;
-      upsert({ ...f, title: f.title.trim(), cve: f.cve ? f.cve.toUpperCase() : null, technique: f.technique?.trim() || null });
+      const next: Finding = { ...f, title: f.title.trim(), cve: f.cve ? f.cve.toUpperCase() : null, technique: f.technique?.trim() || null, attack: attackIds };
+      if (!attackIds.length) delete next.attack;
+      upsert(next);
       notify(initial ? L(`Hallazgo ${f.id} actualizado.`, `Finding ${f.id} updated.`) : L(`Hallazgo ${f.id} añadido.`, `Finding ${f.id} added.`));
       select(f.id);
       onDone();
@@ -395,6 +423,13 @@ function FindingForm({ initial, onDone }: { initial: Finding | null; onDone: () 
           </Field>
         </div>
       </fieldset>
+      <Field
+        label={L('Técnicas MITRE ATT&CK (opcional)', 'MITRE ATT&CK techniques (optional)')}
+        error={attackErr}
+        hint={L(`Vacío = automáticas${inferred.length ? `: ${inferred.join(', ')}` : ''}. Separa los ID con comas.`, `Empty = automatic${inferred.length ? `: ${inferred.join(', ')}` : ''}. Separate IDs with commas.`)}
+      >
+        <input className="field num" value={attackText} aria-invalid={!!attackErr} onChange={(e) => setAttackText(e.target.value)} placeholder={inferred.join(', ') || 'T1190, T1059'} />
+      </Field>
       <Field label={L('Descripción', 'Description')}><textarea className="field" rows={3} value={f.description ?? ''} onChange={(e) => set('description', e.target.value)} /></Field>
       <div className="flex justify-end gap-2 pt-1">
         <button type="button" className="btn btn-ghost" onClick={onDone}>{L('Cancelar', 'Cancel')}</button>

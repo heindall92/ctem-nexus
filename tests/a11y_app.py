@@ -16,7 +16,7 @@ OUT = ROOT / "tests" / "artifacts"
 OUT.mkdir(parents=True, exist_ok=True)
 TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]
 S = "window.__CTEM__.getState()"
-VIEWS = ["panel", "alcance", "priorizacion", "rutas", "movilizacion", "ajustes"]
+VIEWS = ["panel", "alcance", "priorizacion", "rutas", "mitre", "movilizacion", "ajustes"]
 HELP_TABS = ["Ciclo CTEM", "Cálculo de riesgo", "Ingesta de datos", "Atajos de teclado", "Glosario", "Acerca de"]
 
 
@@ -50,6 +50,9 @@ def states(page, mobile):
     page.locator("[data-testid=ruta]").first.click(); yield "rutas/seleccionada"
     page.get_by_role("button", name="Solo esta ruta").click(); yield "rutas/solo-esta-ruta"
     page.get_by_role("button", name="Acercar").click(); yield "rutas/zoom"
+    J(f"{S}.setView('mitre')")
+    page.locator("[data-testid^=tecnica-]:visible").first.click(); yield "attack/ficha-tecnica"
+    page.keyboard.press("Escape")
     J(f"{S}.setView('movilizacion')")
     J(f"{S}.setHelpOpen(true)")
     for t in HELP_TABS:

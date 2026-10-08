@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from 'motion/react';
-import { ArrowRight, Crosshair, HelpCircle, Layers, Radar, Route, Search, ShieldAlert, X } from 'lucide-react';
+import { ArrowRight, Crosshair, Grid3x3, HelpCircle, Layers, Radar, Route, Search, ShieldAlert, X } from 'lucide-react';
+import { TACTICS, TECHNIQUES, techniquesOf } from '../engine/attack';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { screen } from '../i18n';
@@ -13,6 +14,7 @@ export function SearchModal() {
   const setView = useStore((s) => s.setView);
   const selectFinding = useStore((s) => s.selectFinding);
   const setHelpOpen = useStore((s) => s.setHelpOpen);
+  const setFocusTechnique = useStore((s) => s.setFocusTechnique);
   const lang = useStore((s) => s.lang);
   const c = screen[lang];
   const project = useStore((s) => s.project);
@@ -60,14 +62,18 @@ export function SearchModal() {
       .slice(0, 5);
 
     const matchedFindings = project.findings
-      .filter((f) => f.title.toLowerCase().includes(q) || (f.cve && f.cve.toLowerCase().includes(q)) || (f.technique && f.technique.toLowerCase().includes(q)) || f.assetId.toLowerCase().includes(q))
+      .filter((f) => f.title.toLowerCase().includes(q) || (f.cve && f.cve.toLowerCase().includes(q)) || (f.technique && f.technique.toLowerCase().includes(q)) || f.assetId.toLowerCase().includes(q) || techniquesOf(f).some((id) => id.toLowerCase() === q))
       .slice(0, 6);
+
+    const matchedTechniques = TECHNIQUES
+      .filter((t) => t.id.toLowerCase().startsWith(q) || t.name.toLowerCase().includes(q) || t.nameEs.toLowerCase().includes(q))
+      .slice(0, 5);
 
     const matchedRanges = project.ranges
       .filter((r) => r.label.toLowerCase().includes(q) || r.cidr.toLowerCase().includes(q))
       .slice(0, 3);
 
-    return { assets: matchedAssets, findings: matchedFindings, ranges: matchedRanges };
+    return { assets: matchedAssets, findings: matchedFindings, ranges: matchedRanges, techniques: matchedTechniques };
   }, [query, project.assets, project.ranges, project.findings]);
 
   const navigateTo = (view: View, findingId?: string) => {
@@ -168,6 +174,14 @@ export function SearchModal() {
                     </button>
                     <button
                       type="button"
+                      onClick={() => navigateTo('mitre')}
+                      className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-left text-ink-2 transition hover:bg-surface-2 hover:text-ink"
+                    >
+                      <Grid3x3 className="size-4 text-accent" />
+                      <span>{lang === 'en' ? 'ATT&CK map' : 'Mapa ATT&CK'}</span>
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => { setOpen(false); setHelpOpen(true); }}
                       className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-left text-ink-2 transition hover:bg-surface-2 hover:text-ink"
                     >
@@ -176,7 +190,7 @@ export function SearchModal() {
                     </button>
                   </div>
                 </div>
-              ) : results && (results.assets.length > 0 || results.findings.length > 0 || results.ranges.length > 0) ? (
+              ) : results && (results.assets.length > 0 || results.findings.length > 0 || results.ranges.length > 0 || results.techniques.length > 0) ? (
                 <div className="space-y-4 p-1">
                   {results.findings.length > 0 && (
                     <div>
@@ -198,14 +212,38 @@ export function SearchModal() {
                                 </div>
                                 <div className="mt-0.5 text-[0.6875rem] text-ink-3">
                                   {f.cve && <span className="font-mono text-ink-2">{f.cve} · </span>}
-                                  <span>{c.assetLabel}: {f.assetId}</span>
-                                  {f.technique && <span> · MITRE: {f.technique}</span>}
+                                  <span>{c.assetLabel}: {project.assets.find((a) => a.id === f.assetId)?.name ?? f.assetId}</span>
+                                  {techniquesOf(f).length > 0 && <span className="font-mono"> · {techniquesOf(f).slice(0, 3).join(', ')}</span>}
                                 </div>
                               </div>
                               <ArrowRight className="size-3.5 text-ink-3 opacity-0 transition group-hover:opacity-100" />
                             </button>
                           );
                         })}
+                      </div>
+                    </div>
+                  )}
+
+                  {results.techniques.length > 0 && (
+                    <div>
+                      <div className="px-3 pb-1 text-[0.6875rem] font-semibold uppercase tracking-wider text-ink-3">{lang === 'en' ? 'ATT&CK techniques' : 'Técnicas ATT&CK'}</div>
+                      <div className="space-y-0.5">
+                        {results.techniques.map((t) => (
+                          <button
+                            key={t.id}
+                            type="button"
+                            onClick={() => { setFocusTechnique(t.id); navigateTo('mitre'); }}
+                            className="group flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left text-xs transition hover:bg-surface-2"
+                          >
+                            <div className="flex min-w-0 items-center gap-2.5">
+                              <Grid3x3 className="size-3.5 shrink-0 text-ink-3" />
+                              <span className="font-mono text-ink-2">{t.id}</span>
+                              <span className="truncate font-medium text-ink group-hover:text-accent">{lang === 'en' ? t.name : t.nameEs}</span>
+                              <span className="hidden shrink-0 text-ink-3 sm:inline">{(() => { const tac = TACTICS.find((x) => x.id === t.tactic)!; return lang === 'en' ? tac.name : tac.nameEs; })()}</span>
+                            </div>
+                            <ArrowRight className="size-3.5 text-ink-3 opacity-0 transition group-hover:opacity-100" />
+                          </button>
+                        ))}
                       </div>
                     </div>
                   )}

@@ -103,7 +103,7 @@ def escritorio(b, tmp):
     det = J(f"{S}.project.findings.find(f => f.id === 'H-001').detectedAt")
     check("las fechas de la demo se desplazan a hoy (no envejece)", det == "2026-09-24", det)
 
-    for nombre, vista in [("Alcance y activos", "alcance"), ("Priorización", "priorizacion"), ("Rutas de ataque", "rutas"), ("Movilización", "movilizacion"), ("Ajustes y datos", "ajustes"), ("Inicio", "panel")]:
+    for nombre, vista in [("Alcance y activos", "alcance"), ("Priorización", "priorizacion"), ("Rutas de ataque", "rutas"), ("Mapa ATT&CK", "mitre"), ("Movilización", "movilizacion"), ("Ajustes y datos", "ajustes"), ("Inicio", "panel")]:
         nav(page, nombre)
         check(f"navegación a {nombre}", J(f"{S}.view") == vista and page.get_by_role("navigation", name="Secciones").get_by_role("button", name=nombre).get_attribute("aria-current") == "page")
 
@@ -124,7 +124,7 @@ def escritorio(b, tmp):
     acciones.first.get_by_role("button").click()
     check("una acción abre su hallazgo en Priorización", J(f"{S}.view") == "priorizacion" and J(f"{S}.selectedFinding") is not None)
     page.keyboard.press("Escape")
-    for nombre in ["Inicio", "Alcance y activos", "Priorización", "Rutas de ataque", "Movilización", "Ajustes y datos"]:
+    for nombre in ["Inicio", "Alcance y activos", "Priorización", "Rutas de ataque", "Mapa ATT&CK", "Movilización", "Ajustes y datos"]:
         nav(page, nombre)
         h1 = page.locator("h1")
         if h1.count() != 1:
@@ -223,6 +223,33 @@ def escritorio(b, tmp):
     md = pathlib.Path(d.value.path()).read_text(encoding="utf-8")
     check("los tickets en Markdown incluyen la fecha límite", "**Vence:** 20" in md)
 
+    # Mapa ATT&CK: matriz, ficha de técnica, ida y vuelta con el hallazgo, capa de Navigator y búsqueda por ID
+    nav(page, "Mapa ATT&CK")
+    check("la matriz ATT&CK muestra las 11 tácticas", page.get_by_test_id("matriz-attack").locator("section").count() == 11)
+    celda = page.get_by_test_id("matriz-attack").get_by_test_id("tecnica-T1190")
+    anunciados = int(re.search(r": (\d+) hallazgos", celda.get_attribute("aria-label")).group(1))
+    celda.click()
+    ficha = page.get_by_test_id("ficha-tecnica")
+    check("la ficha de T1190 lista los hallazgos que anuncia su celda, Log4Shell incluido", ficha.locator("li").count() == anunciados >= 2 and "Log4Shell" in ficha.inner_text(), anunciados)
+    ficha.locator("li button").first.click()
+    check("un hallazgo de la ficha abre su detalle en Priorización", J(f"{S}.view") == "priorizacion" and J(f"{S}.selectedFinding") == "H-001")
+    page.get_by_test_id("attack-hallazgo").get_by_role("button").first.click()
+    check("un chip ATT&CK del hallazgo abre esa técnica en el mapa", J(f"{S}.view") == "mitre" and page.get_by_test_id("ficha-tecnica").count() == 1)
+    page.keyboard.press("Escape")
+    with page.expect_download() as d:
+        page.get_by_role("button", name="Capa para Navigator").click()
+    capa = json.loads(pathlib.Path(d.value.path()).read_text(encoding="utf-8-sig"))
+    expuestas = page.locator("[data-testid=matriz-attack] [data-testid^=tecnica-]").count()
+    check("la capa de Navigator es válida y trae una técnica por celda expuesta", capa["domain"] == "enterprise-attack" and capa["versions"]["layer"] == "4.5" and len(capa["techniques"]) == expuestas and all(1 <= t["score"] <= 3 for t in capa["techniques"]), (len(capa["techniques"]), expuestas))
+    check("un hallazgo mitigado no aporta técnicas a la capa", "H-017" not in json.dumps(capa))
+    page.get_by_role("button", name=re.compile("^Buscar")).click()
+    caja = page.get_by_role("textbox", name=re.compile("Buscar activo"))
+    expect(caja).to_be_focused()
+    caja.fill("T1558.003")
+    page.get_by_role("dialog").get_by_role("button", name=re.compile("Kerberoasting")).first.click()
+    check("buscar por ID de técnica abre su ficha en el mapa", J(f"{S}.view") == "mitre" and page.get_by_role("dialog", name=re.compile("Kerberoasting")).count() == 1)
+    page.keyboard.press("Escape")
+
     # Pasos de remediación con casillas: se guardan en el proyecto
     J(f"{S}.setView('priorizacion')"); J(f"{S}.selectFinding('H-001')")
     detalle = page.get_by_role("dialog")
@@ -294,9 +321,12 @@ def escritorio(b, tmp):
     # Inglés completo: ninguna vista, detalle, formulario ni pestaña de ayuda conserva texto de interfaz en español
     J(f"{S}.loadDemo()")
     restos = {}
-    for v in ["panel", "alcance", "priorizacion", "rutas", "movilizacion", "ajustes"]:
+    for v in ["panel", "alcance", "priorizacion", "rutas", "mitre", "movilizacion", "ajustes"]:
         J(f"{S}.setView('{v}')")
         restos[v] = restos_en_espanol(page)
+    J(f"{S}.setView('mitre')"); page.locator("[data-testid^=tecnica-]:visible").first.click()
+    restos["ficha-tecnica"] = restos_en_espanol(page)
+    page.keyboard.press("Escape")
     J(f"{S}.setView('priorizacion')"); J(f"{S}.selectFinding('H-001')")
     restos["detalle"] = restos_en_espanol(page)
     page.keyboard.press("Escape")
@@ -309,7 +339,7 @@ def escritorio(b, tmp):
         restos[f"ayuda/{t}"] = restos_en_espanol(page)
     J(f"{S}.setHelpOpen(false)")
     sucios = {k: v[:3] for k, v in restos.items() if v}
-    check("en inglés no queda texto de interfaz en español (14 pantallas)", not sucios, sucios)
+    check("en inglés no queda texto de interfaz en español (16 pantallas)", not sucios, sucios)
     J(f"{S}.setLang('es')")
 
     check("sin errores de consola ni peticiones externas", not problemas, problemas[:5])
@@ -345,13 +375,18 @@ def movil(b):
       }
       return out.slice(0, 5);
     }"""
-    for v in ["panel", "alcance", "priorizacion", "rutas", "movilizacion", "ajustes"]:
+    for v in ["panel", "alcance", "priorizacion", "rutas", "mitre", "movilizacion", "ajustes"]:
         page.evaluate(f"{S}.setView('{v}')")
         page.wait_for_timeout(250)
         fuera = page.evaluate(recorte)
         check(f"en móvil, «{v}» no recorta contenido por la derecha", not fuera, fuera)
     page.evaluate(f"{S}.setView('movilizacion')")
     check("en móvil, los riesgos principales se ven como tarjetas", page.get_by_test_id("tarjetas-riesgos").is_visible())
+    page.evaluate(f"{S}.setView('mitre')")
+    check("en móvil, el mapa ATT&CK es una lista por táctica y no la matriz", page.get_by_test_id("lista-attack").is_visible() and not page.get_by_test_id("matriz-attack").is_visible())
+    barra.get_by_role("button", name="Más").click()
+    page.get_by_role("button", name="Mapa ATT&CK").click()
+    check("«Más» lleva al mapa ATT&CK", page.evaluate(f"{S}.view") == "mitre")
     barra.get_by_role("button", name="Más").click()
     page.get_by_role("button", name="Alcance y activos").click()
     check("«Más» lleva a las vistas secundarias", page.evaluate(f"{S}.view") == "alcance")

@@ -19,6 +19,7 @@ import {
   Radar,
   RotateCcw,
   Route,
+  Grid3x3,
   Search,
   Waypoints,
   Settings as SettingsIcon,
@@ -40,6 +41,7 @@ const NAV: Array<{ view: View; icon: ReactNode }> = [
   { view: 'alcance', icon: <Crosshair /> },
   { view: 'priorizacion', icon: <Radar /> },
   { view: 'rutas', icon: <Route /> },
+  { view: 'mitre', icon: <Grid3x3 /> },
   { view: 'movilizacion', icon: <ListChecks /> },
 ];
 
@@ -782,6 +784,9 @@ export function MobileTabBar() {
         <div className="absolute inset-x-3 bottom-full mb-2 flex flex-col gap-1 rounded-2xl border border-hairline bg-surface p-2 shadow-xl">
           <button type="button" onClick={() => go('alcance')} className="flex h-11 items-center gap-2 rounded-xl px-3 text-sm text-ink active:scale-[0.97]">
             <Crosshair className="size-4 text-accent" /> {t.alcance}
+          </button>
+          <button type="button" onClick={() => go('mitre')} aria-current={view === 'mitre' ? 'page' : undefined} className="flex h-11 items-center gap-2 rounded-xl px-3 text-sm text-ink active:scale-[0.97]">
+            <Grid3x3 className="size-4 text-accent" /> {t.mitre}
           </button>
           <button type="button" onClick={() => go('ajustes')} className="flex h-11 items-center gap-2 rounded-xl px-3 text-sm text-ink active:scale-[0.97]">
             <SettingsIcon className="size-4 text-accent" /> {t.ajustes}
