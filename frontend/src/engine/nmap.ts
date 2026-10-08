@@ -15,6 +15,17 @@ export function isPrivateIp(ip: string): boolean {
   return false;
 }
 
+/** Tamaño máximo aceptado para un XML de Nmap (20 MB, igual que la API). */
+export const MAX_XML = 20_000_000;
+
+/** Rechaza XML con entidades o DTD interna/externa (XXE, «billion laughs»). Nmap solo emite `<!DOCTYPE nmaprun>`. */
+export function assertSafeXml(xmlText: string): void {
+  if (xmlText.length > MAX_XML) throw new Error('El archivo supera el máximo de 20 MB.');
+  if (/<!ENTITY/i.test(xmlText) || /<!DOCTYPE[^>]*(\[|SYSTEM|PUBLIC)/i.test(xmlText)) {
+    throw new Error('El XML declara entidades o una DTD: se rechaza por seguridad.');
+  }
+}
+
 export interface NmapParseResult {
   assets: Asset[];
   findings: Finding[];
@@ -28,6 +39,7 @@ export interface NmapParseResult {
  * Funciona de manera universal en navegadores (vía DOMParser) y con respaldo de expresiones regulares.
  */
 export function parseNmapXml(xmlText: string): NmapParseResult {
+  assertSafeXml(xmlText);
   const assets: Asset[] = [];
   const findings: Finding[] = [];
   const subnets = new Set<string>();

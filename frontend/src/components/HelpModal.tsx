@@ -284,7 +284,7 @@ export function HelpModal() {
 
                   <section className="space-y-2 text-xs text-ink-2">
                     <h4 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-3">Sobre la herramienta</h4>
-                    <p><strong className="text-ink">CTEM-Nexus 0.2.0</strong> · Gestión continua de la exposición a amenazas, en las cinco fases de Gartner. Alcance, descubrimiento con Nmap y BloodHound, priorización explicable, rutas de ataque y movilización.</p>
+                    <p><strong className="text-ink">CTEM-Nexus {__APP_VERSION__}</strong> · Gestión continua de la exposición a amenazas, en las cinco fases de Gartner. Alcance, descubrimiento con Nmap y BloodHound, priorización explicable, rutas de ataque y movilización.</p>
                     <p>Herramienta de apoyo a la priorización. No sustituye a un test de intrusión ni a la auditoría de certificación. El caso de ejemplo es ficticio.</p>
                     <p>Iconos Lucide. El cálculo corre en el navegador; la API FastAPI es opcional y solo habla con localhost. Código bajo licencia GPLv2.</p>
                     <a href="https://github.com/heindall92/ctem-nexus" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 font-medium text-accent">

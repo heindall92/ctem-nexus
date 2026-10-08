@@ -1,11 +1,13 @@
-![header](https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=12,20,24,30&height=200&section=header&text=CTEM-Nexus&fontSize=64&fontColor=fff&animation=twinkling&fontAlignY=35&desc=Gesti%C3%B3n%20continua%20de%20la%20exposici%C3%B3n%20a%20amenazas%20%C2%B7%20Gartner%20CTEM&descSize=18&descAlignY=56&descAlign=50)
+<p align="center">
+  <img src="docs/assets/readme/cabecera.svg" alt="CTEM-Nexus: del escaneo al plan de remediación, en tu navegador. CVSS, EPSS, CISA KEV, rutas de ataque y puntos de estrangulamiento" width="100%">
+</p>
 
 <p align="center">
   <b>Plataforma de gestión continua de la exposición a amenazas: define el alcance, ingesta escaneos de red Nmap y vulnerabilidades, prioriza con cálculo explicable (CVSS · EPSS · KEV), calcula rutas de ataque hacia las joyas de la corona y moviliza la remediación con planes ejecutivos y técnicos.</b>
 </p>
 
 <p align="center">
-  <a href="https://heindall92.github.io/ctem-nexus/ctem-nexus.html"><img alt="Abrir CTEM-Nexus" src="https://img.shields.io/badge/ABRIR-heindall92.github.io%2Fctem--nexus-3DDCC4?style=for-the-badge"/></a>
+  <a href="https://heindall92.github.io/ctem-nexus/"><img alt="Abrir CTEM-Nexus" src="https://img.shields.io/badge/ABRIR-heindall92.github.io%2Fctem--nexus-3DDCC4?style=for-the-badge"/></a>
 </p>
 
 <p align="center">
@@ -17,7 +19,7 @@
   <img alt="Tailwind CSS 4" src="https://img.shields.io/badge/Tailwind%20CSS-4-06B6D4?style=flat&logo=tailwindcss&logoColor=white"/>
   <img alt="FastAPI opcional" src="https://img.shields.io/badge/API-FastAPI%20(opcional)-009688?style=flat&logo=fastapi&logoColor=white"/>
   <img alt="Un solo HTML" src="https://img.shields.io/badge/un%20solo-HTML%20sin%20servidor-2E8B57?style=flat"/>
-  <img alt="Pruebas 100% OK" src="https://img.shields.io/badge/pruebas-Vitest%2024%20%C2%B7%20Pytest%2018-2E8B57?style=flat"/>
+  <img alt="Pruebas 100% OK" src="https://img.shields.io/badge/pruebas-Vitest%2030%20%C2%B7%20Pytest%2019-2E8B57?style=flat"/>
   <img alt="Iconos Lucide" src="https://img.shields.io/badge/iconos-Lucide-F56565?style=flat&logo=lucide&logoColor=white"/>
 </p>
 
@@ -89,7 +91,7 @@ pesadas de auditoría.
       <td valign="top"><code>├─</code> <img src="docs/assets/icons/check-check.svg" width="16" height="16" alt="" valign="middle"/> <code>pruebas_calidad:</code><br><br>
         <img src="docs/assets/stack/vitest.svg" height="48" alt="Vitest">
         <img src="docs/assets/stack/pytest.svg" height="48" alt="Pytest"><br>
-        <sub><code>Vitest 23 pruebas · Pytest 17 pruebas · Paridad exacta TS ↔ Python (golden-demo)</code></sub>
+        <sub><code>Vitest 30 pruebas · Pytest 19 pruebas · Paridad exacta TS ↔ Python (golden-demo)</code></sub>
       </td>
       <td valign="top"><code>╰─</code> <img src="docs/assets/icons/shield-check.svg" width="16" height="16" alt="" valign="middle"/> <code>seguridad_privacidad:</code><br><br>
         <img src="docs/assets/stack/csp.svg" height="48" alt="CSP estricta"><br>
@@ -99,7 +101,7 @@ pesadas de auditoría.
   </tbody>
   <tfoot>
     <tr>
-      <td colspan="2"><code>version: 0.2.0&nbsp;&nbsp;·&nbsp;&nbsp;motor: TS + FastAPI&nbsp;&nbsp;·&nbsp;&nbsp;Gartner CTEM&nbsp;&nbsp;·&nbsp;&nbsp;pruebas: Vitest 24 · Pytest 18&nbsp;&nbsp;·&nbsp;&nbsp;licencia: GPLv2</code></td>
+      <td colspan="2"><code>version: 0.2.0&nbsp;&nbsp;·&nbsp;&nbsp;motor: TS + FastAPI&nbsp;&nbsp;·&nbsp;&nbsp;Gartner CTEM&nbsp;&nbsp;·&nbsp;&nbsp;pruebas: Vitest 30 · Pytest 19&nbsp;&nbsp;·&nbsp;&nbsp;licencia: GPLv2</code></td>
     </tr>
   </tfoot>
 </table>
@@ -122,6 +124,7 @@ pesadas de auditoría.
 - [Seguridad y privacidad](#seguridad-y-privacidad)
 - [Limitaciones conocidas](#limitaciones-conocidas)
 - [Estructura del proyecto](#estructura-del-proyecto)
+- [Hoja de ruta](#hoja-de-ruta)
 - [Licencia](#licencia)
 - [Autor](#autor)
 
@@ -327,8 +330,8 @@ Detalles completos y ejemplo resuelto en [`docs/SCORING.md`](docs/SCORING.md).
 
 ## <img src="docs/assets/icons/shield-check.svg" width="20" height="20" valign="middle"/> Calidad y pruebas
 
-- **Motor TypeScript:** 24 pruebas con Vitest (fórmulas, clasificaciones, grafo, rutas, estrangulamientos, parseador Nmap XML, BloodHound, importaciones CSV/JSON y fichero dorado).
-- **Motor Python y API:** 18 pruebas con Pytest (endpoints de FastAPI, carga multipart de Nmap, neutralización de fórmulas CSV y paridad con `shared/golden-demo.json`).
+- **Motor TypeScript:** 30 pruebas con Vitest (fórmulas, clasificaciones, grafo, rutas, estrangulamientos, parseador Nmap XML, BloodHound, importaciones CSV/JSON, fichero dorado, rechazo de XML con entidades y coherencia del repositorio).
+- **Motor Python y API:** 19 pruebas con Pytest (endpoints de FastAPI, carga multipart de Nmap, rechazo de XML con entidades, neutralización de fórmulas CSV y paridad con `shared/golden-demo.json`).
 - **Compilación e integridad:** TypeScript en modo estricto (`tsc -b`). La CSP del archivo único prohíbe scripts externos y evalúa hashes criptográficos.
 
 ## <img src="docs/assets/icons/shield-alert.svg" width="20" height="20" valign="middle"/> Seguridad y privacidad
@@ -336,7 +339,7 @@ Detalles completos y ejemplo resuelto en [`docs/SCORING.md`](docs/SCORING.md).
 - **Cero dependencias externas en tiempo de ejecución:** Fuentes autoalojadas e incrustadas en base64; sin CDNs externos, sin Google Analytics y sin telemetría.
 - **Política de Seguridad de Contenido (CSP) estricta:** `default-src 'none'`, estilos y scripts autorizados exclusivamente por hash SHA-256, y conexiones limitadas a `localhost` para la API opcional.
 - **Protección contra inyección de fórmulas CSV:** Toda celda que comience por caracteres peligrosos (`=`, `+`, `-`, `@`, `\t`, `\r`) es neutralizada con apóstrofe inicial en la interfaz y en el backend.
-- **Análisis defensivo:** Sanitización de claves prohibidas (`__proto__`, `constructor`) durante el parseo de proyectos JSON.
+- **Análisis defensivo:** Sanitización de claves prohibidas (`__proto__`, `constructor`, `prototype`) al leer proyectos y exportaciones de BloodHound, y rechazo de XML con entidades o DTD (XXE, «billion laughs») con un máximo de 20 MB por fichero. Política completa en [SECURITY.md](SECURITY.md).
 
 ## <img src="docs/assets/icons/list-checks.svg" width="20" height="20" valign="middle"/> Limitaciones conocidas
 
@@ -368,17 +371,24 @@ ctem-nexus/
 │   │   └── engine/            # prioritization.py (lógica idéntica al motor TS)
 │   └── tests/                 # Pytest (pruebas unitarias, paridad y endpoints)
 ├── shared/golden-demo.json    # Fichero dorado para verificar paridad TS ↔ Python
+├── ROADMAP.md · CHANGELOG.md · SECURITY.md · CONTRIBUTING.md
 ├── docs/
 │   ├── ARCHITECTURE.md        # Documentación de arquitectura
 │   ├── SCORING.md             # Especificación matemática del cálculo de riesgo
 │   ├── screenshots/           # Capturas de pantalla de la interfaz
-│   └── assets/                # Iconos Lucide y badges vectoriales del stack
+│   └── assets/                # Iconos Lucide, insignias del stack y cabecera del README (readme/)
 └── .github/workflows/         # CI/CD y despliegue en GitHub Pages
 ```
+
+## <img src="docs/assets/icons/route.svg" width="20" height="20" valign="middle"/> Hoja de ruta
+
+El plan hasta la 1.0.0 está en [ROADMAP.md](ROADMAP.md): accesibilidad AA verificada con axe, rediseño, nuevos importadores (Nessus, OpenVAS, Nuclei, SARIF), excepciones de riesgo, histórico de ciclos, ATT&CK e integración por fichero con el resto del ecosistema. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md) y la guía para colaborar en [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Licencia
 
 Este proyecto está distribuido bajo la licencia [GPL-2.0](LICENSE).
+
+**Independencia.** CTEM-Nexus es un proyecto personal y de código abierto. No está afiliado a Gartner, MITRE, CISA, FIRST, ISO, IEC, el CCN ni a ninguna entidad de certificación, ni cuenta con su respaldo. CTEM es un marco publicado por Gartner. CVSS y EPSS son de FIRST y el catálogo KEV es de CISA. Los datos del ejemplo son ficticios y usan rangos de documentación (RFC 5737).
 
 ## <img src="docs/assets/icons/user.svg" width="20" height="20" valign="middle"/> Autor
 
@@ -399,3 +409,7 @@ El mismo autor mantiene el ecosistema con el que se cruza esta herramienta:
 | [ENS AD Auditor](https://github.com/heindall92/ens_ad-auditor) | Directorio activo frente al ENS. |
 | [ARGOS](https://github.com/heindall92/argos-grc) | Práctica del gobierno de la seguridad. |
 | [Norvik](https://github.com/heindall92/Norvik_Gobernanza) | Gobernanza. |
+
+<p align="center">
+  <img src="docs/assets/readme/pie.svg" alt="" width="100%">
+</p>

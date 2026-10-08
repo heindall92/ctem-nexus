@@ -35,13 +35,15 @@ Problemas detectados:
 
 Tareas:
 
-- [ ] Fuente única de versión: `package.json` → `__APP_VERSION__` (Vite `define`) → interfaz, informe y «Acerca de». La versión del motor se mantiene aparte y se documenta.
-- [ ] Prueba que falle si el README, `package.json` y `CHANGELOG.md` no coinciden en la versión.
-- [ ] Sacar `tsconfig.tsbuildinfo` del repositorio y añadir `*.tsbuildinfo` a `.gitignore`.
-- [ ] Cabecera y pie del README como SVG locales (`docs/assets/`), generados por script, sin servicios de terceros.
-- [ ] Fijar las acciones por SHA con comentario de versión; `permissions: contents: read` por defecto y escritura solo en el paso de despliegue; Dependabot semanal para npm, pip y actions.
-- [ ] CI: comprobar que `ctem-nexus.html` de la raíz coincide con el `dist/` recién construido (como en ARGOS) y que el árbol queda limpio tras compilar.
-- [ ] `CHANGELOG.md` (Keep a Changelog), `SECURITY.md` y `CONTRIBUTING.md`.
+- [x] Fuente única de versión: `package.json` → `__APP_VERSION__` (Vite `define`) → interfaz, informe y «Acerca de». La versión del motor se mantiene aparte y se documenta.
+- [x] Prueba que falle si el README, `package.json` y `CHANGELOG.md` no coinciden en la versión.
+- [x] Sacar `tsconfig.tsbuildinfo` del repositorio y añadir `*.tsbuildinfo` a `.gitignore`.
+- [x] Cabecera y pie del README como SVG locales (`docs/assets/`), generados por script, sin servicios de terceros.
+- [x] Fijar las acciones por SHA con comentario de versión; `permissions: contents: read` por defecto y escritura solo en el paso de despliegue; Dependabot semanal para npm, pip y actions.
+- [x] CI: comprobar que `ctem-nexus.html` de la raíz coincide con el `dist/` recién construido (como en ARGOS) y que el árbol queda limpio tras compilar.
+- [x] `CHANGELOG.md` (Keep a Changelog), `SECURITY.md` y `CONTRIBUTING.md`.
+
+**Estado: cerrada en 0.2.0.** Además se corrigió el análisis de XML con entidades (XXE) en el navegador y en la API.
 
 **Aceptación:** `git status` vacío tras `npm ci && npm test && npm run build`, la CI en verde y una única cifra de versión y de pruebas en todo el repositorio.
 

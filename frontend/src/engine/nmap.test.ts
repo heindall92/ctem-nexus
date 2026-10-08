@@ -60,4 +60,11 @@ describe('nmap parser', () => {
     expect(cve).toBeDefined();
     expect(cve?.assetId).toBe(gw?.id);
   });
+
+  it('rechaza XML con entidades o DTD (XXE, «billion laughs») y acepta el DOCTYPE de Nmap', () => {
+    expect(() => parseNmapXml('<!DOCTYPE r [<!ENTITY a "x">]><nmaprun>&a;</nmaprun>')).toThrow(/DTD/);
+    expect(() => parseNmapXml('<!DOCTYPE r SYSTEM "file:///etc/passwd"><nmaprun/>')).toThrow(/DTD/);
+    const real = parseNmapXml('<?xml version="1.0"?><!DOCTYPE nmaprun><nmaprun><host><status state="up"/><address addr="10.0.0.1" addrtype="ipv4"/></host></nmaprun>');
+    expect(real.totalHosts).toBe(1);
+  });
 });

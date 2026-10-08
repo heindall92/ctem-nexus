@@ -61,4 +61,10 @@ describe('bloodhound active directory parser', () => {
     expect(kerb?.title).toContain('Kerberoasting');
     expect(kerb?.leadsTo).toContain(dc?.id);
   });
+
+  it('descarta claves de prototipo del JSON importado', () => {
+    parseBloodHoundJson('{"data":[{"__proto__":{"polluted":true},"ObjectIdentifier":"S-1","Properties":{"name":"PC01.CORP.LOCAL"}}]}');
+    expect(({} as Record<string, unknown>).polluted).toBeUndefined();
+    expect(() => parseBloodHoundJson('no es json')).toThrow(/JSON/);
+  });
 });

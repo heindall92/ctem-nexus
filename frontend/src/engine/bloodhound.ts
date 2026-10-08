@@ -1,5 +1,6 @@
 /* Parser de exportaciones JSON de BloodHound / SharpHound (Active Directory). */
 import type { Asset, AssetType, Finding, ManualEdge } from './types';
+import { safeJsonParse } from './io';
 
 export interface BloodHoundParseResult {
   assets: Asset[];
@@ -24,12 +25,9 @@ function cleanName(raw: string): string {
  * Parsea contenido JSON exportado por SharpHound / BloodHound CE (computers, users, o estructura unificada).
  */
 export function parseBloodHoundJson(jsonText: string): BloodHoundParseResult {
-  let parsed: any;
-  try {
-    parsed = JSON.parse(jsonText);
-  } catch {
-    throw new Error('El archivo no es un JSON válido de BloodHound.');
-  }
+  // Sin claves de prototipo (__proto__, constructor, prototype): el fichero es dato no confiable.
+  const parsed: any = safeJsonParse(jsonText);
+  if (parsed === null || typeof parsed !== 'object') throw new Error('El archivo no es un JSON válido de BloodHound.');
 
   // Detectar formato BloodHound (con clave "data" o array directo)
   const items: any[] = Array.isArray(parsed)

@@ -16,7 +16,7 @@ function findChrome() {
   if (process.env.CHROME_PATH && existsSync(process.env.CHROME_PATH)) return process.env.CHROME_PATH;
   const cache = join(homedir(), '.cache/ms-playwright');
   const local = join(process.env.LOCALAPPDATA || '', 'ms-playwright');
-  for (const root of [cache, local]) {
+  for (const root of [process.env.PLAYWRIGHT_BROWSERS_PATH || '', cache, local].filter(Boolean)) {
     if (!existsSync(root)) continue;
     for (const d of readdirSync(root).filter((x) => x.startsWith('chromium-')).sort().reverse()) {
       for (const sub of ['chrome-linux64/chrome', 'chrome-linux/chrome', 'chrome-win64/chrome.exe', 'chrome-win/chrome.exe']) {

@@ -46,10 +46,29 @@ def _infer_subnet(ip_str: str) -> Optional[str]:
     return None
 
 
+MAX_UPLOAD = 20_000_000
+_ENTIDAD = re.compile(rb"<!ENTITY", re.IGNORECASE)
+_DTD_INTERNA = re.compile(rb"<!DOCTYPE[^>]*(\[|SYSTEM|PUBLIC)", re.IGNORECASE)
+
+
+def rechazar_dtd(content: bytes) -> None:
+    """Rechaza XML con entidades o DTD interna/externa (XXE, «billion laughs»). Nmap solo emite `<!DOCTYPE nmaprun>`."""
+    if _ENTIDAD.search(content) or _DTD_INTERNA.search(content):
+        raise HTTPException(status_code=400, detail="El XML declara entidades o una DTD: se rechaza por seguridad.")
+
+
+async def leer_limitado(file: UploadFile) -> bytes:
+    content = await file.read(MAX_UPLOAD + 1)
+    if len(content) > MAX_UPLOAD:
+        raise HTTPException(status_code=413, detail="El archivo supera el máximo de 20 MB.")
+    return content
+
+
 def parse_nmap_xml_content(content: bytes | str) -> dict:
     """Parsea el reporte XML de Nmap y genera activos y hallazgos compatibles con CTEM-Nexus."""
     if isinstance(content, str):
         content = content.encode("utf-8")
+    rechazar_dtd(content)
 
     try:
         root = ET.fromstring(content)
@@ -285,12 +304,12 @@ async def upload_nmap_scan(file: UploadFile = File(...)) -> dict:
     if not (file.filename or "").lower().endswith(".xml"):
         raise HTTPException(status_code=400, detail="El archivo debe tener extensión .xml generado por Nmap (-oX).")
     try:
-        content = await file.read()
+        content = await leer_limitado(file)
         return parse_nmap_xml_content(content)
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error interno procesando el archivo: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error interno procesando el archivo.") from e
 
 
 class BloodHoundImport(BaseModel):
@@ -462,9 +481,9 @@ async def upload_bloodhound_file(file: UploadFile = File(...)) -> dict:
     if not (file.filename or "").lower().endswith(".json"):
         raise HTTPException(status_code=400, detail="El archivo debe tener extensión .json (SharpHound / BloodHound).")
     try:
-        content = await file.read()
+        content = await leer_limitado(file)
         return parse_bloodhound_json_content(content)
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error interno procesando BloodHound: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error interno procesando BloodHound.") from e

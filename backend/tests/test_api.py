@@ -156,3 +156,16 @@ def test_bloodhound_api():
     kerb = next(f for f in data["findings"] if f["remediation"] == "kerberoast")
     assert kerb is not None
     assert dc["id"] in kerb["leadsTo"]
+
+
+def test_nmap_rechaza_entidades_y_acepta_doctype_de_nmap():
+    bomba = '<?xml version="1.0"?><!DOCTYPE r [<!ENTITY a "aaaa"><!ENTITY b "&a;&a;&a;&a;">]><nmaprun>&b;</nmaprun>'
+    r = client.post("/api/v1/discovery/import-nmap", json={"xml": bomba})
+    assert r.status_code == 400
+    assert "DTD" in r.json()["detail"]
+    externa = '<?xml version="1.0"?><!DOCTYPE r SYSTEM "file:///etc/passwd"><nmaprun/>'
+    assert client.post("/api/v1/discovery/nmap/upload", files={"file": ("x.xml", externa, "application/xml")}).status_code == 400
+    real = '<?xml version="1.0"?><!DOCTYPE nmaprun><nmaprun><host><status state="up"/><address addr="10.0.0.1" addrtype="ipv4"/></host></nmaprun>'
+    r = client.post("/api/v1/discovery/import-nmap", json={"xml": real})
+    assert r.status_code == 200
+    assert r.json()["total_hosts_activos"] == 1

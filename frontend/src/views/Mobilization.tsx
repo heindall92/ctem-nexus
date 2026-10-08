@@ -45,7 +45,7 @@ export function Mobilization() {
               <header className="flex flex-wrap items-end justify-between gap-3 px-6 pb-4 pt-5">
                 <div>
                   <h2 className="text-xl font-semibold tracking-[-0.02em]">Informe ejecutivo de exposición</h2>
-                  <p className="print-muted mt-1 text-[0.8125rem] text-ink-3">{project.name} · {new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })} · motor {result.engine === 'ts' ? 'local' : 'API'} v{result.version}{author ? ` · ${author}` : ''}</p>
+                  <p className="print-muted mt-1 text-[0.8125rem] text-ink-3">{project.name} · {new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })} · CTEM-Nexus {__APP_VERSION__} · motor {result.engine === 'ts' ? 'local' : 'API'} v{result.version}{author ? ` · ${author}` : ''}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button type="button" className="btn no-print" onClick={() => window.print()}><Printer className="size-4" />Imprimir informe</button>
