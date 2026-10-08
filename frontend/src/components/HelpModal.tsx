@@ -179,7 +179,7 @@ export function HelpModal() {
                 <div className="space-y-5">
                   <h3 className="text-sm font-semibold text-ink">{L('Ingesta local, sin servidor', 'Local intake, no server')}</h3>
                   <p className="text-xs text-ink-3">
-                    {L('Los ficheros se analizan en la memoria de tu navegador (o en la API FastAPI local si la activas). Todo lo importado se trata como no confiable: XML sin entidades ni DTD, JSON sin claves de prototipo y un máximo de 20 MB.', 'Files are parsed in your browser’s memory (or in the local FastAPI API if you enable it). Everything imported is treated as untrusted: XML without entities or DTD, JSON without prototype keys and a 20 MB limit.')}
+                    {L('Los ficheros se analizan en la memoria de tu navegador (o en la API FastAPI local si la activas). Todo lo importado se trata como no confiable: XML sin entidades ni DTD, JSON sin claves de prototipo y un tamaño máximo por fichero (60 MB en escáneres).', 'Files are parsed in your browser’s memory (or in the local FastAPI API if you enable it). Everything imported is treated as untrusted: XML without entities or DTD, JSON without prototype keys and a per-file size limit (60 MB for scanners).')}
                   </p>
                   <div className="space-y-3">
                     <div className="rounded-2xl border border-hairline bg-surface p-4">
@@ -198,6 +198,29 @@ export function HelpModal() {
                       <p className="mt-1 text-xs text-ink-3">
                         {L('Ficheros de SharpHound o BloodHound CE (computers.json, users.json). Detecta controladores de dominio, cuentas con SPN (Kerberoasting), cuentas sin preautenticación (AS-REP roasting) y delegación sin restricciones.', 'SharpHound or BloodHound CE files (computers.json, users.json). Detects domain controllers, accounts with SPNs (Kerberoasting), accounts without pre-authentication (AS-REP roasting) and unconstrained delegation.')}
                       </p>
+                    </div>
+                    <div className="rounded-2xl border border-hairline bg-surface p-4">
+                      <div className="flex items-center gap-2 font-medium text-ink">
+                        <Terminal className="size-4 text-accent" />
+                        <span>Nessus · OpenVAS · Nuclei · Trivy · SARIF</span>
+                      </div>
+                      <p className="mt-1 text-xs text-ink-3">{L('«Importar escáner» en Priorización detecta el formato, enseña qué se crea, qué se actualiza y qué se reabre, y solo entonces lo aplica. Un hallazgo que ya existe se reconoce por activo y CVE o por la misma guía, así que importar dos veces no duplica.', '“Import scanner” in Prioritization detects the format, shows what will be created, updated and reopened, and only then applies it. An existing finding is recognised by asset and CVE or by the same guide, so importing twice does not duplicate.')}</p>
+                      <pre className="code mt-2">nuclei -l objetivos.txt -jsonl -o nuclei.jsonl{'\n'}trivy image --format json -o trivy.json registro/app:1.0{'\n'}semgrep --sarif -o semgrep.sarif</pre>
+                    </div>
+                    <div className="rounded-2xl border border-hairline bg-surface p-4">
+                      <div className="flex items-center gap-2 font-medium text-ink">
+                        <Terminal className="size-4 text-accent" />
+                        <span>CISA KEV · FIRST EPSS</span>
+                      </div>
+                      <p className="mt-1 text-xs text-ink-3">{L('Descarga tú los catálogos oficiales (known_exploited_vulnerabilities.json y epss_scores-AAAA-MM-DD.csv.gz) e impórtalos igual que un escáner. La app nunca los pide por red; su versión queda en el proyecto y en el informe.', 'Download the official catalogs yourself (known_exploited_vulnerabilities.json and epss_scores-YYYY-MM-DD.csv.gz) and import them like a scanner. The app never fetches them; their version is stored in the project and the report.')}</p>
+                    </div>
+                    <div className="rounded-2xl border border-hairline bg-surface p-4">
+                      <div className="flex items-center gap-2 font-medium text-ink">
+                        <Terminal className="size-4 text-accent" />
+                        <span>{L('Tickets en Jira y GitHub', 'Tickets in Jira and GitHub')}</span>
+                      </div>
+                      <p className="mt-1 text-xs text-ink-3">{L('Jira: Ajustes del sistema → Importación externa → CSV, con formato de fecha «yyyy-MM-dd». GitHub: el JSON trae un issue por ticket; se envía sin pasar los textos por la shell:', 'Jira: System settings → External system import → CSV, with date format “yyyy-MM-dd”. GitHub: the JSON has one issue per ticket; send it without passing the texts through the shell:')}</p>
+                      <pre className="code mt-2">{"jq -c '.[]' github-issues.json | while read -r i; do\n  printf '%s' \"$i\" | gh api --method POST repos/ORG/REPO/issues --input -\ndone"}</pre>
                     </div>
                     <div className="rounded-2xl border border-hairline bg-surface p-4">
                       <div className="flex items-center gap-2 font-medium text-ink">

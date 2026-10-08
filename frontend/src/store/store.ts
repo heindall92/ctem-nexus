@@ -10,7 +10,7 @@ import type { Asset, Finding, FindingStatus, ManualEdge, NetworkRange, ProfileId
 import { setFormatLang } from '../lib/format';
 import { load, remove, save } from '../lib/storage';
 
-export type View = 'panel' | 'alcance' | 'priorizacion' | 'rutas' | 'movilizacion' | 'mitre' | 'ajustes';
+export type View = 'panel' | 'alcance' | 'priorizacion' | 'rutas' | 'mitre' | 'simulacion' | 'movilizacion' | 'ajustes';
 
 export type Accent = 'rosa' | 'solar' | 'glaciar' | 'orquidea' | 'verde' | 'azul' | 'rojo';
 export const ACCENT_IDS: Accent[] = ['rosa', 'solar', 'glaciar', 'orquidea', 'verde', 'azul', 'rojo'];
@@ -27,6 +27,9 @@ interface State extends Persisted {
   selectedFinding: string | null;
   /** Técnica ATT&CK que la matriz debe abrir al entrar (desde la ficha de un hallazgo). */
   focusTechnique: string | null;
+  /** Borrador de la simulación «¿y si…?»: hallazgos que se dan por corregidos (no se guarda en el proyecto). */
+  simFixed: string[];
+  setSimFixed: (ids: string[]) => void;
   setFocusTechnique: (id: string | null) => void;
   sidebarCollapsed: boolean;
   helpOpen: boolean;
@@ -144,6 +147,8 @@ export const useStore = create<State>()((set, get) => ({
   toasts: [],
   selectedFinding: null,
   focusTechnique: null,
+  simFixed: [],
+  setSimFixed: (simFixed) => set({ simFixed }),
   setFocusTechnique: (focusTechnique) => set({ focusTechnique }),
   theme: initial.settings.theme ?? 'dark',
   lang: initial.settings.lang ?? 'es',
@@ -228,14 +233,14 @@ export const useStore = create<State>()((set, get) => ({
   }),
   addEdge: (e) => set((s) => ({ project: { ...s.project, edges: [...s.project.edges, e] } })),
   deleteEdge: (id) => set((s) => ({ project: { ...s.project, edges: s.project.edges.filter((e) => e.id !== id) } })),
-  loadDemo: () => set({ project: demoProject(), selectedFinding: null }),
-  startFresh: () => set({ project: { ...emptyProject(), name: 'Nuevo análisis de exposición' }, selectedFinding: null, view: 'alcance' }),
+  loadDemo: () => set({ project: demoProject(), selectedFinding: null, simFixed: [] }),
+  startFresh: () => set({ project: { ...emptyProject(), name: 'Nuevo análisis de exposición' }, selectedFinding: null, simFixed: [], view: 'alcance' }),
   replaceProject: (project) => {
     const { findings, expired } = expireExceptions(project.findings, today());
-    set({ project: expired.length ? { ...project, findings } : project, selectedFinding: null });
+    set({ project: expired.length ? { ...project, findings } : project, selectedFinding: null, simFixed: [] });
     if (expired.length) get().notify(expiredText(expired, get().lang), 'info');
   },
-  reset: () => { remove(KEY); set({ project: emptyProject(), selectedFinding: null }); },
+  reset: () => { remove(KEY); set({ project: emptyProject(), selectedFinding: null, simFixed: [] }); },
   setSettings: (p) => set((s) => ({ settings: { ...s.settings, ...p } })),
   applyImport: (plan, file) => set((s) => {
     let assets = s.project.assets;

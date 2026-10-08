@@ -16,7 +16,7 @@ OUT = ROOT / "tests" / "artifacts"
 OUT.mkdir(parents=True, exist_ok=True)
 TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]
 S = "window.__CTEM__.getState()"
-VIEWS = ["panel", "alcance", "priorizacion", "rutas", "mitre", "movilizacion", "ajustes"]
+VIEWS = ["panel", "alcance", "priorizacion", "rutas", "mitre", "simulacion", "movilizacion", "ajustes"]
 HELP_TABS = ["Ciclo CTEM", "Cálculo de riesgo", "Ingesta de datos", "Atajos de teclado", "Glosario", "Acerca de"]
 
 
@@ -65,7 +65,10 @@ def states(page, mobile):
     J(f"{S}.setView('mitre')")
     page.locator("[data-testid^=tecnica-]:visible").first.click(); yield "attack/ficha-tecnica"
     page.keyboard.press("Escape")
-    J(f"{S}.setView('movilizacion')")
+    J(f"{S}.setView('simulacion')"); page.get_by_role("button", name="Simular el plan").click(); yield "simulacion/plan"
+    J(f"{S}.setSimFixed([])")
+    J(f"{S}.addSnapshot({{at:'2026-09-08',label:'Ciclo 1',profile:'defecto',exposureIndex:93,open:17,byBand:{{critica:6,alta:6,media:3,baja:2}},kev:8,attackPaths:8,accepted:0,overdue:4,mttrDays:11}})")
+    J(f"{S}.setView('movilizacion')"); yield "movilizacion/con-ciclos"
     J(f"{S}.setHelpOpen(true)")
     for t in HELP_TABS:
         page.get_by_role("tab", name=t).click(); yield f"ayuda/{t}"

@@ -3,6 +3,8 @@
 Uso:  python3 tests/e2e_app.py   (tras `npm run build`; falla si alguna comprobación no se cumple)
 Red bloqueada: cualquier petición que no sea file:, data: o blob: cuenta como fallo, igual que un error de consola.
 """
+import csv
+import io
 import json
 import pathlib
 import re
@@ -55,7 +57,7 @@ def texto_sin_datos(page):
     """Texto visible menos los datos del proyecto (nombres, títulos, técnicas…), el texto del grafo y el nombre del autor."""
     return page.evaluate(f"""() => {{
       const p = {S}.project;
-      const datos = [p.name, ...p.assets.flatMap(a => [a.name, a.owner, ...a.tags]), ...p.findings.flatMap(f => [f.title, f.technique || '', f.description || '']),
+      const datos = [p.name, ...p.assets.flatMap(a => [a.name, a.owner, ...a.tags]), ...p.findings.flatMap(f => [f.title, f.technique || '', f.description || '', f.exception?.owner || '', f.exception?.reason || '', f.exception?.compensating || '']),
         ...p.ranges.map(r => r.label), ...p.edges.map(e => e.technique), ...[...document.querySelectorAll('svg text, svg tspan')].map(t => t.textContent),
         'Yoandy Ramírez Delgado'].filter(Boolean).sort((a, b) => b.length - a.length);
       let t = document.body.innerText;
@@ -103,7 +105,7 @@ def escritorio(b, tmp):
     det = J(f"{S}.project.findings.find(f => f.id === 'H-001').detectedAt")
     check("las fechas de la demo se desplazan a hoy (no envejece)", det == "2026-09-24", det)
 
-    for nombre, vista in [("Alcance y activos", "alcance"), ("Priorización", "priorizacion"), ("Rutas de ataque", "rutas"), ("Mapa ATT&CK", "mitre"), ("Movilización", "movilizacion"), ("Ajustes y datos", "ajustes"), ("Inicio", "panel")]:
+    for nombre, vista in [("Alcance y activos", "alcance"), ("Priorización", "priorizacion"), ("Rutas de ataque", "rutas"), ("Mapa ATT&CK", "mitre"), ("¿Y si…?", "simulacion"), ("Movilización", "movilizacion"), ("Ajustes y datos", "ajustes"), ("Inicio", "panel")]:
         nav(page, nombre)
         check(f"navegación a {nombre}", J(f"{S}.view") == vista and page.get_by_role("navigation", name="Secciones").get_by_role("button", name=nombre).get_attribute("aria-current") == "page")
 
@@ -124,7 +126,7 @@ def escritorio(b, tmp):
     acciones.first.get_by_role("button").click()
     check("una acción abre su hallazgo en Priorización", J(f"{S}.view") == "priorizacion" and J(f"{S}.selectedFinding") is not None)
     page.keyboard.press("Escape")
-    for nombre in ["Inicio", "Alcance y activos", "Priorización", "Rutas de ataque", "Mapa ATT&CK", "Movilización", "Ajustes y datos"]:
+    for nombre in ["Inicio", "Alcance y activos", "Priorización", "Rutas de ataque", "Mapa ATT&CK", "¿Y si…?", "Movilización", "Ajustes y datos"]:
         nav(page, nombre)
         h1 = page.locator("h1")
         if h1.count() != 1:
@@ -300,6 +302,44 @@ def escritorio(b, tmp):
     check("Ajustes enseña los catálogos en uso y el registro de importaciones", page.get_by_test_id("inteligencia").get_by_text(re.compile("versión 2026.10.07")).count() == 1 and page.get_by_test_id("registro-importaciones").locator("li").count() >= 1)
     perfil.get_by_role("button", name="General").click()
 
+    # ¿Y si…?: borrador sin tocar el proyecto, plan voraz y grupo que solo corta junto
+    J(f"{S}.loadDemo()")
+    nav(page, "¿Y si…?")
+    proyecto = J(f"JSON.stringify({S}.project)")
+    page.get_by_label("Dar por corregido H-001").check()
+    check("marcar un hallazgo lo simula al instante", J(f"{S}.simFixed") == ["H-001"] and "antes" in page.get_by_test_id("sim-indice").inner_text())
+    page.get_by_role("button", name="Simular el plan").click()
+    check("el plan simulado deja cero rutas hacia las joyas de la corona", re.search(r"\n0\n", page.get_by_test_id("sim-rutas").inner_text()) is not None, page.get_by_test_id("sim-rutas").inner_text())
+    check("el plan propone juntos los dos fallos de Citrix", page.get_by_test_id("pasos-plan").get_by_text("solo juntos cortan su arista").count() == 1)
+    check("la simulación no modifica el proyecto", J(f"JSON.stringify({S}.project)") == proyecto)
+    nav(page, "Inicio"); nav(page, "¿Y si…?")
+    check("el borrador se conserva al navegar", len(J(f"{S}.simFixed")) > 1)
+    page.get_by_role("button", name="Vaciar").click()
+    check("«Vaciar» quita el borrador", J(f"{S}.simFixed") == [])
+
+    # Movilización: SLA, ciclos, informe con cinco acciones y exportaciones Jira/GitHub
+    nav(page, "Movilización")
+    check("el cumplimiento de SLA se muestra en porcentaje", re.fullmatch(r"\d+ %", page.get_by_test_id("sla-global").inner_text()) is not None, page.get_by_test_id("sla-global").inner_text())
+    check("el informe trae cinco acciones y los riesgos aceptados", page.get_by_test_id("cinco-acciones").locator("ol > li").count() == 5 and "H-019" in page.get_by_test_id("informe-aceptados").inner_text())
+    ciclos = page.get_by_test_id("panel-ciclos")
+    ciclos.get_by_label("Nombre del ciclo").fill("Ciclo de octubre")
+    ciclos.get_by_role("button", name="Cerrar ciclo").click()
+    check("cerrar un ciclo guarda la instantánea con su nombre", J(f"{S}.project.snapshots.length") == 1 and J(f"{S}.project.snapshots[0].label") == "Ciclo de octubre" and ciclos.get_by_role("button", name="Actualizar el cierre de hoy").count() == 1)
+    with page.expect_download() as d:
+        page.get_by_role("button", name="Jira CSV").click()
+    jira = pathlib.Path(d.value.path()).read_text(encoding="utf-8-sig")
+    tickets = J(f"{S}.project.findings.filter(f => f.status === 'abierto' || f.status === 'validado').length")
+    filas = list(csv.reader(io.StringIO(jira)))
+    check("el CSV de Jira trae cabecera del asistente y una fila por ticket", filas[0][:4] == ["Summary", "Issue Type", "Priority", "Due Date"] and len(filas) - 1 == tickets and all(f[2] in ("Highest", "High", "Medium", "Low") for f in filas[1:]), (len(filas) - 1, tickets))
+    with page.expect_download() as d:
+        page.get_by_role("button", name="GitHub Issues").click()
+    issues = json.loads(pathlib.Path(d.value.path()).read_text(encoding="utf-8"))
+    check("el JSON de GitHub trae un issue por ticket con título, cuerpo y etiquetas", len(issues) == tickets and all(set(i) == {"title", "body", "labels"} for i in issues))
+    with page.expect_download() as d:
+        page.get_by_role("button", name="Informe .md").click()
+    informe = pathlib.Path(d.value.path()).read_text(encoding="utf-8")
+    check("el informe Markdown incluye perfil, cinco acciones y riesgos aceptados", all(x in informe for x in ("Perfil de ponderación", "## Cinco acciones", "## Riesgos aceptados")))
+
     # Pasos de remediación con casillas: se guardan en el proyecto
     J(f"{S}.setView('priorizacion')"); J(f"{S}.selectFinding('H-001')")
     detalle = page.get_by_role("dialog")
@@ -371,7 +411,7 @@ def escritorio(b, tmp):
     # Inglés completo: ninguna vista, detalle, formulario ni pestaña de ayuda conserva texto de interfaz en español
     J(f"{S}.loadDemo()")
     restos = {}
-    for v in ["panel", "alcance", "priorizacion", "rutas", "mitre", "movilizacion", "ajustes"]:
+    for v in ["panel", "alcance", "priorizacion", "rutas", "mitre", "simulacion", "movilizacion", "ajustes"]:
         J(f"{S}.setView('{v}')")
         restos[v] = restos_en_espanol(page)
     J(f"{S}.setView('mitre')"); page.locator("[data-testid^=tecnica-]:visible").first.click()
@@ -389,7 +429,7 @@ def escritorio(b, tmp):
         restos[f"ayuda/{t}"] = restos_en_espanol(page)
     J(f"{S}.setHelpOpen(false)")
     sucios = {k: v[:3] for k, v in restos.items() if v}
-    check("en inglés no queda texto de interfaz en español (16 pantallas)", not sucios, sucios)
+    check("en inglés no queda texto de interfaz en español (17 pantallas)", not sucios, sucios)
     J(f"{S}.setLang('es')")
 
     check("sin errores de consola ni peticiones externas", not problemas, problemas[:5])
@@ -425,7 +465,7 @@ def movil(b):
       }
       return out.slice(0, 5);
     }"""
-    for v in ["panel", "alcance", "priorizacion", "rutas", "mitre", "movilizacion", "ajustes"]:
+    for v in ["panel", "alcance", "priorizacion", "rutas", "mitre", "simulacion", "movilizacion", "ajustes"]:
         page.evaluate(f"{S}.setView('{v}')")
         page.wait_for_timeout(250)
         fuera = page.evaluate(recorte)
@@ -437,6 +477,9 @@ def movil(b):
     barra.get_by_role("button", name="Más").click()
     page.get_by_role("button", name="Mapa ATT&CK").click()
     check("«Más» lleva al mapa ATT&CK", page.evaluate(f"{S}.view") == "mitre")
+    barra.get_by_role("button", name="Más").click()
+    page.get_by_role("button", name="¿Y si…?").click()
+    check("«Más» lleva a la simulación", page.evaluate(f"{S}.view") == "simulacion")
     barra.get_by_role("button", name="Más").click()
     page.get_by_role("button", name="Alcance y activos").click()
     check("«Más» lleva a las vistas secundarias", page.evaluate(f"{S}.view") == "alcance")

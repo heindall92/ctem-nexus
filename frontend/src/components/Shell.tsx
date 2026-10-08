@@ -20,6 +20,7 @@ import {
   RotateCcw,
   Route,
   Grid3x3,
+  FlaskConical,
   Search,
   Waypoints,
   Settings as SettingsIcon,
@@ -42,6 +43,7 @@ const NAV: Array<{ view: View; icon: ReactNode }> = [
   { view: 'priorizacion', icon: <Radar /> },
   { view: 'rutas', icon: <Route /> },
   { view: 'mitre', icon: <Grid3x3 /> },
+  { view: 'simulacion', icon: <FlaskConical /> },
   { view: 'movilizacion', icon: <ListChecks /> },
 ];
 
@@ -788,6 +790,9 @@ export function MobileTabBar() {
           <button type="button" onClick={() => go('mitre')} aria-current={view === 'mitre' ? 'page' : undefined} className="flex h-11 items-center gap-2 rounded-xl px-3 text-sm text-ink active:scale-[0.97]">
             <Grid3x3 className="size-4 text-accent" /> {t.mitre}
           </button>
+          <button type="button" onClick={() => go('simulacion')} aria-current={view === 'simulacion' ? 'page' : undefined} className="flex h-11 items-center gap-2 rounded-xl px-3 text-sm text-ink active:scale-[0.97]">
+            <FlaskConical className="size-4 text-accent" /> {t.simulacion}
+          </button>
           <button type="button" onClick={() => go('ajustes')} className="flex h-11 items-center gap-2 rounded-xl px-3 text-sm text-ink active:scale-[0.97]">
             <SettingsIcon className="size-4 text-accent" /> {t.ajustes}
           </button>
@@ -801,15 +806,15 @@ export function MobileTabBar() {
           const active = view === n.view;
           return (
             <li key={n.view}>
-              <button type="button" onClick={() => go(n.view)} aria-current={active ? 'page' : undefined} className={`flex h-14 w-full flex-col items-center justify-center gap-0.5 text-[11px] active:scale-[0.97] ${active ? 'text-accent' : 'text-ink-3'}`}>
+              <button type="button" onClick={() => go(n.view)} aria-current={active ? 'page' : undefined} aria-label={t[n.view]} className={`flex h-14 w-full flex-col items-center justify-center gap-0.5 text-[11px] active:scale-[0.97] ${active ? 'text-accent' : 'text-ink-3'}`}>
                 <span className="[&_svg]:size-5">{n.icon}</span>
-                <span className="max-w-full truncate px-1">{t[n.view]}</span>
+                <span className="max-w-full truncate px-1" aria-hidden>{n.view === 'rutas' ? (lang === 'en' ? 'Paths' : 'Rutas') : t[n.view]}</span>
               </button>
             </li>
           );
         })}
         <li>
-          <button type="button" onClick={() => setMore((v) => !v)} aria-expanded={more} className={`flex h-14 w-full flex-col items-center justify-center gap-0.5 text-[11px] active:scale-[0.97] ${more ? 'text-accent' : 'text-ink-3'}`}>
+          <button type="button" onClick={() => setMore((v) => !v)} aria-expanded={more} className={`flex h-14 w-full flex-col items-center justify-center gap-0.5 text-[11px] active:scale-[0.97] ${more || !main.some((m) => m.view === view) ? 'text-accent' : 'text-ink-3'}`}>
             <MoreHorizontal className="size-5" />
             <span>{t.more}</span>
           </button>

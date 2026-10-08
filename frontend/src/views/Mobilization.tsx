@@ -1,6 +1,8 @@
-import { AlarmClock, Check, Waypoints, ChevronDown, Copy, FileDown, FileSpreadsheet, FileText, ListChecks, Printer } from 'lucide-react';
-import { useState } from 'react';
-import { buildTickets, reportMarkdown, ticketsCsv, ticketsMarkdown } from '../engine/io';
+import { AlarmClock, Check, Waypoints, ChevronDown, Copy, FileDown, FileJson, FileSpreadsheet, FileText, ListChecks, Printer } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { CyclesPanel, SlaPanel } from '../components/MobilizationPanels';
+import { buildTickets, githubIssues, jiraCsv, reportMarkdown, ticketsCsv, ticketsMarkdown } from '../engine/io';
+import { fixPlan } from '../engine/simulate';
 import { slaInfo, type SlaState } from '../engine/sla';
 import { TopBar } from '../components/Shell';
 import { BandBadge, DemoBadge, Empty, PageHeader } from '../components/ui';
@@ -40,6 +42,12 @@ export function Mobilization() {
   const [open, setOpen] = useState<string | null>(tickets[0]?.finding.id ?? null);
   const top = tickets.slice(0, 8);
   const overdue = tickets.filter((t) => slaInfo(t.finding.detectedAt, t.scored.slaDays).state === 'vencido').length;
+  const plan = useMemo(() => fixPlan(result, project.findings, 5), [result, project.findings]);
+  const prev = project.snapshots?.length ? project.snapshots[project.snapshots.length - 1] : null;
+  const accepted = project.findings.filter((f) => f.status === 'aceptado' && f.exception);
+  const fTitle = new Map(project.findings.map((f) => [f.id, f.title]));
+  const PROF = { defecto: L('general', 'general'), ot: 'OT / industrial', banca: L('banca y finanzas', 'banking and finance') }[project.profile ?? 'defecto'];
+  const diff = (now: number, then: number, dec = false) => { const d = Math.round((now - then) * 10) / 10; return { text: `${d > 0 ? '+' : d < 0 ? '−' : '±'}${dec ? n1(Math.abs(d)) : Math.abs(d)}`, color: d === 0 ? undefined : d < 0 ? 'var(--color-ok)' : 'var(--color-critica)' }; };
   const slug = project.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'proyecto';
 
   return (
@@ -90,6 +98,7 @@ export function Mobilization() {
                 <div>
                   <h2 className="text-xl font-semibold tracking-[-0.02em]">{L('Informe ejecutivo de exposición', 'Executive exposure report')}</h2>
                   <p className="print-muted mt-1 text-[0.8125rem] text-ink-3">{project.name} · {longDate(new Date())} · CTEM-Nexus {__APP_VERSION__} · {L('motor', 'engine')} {result.engine === 'ts' ? 'local' : 'API'} v{result.version}{author ? ` · ${author}` : ''}</p>
+                  <p className="print-muted mt-0.5 text-xs text-ink-3" data-testid="informe-datos">{L('Perfil', 'Profile')} {PROF}{project.intel?.kev ? ` · CISA KEV ${project.intel.kev.version}` : ''}{project.intel?.epss ? ` · FIRST EPSS ${project.intel.epss.scoreDate || project.intel.epss.model}` : ''}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button type="button" className="btn no-print" onClick={() => window.print()}><Printer className="size-4" />{L('Imprimir informe', 'Print report')}</button>
@@ -166,7 +175,58 @@ export function Mobilization() {
                   </p>
                 </section>
               </div>
+              <div className="grid grid-cols-1 border-t border-hairline lg:grid-cols-3">
+                <section className="px-6 py-4" data-testid="cinco-acciones">
+                  <h3 className="title-md mb-2">{L('Cinco acciones', 'Five actions')}</h3>
+                  <ol className="flex flex-col gap-2 text-[0.8125rem]">
+                    {plan.steps.map((st, i) => (
+                      <li key={i} className="flex gap-2.5">
+                        <span className="num w-4 shrink-0 text-ink-3">{i + 1}</span>
+                        <span className="min-w-0">
+                          {st.ids.map((id) => <span key={id} className="block leading-snug"><span className="num text-ink-3">{id}</span> {fTitle.get(id)}</span>)}
+                          <span className="print-muted block text-xs text-ink-3">{st.newlyBroken ? L(`Rompe ${st.newlyBroken} ${st.newlyBroken === 1 ? 'ruta' : 'rutas'} (${st.cumulativeBroken}/${plan.totalPaths})`, `Breaks ${st.newlyBroken} ${st.newlyBroken === 1 ? 'path' : 'paths'} (${st.cumulativeBroken}/${plan.totalPaths})`) : L('Baja el índice de exposición', 'Lowers the exposure index')}</span>
+                        </span>
+                      </li>
+                    ))}
+                    {plan.steps.length === 0 && <li className="text-ink-3">{L('Nada abierto que corregir.', 'Nothing open to fix.')}</li>}
+                  </ol>
+                </section>
+                <section className="border-t border-hairline px-6 py-4 lg:border-l lg:border-t-0" data-testid="informe-tendencia">
+                  <h3 className="title-md mb-2">{L('Tendencia', 'Trend')}</h3>
+                  {prev ? (
+                    <>
+                      <p className="print-muted mb-2 text-xs text-ink-3">{L(`Frente al cierre del ${prev.at}${prev.label ? ` (${prev.label})` : ''}`, `Compared with the ${prev.at} close${prev.label ? ` (${prev.label})` : ''}`)}</p>
+                      <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-[0.8125rem]">
+                        {([
+                          [L('Índice', 'Index'), s.exposureIndex, prev.exposureIndex, true],
+                          [L('Abiertos', 'Open'), s.openFindings, prev.open, false],
+                          [L('Críticos', 'Critical'), s.byBand.critica, prev.byBand.critica, false],
+                          [L('Rutas', 'Paths'), s.attackPaths, prev.attackPaths, false],
+                        ] as Array<[string, number, number, boolean]>).map(([lbl, now, then, dec]) => {
+                          const d = diff(now, then, dec);
+                          return <div key={lbl}><dt className="label">{lbl}</dt><dd><span className="num">{dec ? n1(now) : now}</span> <span className="num text-xs font-semibold" style={{ color: d.color }}>{d.text}</span></dd></div>;
+                        })}
+                      </dl>
+                    </>
+                  ) : <p className="print-muted text-[0.8125rem] text-ink-3">{L('Cierra un ciclo para comparar el próximo informe con este.', 'Close a cycle to compare the next report with this one.')}</p>}
+                </section>
+                <section className="border-t border-hairline px-6 py-4 lg:border-l lg:border-t-0" data-testid="informe-aceptados">
+                  <h3 className="title-md mb-2">{L('Riesgos aceptados', 'Accepted risks')}</h3>
+                  <ul className="flex flex-col gap-2 text-[0.8125rem]">
+                    {accepted.map((f) => (
+                      <li key={f.id}>
+                        <span className="block leading-snug"><span className="num text-ink-3">{f.id}</span> {f.title}</span>
+                        <span className="print-muted block text-xs text-ink-3">{f.exception!.owner} · {L('caduca', 'expires')} <span className="num">{f.exception!.expires}</span></span>
+                      </li>
+                    ))}
+                    {accepted.length === 0 && <li className="print-muted text-ink-3">{L('Ninguno vigente.', 'None in force.')}</li>}
+                  </ul>
+                </section>
+              </div>
             </article>
+
+            <SlaPanel />
+            <CyclesPanel />
 
             {/* Guías y tickets */}
             <section className="panel no-print overflow-hidden">
@@ -175,9 +235,11 @@ export function Mobilization() {
                   <h2 className="title-md">{L('Guías de remediación', 'Remediation guides')}</h2>
                   <p className="mt-0.5 text-[0.8125rem] text-ink-3">{L(`${tickets.length} tickets abiertos`, `${tickets.length} open tickets`)}{overdue > 0 && <> · <span className="font-medium text-critica">{L(`${overdue} fuera de plazo`, `${overdue} overdue`)}</span></>} · {L('SLA por banda', 'SLA by band')}: {c.band.critica} 3 d · {c.band.alta} 14 d · {c.band.media} 30 d · {c.band.baja} 90 d</p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <button type="button" className="btn" onClick={() => { download(`tickets-${slug}-${stamp()}.csv`, ticketsCsv(project.findings, project.assets, result, lang), 'text/csv;charset=utf-8'); notify(L('Tickets exportados en CSV (fórmulas neutralizadas).', 'Tickets exported as CSV (formulas neutralized).')); }}><FileSpreadsheet />Tickets CSV</button>
                   <button type="button" className="btn" onClick={() => { download(`tickets-${slug}-${stamp()}.md`, ticketsMarkdown(project.findings, project.assets, result, lang), 'text/markdown;charset=utf-8'); notify(L('Tickets exportados en Markdown.', 'Tickets exported as Markdown.')); }}><FileDown />Tickets .md</button>
+                  <button type="button" className="btn" onClick={() => { download(`jira-${slug}-${stamp()}.csv`, jiraCsv(project.findings, project.assets, result, lang), 'text/csv;charset=utf-8'); notify(L('CSV para Jira exportado. Al importarlo, formato de fecha «yyyy-MM-dd».', 'Jira CSV exported. When importing, use date format “yyyy-MM-dd”.')); }}><FileSpreadsheet />Jira CSV</button>
+                  <button type="button" className="btn" onClick={() => { download(`github-issues-${slug}-${stamp()}.json`, JSON.stringify(githubIssues(project.findings, project.assets, result, lang), null, 2), 'application/json'); notify(L('Issues de GitHub exportados en JSON (instrucciones en la ayuda).', 'GitHub issues exported as JSON (instructions in Help).')); }}><FileJson />GitHub Issues</button>
                 </div>
               </div>
               <ul className="divide-hair border-t border-hairline">

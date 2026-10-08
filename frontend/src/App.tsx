@@ -12,8 +12,9 @@ import { Prioritization } from './views/Prioritization';
 import { Scoping } from './views/Scoping';
 import { MitreMatrix } from './views/MitreMatrix';
 import { Settings } from './views/Settings';
+import { Simulation } from './views/Simulation';
 
-const VIEWS = { panel: Dashboard, alcance: Scoping, priorizacion: Prioritization, rutas: AttackPaths, movilizacion: Mobilization, mitre: MitreMatrix, ajustes: Settings };
+const VIEWS = { panel: Dashboard, alcance: Scoping, priorizacion: Prioritization, rutas: AttackPaths, movilizacion: Mobilization, mitre: MitreMatrix, simulacion: Simulation, ajustes: Settings };
 
 export function App() {
   const analysis = useAnalysis();

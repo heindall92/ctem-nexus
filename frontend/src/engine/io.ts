@@ -4,6 +4,7 @@ import { fmt } from './engine';
 import { explanationIn, reasonsIn, type Lang } from './explain';
 import { guideIn } from './remediation';
 import { slaInfo } from './sla';
+import { fixPlan } from './simulate';
 import { PROFILE_IDS } from './constants';
 import type { IntelMeta } from './intel';
 import type { Asset, AssetType, Band, EngineResult, Finding, FindingKind, FindingSource, FindingStatus, ManualEdge, NetworkRange, ProfileId, RiskException } from './types';
@@ -393,7 +394,70 @@ export function ticketsMarkdown(findings: Finding[], assets: Asset[], result: En
   return out.join('\n');
 }
 
-export function reportMarkdown(project: { name: string; demo: boolean }, findings: Finding[], assets: Asset[], result: EngineResult, date = new Date(), author = '', lang: Lang = 'es'): string {
+const JIRA_PRIORITY: Record<Band, string> = { critica: 'Highest', alta: 'High', media: 'Medium', baja: 'Low' };
+/** Texto plano para Jira: sin llaves, corchetes ni barras que el marcado wiki interpretaría. */
+const jiraEsc = (s: string) => s.replace(/[{}[\]|]/g, ' ').replace(/\r?\n/g, ' ');
+const labelOf = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9.-]+/g, '-').replace(/^-|-$/g, '').slice(0, 60);
+
+/** CSV para el asistente de importación de Jira (fechas AAAA-MM-DD: indícalo como «yyyy-MM-dd» al importar). */
+export function jiraCsv(findings: Finding[], assets: Asset[], result: EngineResult, lang: Lang = 'es', today: Date = new Date()): string {
+  const L = (es: string, en: string) => (lang === 'en' ? en : es);
+  const rows: unknown[][] = [['Summary', 'Issue Type', 'Priority', 'Due Date', 'Labels', 'Labels', 'Labels', 'Labels', 'Description']];
+  for (const t of buildTickets(findings, assets, result, lang)) {
+    const due = slaInfo(t.finding.detectedAt, t.scored.slaDays, today).due;
+    const desc = [
+      `h3. ${jiraEsc(t.guide.title)}`,
+      `*${L('Activo', 'Asset')}:* ${jiraEsc(t.asset?.name ?? t.finding.assetId)}${t.finding.cve ? ` · *CVE:* ${t.finding.cve}` : ''}`,
+      `*${L('Responsable', 'Owner')}:* ${jiraEsc(t.owner)}`,
+      `*${L('Puntuación', 'Score')}:* ${numIn(lang, t.scored.score)}/100 (${bandName(lang, t.scored.band)}) · *SLA:* ${t.scored.slaDays} ${L('días', 'days')}`,
+      `*${L('Motivo', 'Reason')}:* ${jiraEsc(t.explanation)}`,
+      '',
+      ...t.guide.steps.map((st) => `# ${jiraEsc(st)}`),
+      '',
+      `*${L('Verificación', 'Verification')}:*`,
+      '{noformat}', t.guide.verify.replace(/\{noformat\}/gi, ''), '{noformat}',
+      '',
+      `_CTEM-Nexus · ${t.finding.id}_`,
+    ].join('\n');
+    rows.push([
+      `[${bandName(lang, t.scored.band)}] ${t.finding.id} · ${t.finding.title}`.slice(0, 250), 'Task', JIRA_PRIORITY[t.scored.band], due,
+      'ctem-nexus', `ctem-${labelOf(t.scored.band)}`, labelOf(t.finding.cve ?? t.finding.kind), labelOf(t.finding.remediation), desc,
+    ]);
+  }
+  return toCsv(rows);
+}
+
+export interface GithubIssue { title: string; body: string; labels: string[] }
+
+/** Un objeto por ticket listo para la API de GitHub (POST /repos/OWNER/REPO/issues). */
+export function githubIssues(findings: Finding[], assets: Asset[], result: EngineResult, lang: Lang = 'es', today: Date = new Date()): GithubIssue[] {
+  const L = (es: string, en: string) => (lang === 'en' ? en : es);
+  return buildTickets(findings, assets, result, lang).map((t) => {
+    const due = slaInfo(t.finding.detectedAt, t.scored.slaDays, today).due;
+    const body = [
+      `**${L('Activo', 'Asset')}:** ${mdEsc(t.asset?.name ?? t.finding.assetId)}${t.finding.cve ? ` · **CVE:** ${t.finding.cve}` : ''}`,
+      `**${L('Responsable', 'Owner')}:** ${mdEsc(t.owner)}`,
+      `**${L('Puntuación', 'Score')}:** ${numIn(lang, t.scored.score)}/100 (${bandName(lang, t.scored.band)}) · **SLA:** ${t.scored.slaDays} ${L('días', 'days')} · **${L('Vence', 'Due')}:** ${due}`,
+      `**${L('Motivo', 'Reason')}:** ${mdEsc(t.explanation)}`,
+      '',
+      `### ${mdEsc(t.guide.title)}`,
+      '',
+      ...t.guide.steps.map((st) => `- [ ] ${mdEsc(st)}`),
+      '',
+      `**${L('Verificación', 'Verification')}:**`,
+      '',
+      '~~~',
+      t.guide.verify.replace(/~~~/g, '~ ~ ~'),
+      '~~~',
+      '',
+      `<sub>CTEM-Nexus · ${mdEsc(t.finding.id)}</sub>`,
+    ].join('\n');
+    const labels = ['ctem-nexus', `prioridad:${labelOf(bandName('es', t.scored.band))}`, ...(t.finding.kev ? ['kev'] : [])];
+    return { title: `[${bandName(lang, t.scored.band)}] ${t.finding.id} · ${t.finding.title}`.slice(0, 250), body, labels };
+  });
+}
+
+export function reportMarkdown(project: Pick<Project, 'name' | 'demo'> & Partial<Pick<Project, 'profile' | 'intel' | 'snapshots'>>, findings: Finding[], assets: Asset[], result: EngineResult, date = new Date(), author = '', lang: Lang = 'es'): string {
   const L = (es: string, en: string) => (lang === 'en' ? en : es);
   const s = result.summary;
   const fById = new Map(findings.map((f) => [f.id, f]));
@@ -404,6 +468,26 @@ export function reportMarkdown(project: { name: string; demo: boolean }, finding
     `${L('Fecha', 'Date')}: ${date.toISOString().slice(0, 10)} · ${L('Motor', 'Engine')} ${result.engine === 'ts' ? L('local', 'local') : 'API'} v${result.version}${author ? ` · ${mdEsc(author)}` : ''}`, '',
   ];
   if (project.demo) out.push(L('> **Datos de ejemplo.** Este informe se ha generado con el conjunto de demostración de CTEM-Nexus.', '> **Sample data.** This report was generated with the CTEM-Nexus demo set.'), '');
+  const PROF: Record<ProfileId, string> = { defecto: L('general', 'general'), ot: L('OT / industrial', 'OT / industrial'), banca: L('banca y finanzas', 'banking and finance') };
+  const intelBits = [
+    `${L('Perfil de ponderación', 'Weighting profile')}: ${PROF[project.profile ?? 'defecto']}`,
+    project.intel?.kev ? `CISA KEV ${mdEsc(project.intel.kev.version)}` : '',
+    project.intel?.epss ? `FIRST EPSS ${mdEsc(project.intel.epss.scoreDate || project.intel.epss.model)}` : '',
+  ].filter(Boolean);
+  out.push(intelBits.join(' · '), '');
+  const prev = project.snapshots?.length ? project.snapshots[project.snapshots.length - 1] : null;
+  if (prev) {
+    const d = (a: number, b: number, dec = false) => { const x = Math.round((a - b) * 10) / 10; return `${x > 0 ? '+' : x < 0 ? '−' : '±'}${dec ? numIn(lang, Math.abs(x)) : Math.abs(x)}`; };
+    out.push(`## ${L('Tendencia', 'Trend')}`, '',
+      L(`Frente al cierre del ${prev.at}${prev.label ? ` (${mdEsc(prev.label)})` : ''}:`, `Compared with the close of ${prev.at}${prev.label ? ` (${mdEsc(prev.label)})` : ''}:`), '',
+      `| ${L('Indicador', 'Indicator')} | ${L('Entonces', 'Then')} | ${L('Ahora', 'Now')} | ${L('Cambio', 'Change')} |`, '|---|---:|---:|---:|',
+      `| ${L('Índice de exposición', 'Exposure index')} | ${numIn(lang, prev.exposureIndex)} | ${numIn(lang, s.exposureIndex)} | ${d(s.exposureIndex, prev.exposureIndex, true)} |`,
+      `| ${L('Hallazgos abiertos', 'Open findings')} | ${prev.open} | ${s.openFindings} | ${d(s.openFindings, prev.open)} |`,
+      `| ${L('Críticos', 'Critical')} | ${prev.byBand.critica} | ${s.byBand.critica} | ${d(s.byBand.critica, prev.byBand.critica)} |`,
+      `| ${L('En CISA KEV', 'In CISA KEV')} | ${prev.kev} | ${s.kevOpen} | ${d(s.kevOpen, prev.kev)} |`,
+      `| ${L('Rutas de ataque', 'Attack paths')} | ${prev.attackPaths} | ${s.attackPaths} | ${d(s.attackPaths, prev.attackPaths)} |`, '');
+    if (prev.profile !== (project.profile ?? 'defecto')) out.push(L('> El perfil de ponderación cambió desde entonces: el índice no es del todo comparable.', '> The weighting profile changed since then: the index is not fully comparable.'), '');
+  }
   out.push(`## ${L('Indicadores', 'Indicators')}`, '',
     `| ${L('Indicador', 'Indicator')} | ${L('Valor', 'Value')} |`, '|---|---:|',
     `| ${L('Índice de exposición', 'Exposure index')} | ${numIn(lang, s.exposureIndex)}/100 |`,
@@ -425,5 +509,20 @@ export function reportMarkdown(project: { name: string; demo: boolean }, finding
       : [L('- No se han identificado puntos de estrangulamiento.', '- No choke points were identified.')]), '',
     `## ${L('Recomendación', 'Recommendation')}`, '',
     L('Corregir primero los hallazgos que coinciden con puntos de estrangulamiento: cortan el mayor número de rutas hacia las joyas de la corona con el menor esfuerzo.', 'Fix first the findings on choke points: they break the most paths to the crown jewels with the least effort.'), '');
+  const plan = fixPlan(result, findings, 5);
+  if (plan.steps.length) {
+    out.push(`## ${L('Cinco acciones', 'Five actions')}`, '');
+    plan.steps.forEach((st, i) => {
+      const names = st.ids.map((id) => { const f = fById.get(id)!; return `${mdEsc(id)} · ${mdEsc(f.title)}`; }).join(L(' + ', ' + '));
+      const effect = st.newlyBroken ? L(`rompe ${st.newlyBroken} ${st.newlyBroken === 1 ? 'ruta' : 'rutas'} (${st.cumulativeBroken} de ${plan.totalPaths} acumuladas)`, `breaks ${st.newlyBroken} ${st.newlyBroken === 1 ? 'path' : 'paths'} (${st.cumulativeBroken} of ${plan.totalPaths} cumulative)`) : L(`baja el índice (puntuación ${numIn(lang, st.score)})`, `lowers the index (score ${numIn(lang, st.score)})`);
+      out.push(`${i + 1}. ${names}: ${effect}.`);
+    });
+    out.push('');
+  }
+  const accepted = findings.filter((f) => f.status === 'aceptado' && f.exception);
+  if (accepted.length) {
+    out.push(`## ${L('Riesgos aceptados', 'Accepted risks')}`, '', `| ${L('Hallazgo', 'Finding')} | ${L('Responsable', 'Owner')} | ${L('Caduca', 'Expires')} | ${L('Control compensatorio', 'Compensating control')} |`, '|---|---|---|---|',
+      ...accepted.map((f) => `| ${mdEsc(f.id)} · ${mdEsc(f.title)} | ${mdEsc(f.exception!.owner)} | ${f.exception!.expires} | ${mdEsc(f.exception!.compensating || '—')} |`), '');
+  }
   return out.join('\n');
 }
