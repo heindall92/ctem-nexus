@@ -71,7 +71,7 @@ Pruebas que se añaden en esta fase:
 - [x] **axe-core WCAG 2.2 AA** en claro y oscuro, a 1440 y 390 px, en cada vista: 0 infracciones como criterio de bloqueo en la CI.
 - [x] Prueba de estructura de i18n (claves `es` = claves `en`), más un barrido e2e de 14 pantallas en inglés.
 
-**Estado: cerrada en 0.3.0.** axe-core con barrido de contraste propio: 0 infracciones en 128 estados; e2e 52/52; inglés completo. De paso se corrigió la fórmula falsa de la ayuda.
+**Estado: cerrada en 0.3.0.** axe-core con barrido de contraste propio: 0 infracciones en 128 estados; e2e 53/53; inglés completo. De paso se corrigió la fórmula falsa de la ayuda.
 
 **Aceptación:** axe da 0 infracciones en las 24 combinaciones (6 vistas × 2 temas × 2 anchos) y el e2e está en verde en la CI.
 

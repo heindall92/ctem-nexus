@@ -858,6 +858,21 @@ export function Toasts() {
   );
 }
 
+/** Escape, foco inicial y devolución del foco al cerrar, sin re-ejecutarse en cada render del padre
+ * (onClose suele ser una función nueva en cada render: se guarda en una ref). */
+function useDialogFocus(open: boolean, onClose: () => void, target: React.RefObject<HTMLElement | null>) {
+  const close = useRef(onClose);
+  close.current = onClose;
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.activeElement as HTMLElement | null;
+    requestAnimationFrame(() => target.current?.focus({ preventScroll: true }));
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') close.current(); };
+    window.addEventListener('keydown', esc);
+    return () => { window.removeEventListener('keydown', esc); prev?.focus?.({ preventScroll: true }); };
+  }, [open, target]);
+}
+
 /** Panel lateral con velo translúcido y animación fluida estilo Apple */
 export function Drawer({
   open,
@@ -880,12 +895,8 @@ export function Drawer({
   const reduce = useReducedMotion();
   const ref = useRef<HTMLElement>(null);
   const titleId = useId();
-  useEffect(() => {
-    if (!open) return;
-    const prev = document.activeElement as HTMLElement | null;
-    requestAnimationFrame(() => ref.current?.focus({ preventScroll: true }));
-    return () => prev?.focus?.({ preventScroll: true });
-  }, [open]);
+  // Escape cierra aunque el foco aún no haya entrado en el panel (o esté fuera de él).
+  useDialogFocus(open, onClose, ref);
   const hidden = reduce ? { opacity: 0 } : { opacity: 0, x: 36 };
 
   if (typeof document === 'undefined') return null;
@@ -914,9 +925,6 @@ export function Drawer({
             animate={{ opacity: 1, x: 0 }}
             exit={{ ...hidden, transition: { duration: 0.18, ease: [0.32, 0.72, 0, 1] } }}
             transition={SPRING}
-            onKeyDown={(e) => {
-              if (e.key === 'Escape') onClose();
-            }}
             tabIndex={-1}
             ref={ref}
             className="no-print glass-thick glass-edge fixed bottom-3 right-3 top-3 z-50 flex max-w-[calc(100vw-1.5rem)] flex-col overflow-hidden rounded-[24px] border border-hairline outline-none shadow-2xl"
@@ -965,14 +973,7 @@ export function Modal({
   const hidden = reduce ? { opacity: 0 } : { opacity: 0, scale: 0.95, y: 12 };
   const titleId = useId();
   const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!open) return;
-    const prev = document.activeElement as HTMLElement | null;
-    requestAnimationFrame(() => ref.current?.focus({ preventScroll: true }));
-    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', esc);
-    return () => { window.removeEventListener('keydown', esc); prev?.focus?.({ preventScroll: true }); };
-  }, [open, onClose]);
+  useDialogFocus(open, onClose, ref);
 
   if (typeof document === 'undefined') return null;
 

@@ -25,6 +25,7 @@ Fase 1 de la hoja de ruta cerrada: accesibilidad AA verificada, controles sin du
 - Las cifras no se parten (`94,4 %` con espacio duro).
 
 ### Corregido
+- Paneles y ventanas: Escape cierra aunque el foco aún no haya entrado (antes, el panel de detalle solo cerraba con el foco dentro), y el foco ya no salta fuera del diálogo cuando la vista se vuelve a pintar (por ejemplo, al cambiar el estado de un hallazgo desde el detalle).
 - **La ayuda mostraba una fórmula inexistente** («Criticidad × 0,35 + CVSS × 0,30 + Explotabilidad × 0,20 + Ruta × 0,15») y prometía un «porcentaje proyectado de reducción de riesgo» que no existe. Ahora la pestaña «Cálculo de riesgo» se genera con las constantes del motor (30 · 25 · 20 · 10 · 15, bonificación de validación, factor de no explotable, bandas y SLA), y el e2e comprueba que coincide.
 - Diálogos accesibles: ayuda, búsqueda, perfil, ventanas y paneles con `role="dialog"`, nombre, Escape y devolución del foco. Pestañas de la ayuda con `tablist` y flechas. Menú de cuenta con foco inicial, flechas y Escape. Selector de acento con Escape.
 - Los selectores de fichero de las ingestas (`display: none`) eran inalcanzables con el teclado.

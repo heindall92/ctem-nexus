@@ -19,7 +19,7 @@
   <img alt="Tailwind CSS 4" src="https://img.shields.io/badge/Tailwind%20CSS-4-06B6D4?style=flat&logo=tailwindcss&logoColor=white"/>
   <img alt="FastAPI opcional" src="https://img.shields.io/badge/API-FastAPI%20(opcional)-009688?style=flat&logo=fastapi&logoColor=white"/>
   <img alt="Un solo HTML" src="https://img.shields.io/badge/un%20solo-HTML%20sin%20servidor-2E8B57?style=flat"/>
-  <img alt="Pruebas 100% OK" src="https://img.shields.io/badge/pruebas-Vitest%2049%20%C2%B7%20Pytest%2019%20%C2%B7%20e2e%2052-2E8B57?style=flat"/>
+  <img alt="Pruebas 100% OK" src="https://img.shields.io/badge/pruebas-Vitest%2049%20%C2%B7%20Pytest%2019%20%C2%B7%20e2e%2053-2E8B57?style=flat"/>
   <img alt="Iconos Lucide" src="https://img.shields.io/badge/iconos-Lucide-F56565?style=flat&logo=lucide&logoColor=white"/>
 </p>
 
@@ -91,7 +91,7 @@ pesadas de auditoría.
       <td valign="top"><code>├─</code> <img src="docs/assets/icons/check-check.svg" width="16" height="16" alt="" valign="middle"/> <code>pruebas_calidad:</code><br><br>
         <img src="docs/assets/stack/vitest.svg" height="48" alt="Vitest">
         <img src="docs/assets/stack/pytest.svg" height="48" alt="Pytest"><br>
-        <sub><code>Vitest 49 pruebas · Pytest 19 pruebas · e2e 52 · axe-core 0 infracciones · Paridad exacta TS ↔ Python (golden-demo)</code></sub>
+        <sub><code>Vitest 49 pruebas · Pytest 19 pruebas · e2e 53 · axe-core 0 infracciones · Paridad exacta TS ↔ Python (golden-demo)</code></sub>
       </td>
       <td valign="top"><code>╰─</code> <img src="docs/assets/icons/shield-check.svg" width="16" height="16" alt="" valign="middle"/> <code>seguridad_privacidad:</code><br><br>
         <img src="docs/assets/stack/csp.svg" height="48" alt="CSP estricta"><br>
@@ -101,7 +101,7 @@ pesadas de auditoría.
   </tbody>
   <tfoot>
     <tr>
-      <td colspan="2"><code>version: 0.3.0&nbsp;&nbsp;·&nbsp;&nbsp;motor: TS + FastAPI&nbsp;&nbsp;·&nbsp;&nbsp;Gartner CTEM&nbsp;&nbsp;·&nbsp;&nbsp;pruebas: Vitest 49 · Pytest 19 · e2e 52&nbsp;&nbsp;·&nbsp;&nbsp;licencia: GPLv2</code></td>
+      <td colspan="2"><code>version: 0.3.0&nbsp;&nbsp;·&nbsp;&nbsp;motor: TS + FastAPI&nbsp;&nbsp;·&nbsp;&nbsp;Gartner CTEM&nbsp;&nbsp;·&nbsp;&nbsp;pruebas: Vitest 49 · Pytest 19 · e2e 53&nbsp;&nbsp;·&nbsp;&nbsp;licencia: GPLv2</code></td>
     </tr>
   </tfoot>
 </table>
@@ -332,7 +332,7 @@ Detalles completos y ejemplo resuelto en [`docs/SCORING.md`](docs/SCORING.md).
 
 - **Motor TypeScript:** 49 pruebas con Vitest (fórmulas, clasificaciones, grafo, rutas, estrangulamientos, parseador Nmap XML, BloodHound, importaciones CSV/JSON, fichero dorado, rechazo de XML con entidades, plazos de SLA, ficheros de ejemplo, explicaciones, guías y exportaciones en inglés, paridad de los diccionarios ES/EN y coherencia del repositorio).
 - **Motor Python y API:** 19 pruebas con Pytest (endpoints de FastAPI, carga multipart de Nmap, rechazo de XML con entidades, neutralización de fórmulas CSV y paridad con `shared/golden-demo.json`).
-- **Navegador (e2e):** 52 comprobaciones con Playwright sobre el HTML autocontenido (`tests/e2e_app.py`): CSP, red bloqueada, navegación, ingesta de Nmap real y con entidades, BloodHound, rutas que se cortan al validar, SLA vencidos, exportar y reimportar, diálogos con Escape y foco, fórmula de la ayuda igual a la del motor, tema, inglés completo en 14 pantallas y móvil.
+- **Navegador (e2e):** 53 comprobaciones con Playwright sobre el HTML autocontenido (`tests/e2e_app.py`): CSP, red bloqueada, navegación, ingesta de Nmap real y con entidades, BloodHound, rutas que se cortan al validar, SLA vencidos, exportar y reimportar, diálogos con Escape y foco, fórmula de la ayuda igual a la del motor, tema, inglés completo en 14 pantallas y móvil.
 - **Accesibilidad:** axe-core (WCAG 2.2 A/AA) en 128 estados (32 por combinación: vistas, diálogos, menús, formularios, resultados de ingesta, ayuda y búsqueda, en claro y oscuro, a 1440 y 390 px), más un barrido de contraste propio para lo que axe deja sin decidir: **0 infracciones** (`tests/a11y_app.py`). Ambas suites se ejecutan en la CI.
 - **Compilación e integridad:** TypeScript en modo estricto (`tsc -b`). La CSP del archivo único prohíbe scripts externos y evalúa hashes criptográficos.
 

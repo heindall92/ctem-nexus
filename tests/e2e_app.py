@@ -21,6 +21,15 @@ HOY = "2026-10-08T10:00:00"
 resultados = []
 
 
+def esperar(page, expr, timeout=5000):
+    """Sondea una expresión con evaluate: wait_for_function necesita eval y la CSP de la app lo prohíbe."""
+    for _ in range(timeout // 50):
+        if page.evaluate(expr):
+            return
+        page.wait_for_timeout(50)
+    raise AssertionError(f"no se cumplió a tiempo: {expr}")
+
+
 def check(nombre, cond, detalle=""):
     resultados.append((nombre, bool(cond), detalle))
     print(f"  {'✔' if cond else '✘'} {nombre}{'' if cond else f'  → {detalle}'}")
@@ -35,7 +44,7 @@ def abrir(browser, ancho=1440, alto=900, tema="dark"):
     page.on("pageerror", lambda e: problemas.append(f"excepción: {e}"))
     page.on("request", lambda r: None if re.match(r"^(file|data|blob):", r.url) else problemas.append(f"petición externa: {r.url}"))
     page.goto(APP)
-    page.wait_for_function("!!window.__CTEM__")
+    esperar(page, "!!window.__CTEM__")
     return ctx, page, problemas
 
 
@@ -104,6 +113,10 @@ def escritorio(b, tmp):
     dialogo = page.get_by_role("dialog")
     expect(dialogo).to_be_visible()
     check("el detalle se abre como diálogo con nombre accesible", dialogo.count() == 1 and (dialogo.get_attribute("aria-labelledby") or "") != "")
+    dialogo.get_by_role("button", name="Mitigado").click()
+    page.wait_for_timeout(300)
+    check("cambiar el estado dentro del detalle no saca el foco del panel", page.evaluate("!!document.activeElement?.closest('[role=dialog]')"), page.evaluate("document.activeElement?.outerHTML?.slice(0, 80)"))
+    dialogo.get_by_role("button", name="Validado").click()
     page.keyboard.press("Escape")
     expect(page.get_by_role("dialog")).to_have_count(0)
     check("Escape cierra el detalle", True)
@@ -179,7 +192,7 @@ def escritorio(b, tmp):
     datos = json.loads(exportado.read_text(encoding="utf-8"))
     J(f"{S}.reset()")
     page.locator('input[type="file"][accept=".json,application/json"]').set_input_files(str(exportado))
-    page.wait_for_function(f"{S}.project.assets.length === {len(datos['assets'])}")
+    esperar(page, f"{S}.project.assets.length === {len(datos['assets'])}")
     check("exportar y reimportar conserva activos y hallazgos", J(f"{S}.project.findings.length") == len(datos["findings"]))
 
     # Ayuda: diálogo con pestañas, Escape y foco de vuelta
@@ -187,9 +200,11 @@ def escritorio(b, tmp):
     ayuda.click()
     dlg = page.get_by_role("dialog", name=re.compile("Guía y ayuda"))
     check("la ayuda es un diálogo modal con nombre", dlg.count() == 1)
+    expect(dlg).to_be_focused()  # al abrirse, el diálogo toma el foco en el siguiente frame
     page.get_by_role("tab", name="Ciclo CTEM").focus()
     page.keyboard.press("ArrowRight")
-    check("las pestañas de la ayuda se recorren con las flechas", page.get_by_role("tab", name="Cálculo de riesgo").get_attribute("aria-selected") == "true")
+    expect(page.get_by_role("tab", name="Cálculo de riesgo")).to_have_attribute("aria-selected", "true")
+    check("las pestañas de la ayuda se recorren con las flechas", page.get_by_role("tab", name="Cálculo de riesgo").evaluate("e => e === document.activeElement"))
     page.get_by_role("tab", name="Cálculo de riesgo").click()
     formula = page.get_by_test_id("formula").inner_text()
     check("la ayuda muestra la fórmula real del motor (30 · 25 · 20 · 10 · 15)", all(f"× {w}" in formula for w in (30, 25, 20, 10, 15)) and "0.35" not in formula, formula)
