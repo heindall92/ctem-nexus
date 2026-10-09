@@ -1,4 +1,4 @@
-/* Impacto de corregir un hallazgo: cuántas rutas de ataque hacia las joyas de la corona dejan de existir. Sin DOM. */
+/* Impacto de corregir un hallazgo: cuántas rutas de ataque hacia los activos críticos dejan de existir. Sin DOM. */
 import type { GraphAnalysis } from './types';
 
 /** Aristas que desaparecen al corregir estos hallazgos: las que solo se apoyaban en ellos (y no son manuales). */

@@ -111,7 +111,7 @@ export function Mobilization() {
                   [c.exposure, `${n1(s.exposureIndex)}`, '/100'],
                   [c.openFindings, String(s.openFindings), c.critHigh(s.byBand.critica, s.byBand.alta)],
                   [c.kev, String(s.kevOpen), L('explotación activa', 'active exploitation')],
-                  [L('Rutas / estrangulamientos', 'Paths / choke points'), `${s.attackPaths} / ${s.chokePoints}`, L('hacia joyas de la corona', 'to crown jewels')],
+                  [L('Rutas / estrangulamientos', 'Paths / choke points'), `${s.attackPaths} / ${s.chokePoints}`, L('hacia activos críticos', 'to critical assets')],
                 ].map(([l, v, n], i) => (
                   <div key={l} className={`px-6 py-4 ${i ? 'border-l border-hairline' : ''}`}>
                     <div className="label print-muted">{l}</div>
@@ -170,7 +170,7 @@ export function Mobilization() {
                   </ul>
                   <h3 className="title-md mb-1.5 mt-5">{L('Recomendación', 'Recommendation')}</h3>
                   <p className="print-muted text-[0.8125rem] leading-relaxed text-ink-2">
-                    {L('Corregir primero los hallazgos sobre puntos de estrangulamiento y los incluidos en CISA KEV: cortan el mayor número de rutas hacia las joyas de la corona con el menor esfuerzo.', 'Fix first the findings on choke points and those in CISA KEV: they break the most paths to the crown jewels with the least effort.')}
+                    {L('Corregir primero los hallazgos sobre puntos de estrangulamiento y los incluidos en CISA KEV: cortan el mayor número de rutas hacia los activos críticos con el menor esfuerzo.', 'Fix first the findings on choke points and those in CISA KEV: they break the most paths to the critical assets with the least effort.')}
                     {s.mttrDays !== null && <> {L('MTTR actual', 'Current MTTR')}: <span className="num">{n1(s.mttrDays)}</span> {c.days}.</>}
                   </p>
                 </section>

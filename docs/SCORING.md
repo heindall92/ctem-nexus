@@ -19,7 +19,7 @@ explotabilidad  = max(KEV ? 1 : 0,
                       EPSS)                        × 25
 criticidad      = (criticidad del activo − 1) / 4 × 20
 exposición      = expuesto a Internet ? 1 : 0     × 10
-proximidad      = max(0, 1 − saltos / 4)          × 15   (0 si no hay ruta hasta una joya de la corona)
+proximidad      = max(0, 1 − saltos / 4)          × 15   (0 si no hay ruta hasta un activo crítico)
 ```
 
 | Factor | Peso | Entrada |
@@ -28,7 +28,7 @@ proximidad      = max(0, 1 − saltos / 4)          × 15   (0 si no hay ruta ha
 | Explotabilidad | 25 | CISA KEV (1), exploit público (suelo 0,6) y EPSS (0–1): se toma el máximo. |
 | Criticidad del activo | 20 | Criticidad de negocio 1–5 del activo afectado. |
 | Exposición | 10 | Activo expuesto a Internet. |
-| Proximidad | 15 | Saltos en el grafo hasta la joya de la corona (criticidad 5) más cercana. |
+| Proximidad | 15 | Saltos en el grafo hasta el activo crítico (criticidad 5) más cercana. |
 
 **Perfiles de ponderación.** Los pesos de la tabla son los del perfil *General*. Cada perfil suma 100 y se guarda en el
 proyecto (Ajustes); los tres tienen paridad TS ↔ Python en el fichero dorado.
@@ -75,7 +75,7 @@ categoría). La política forma parte del motor (`slaPolicy` en la entrada y en 
 
 ## Ejemplo resuelto
 
-Hallazgo con CVSS 8,0, EPSS 0,20 y exploit público, sobre un activo interno de criticidad 3 a 2 saltos de una joya:
+Hallazgo con CVSS 8,0, EPSS 0,20 y exploit público, sobre un activo interno de criticidad 3 a 2 saltos de un activo crítico:
 
 | Factor | Cálculo | Puntos |
 |---|---|---:|
@@ -101,7 +101,7 @@ Se listan los tres factores que más puntos aportan, más el ajuste de validaci�
 1. **Grafo.** Nodos: `Internet` + un nodo por activo. Aristas: `Internet → activo` si está expuesto; una arista
    por cada hallazgo activo que habilita movimiento (`edgeFrom` o el activo afectado → `leadsTo`); y las aristas
    manuales. Los hallazgos `mitigado` o `no_explotable` no generan aristas.
-2. **Rutas.** DFS de rutas simples desde Internet hasta cada joya de la corona (criticidad 5), profundidad
+2. **Rutas.** DFS de rutas simples desde Internet hasta cada activo crítico (criticidad 5), profundidad
    máxima 8 y tope de 2.000 rutas (se avisa si se trunca).
 3. **Estrangulamiento.** Un nodo intermedio o una arista es punto de estrangulamiento si aparece en
    **≥ 40 %** de las rutas y en al menos 2. El indicador del panel cuenta los nodos.

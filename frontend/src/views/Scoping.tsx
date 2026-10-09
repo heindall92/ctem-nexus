@@ -108,7 +108,7 @@ export function Scoping() {
         open={showBloodhound}
         onClose={() => setShowBloodhound(false)}
         title={L('Ingesta de Active Directory con BloodHound', 'Active Directory intake with BloodHound')}
-        subtitle={L('Mapeo de Controladores de Dominio, joyas de la corona y vectores de escalada', 'Mapping of domain controllers, crown jewels and escalation vectors')}
+        subtitle={L('Mapeo de Controladores de Dominio, activos críticos y vectores de escalada', 'Mapping of domain controllers, critical assets and escalation vectors')}
         maxWidth={740}
       >
         <BloodHoundUploader onDone={() => setShowBloodhound(false)} />
@@ -194,7 +194,7 @@ function AssetForm({ initial, onDone }: { initial: Asset | null; onDone: () => v
         <Field label="IP / CIDR" error={ipErr}><input className="field num" value={a.ip} aria-invalid={!!ipErr} onChange={(e) => set('ip', e.target.value.trim())} placeholder="10.10.10.5" /></Field>
       </div>
       <Field label={c.thOwner}><input className="field" value={a.owner} onChange={(e) => set('owner', e.target.value)} placeholder={L('Equipo o persona', 'Team or person')} /></Field>
-      <Field label={L(`Criticidad de negocio: ${a.criticality}/5`, `Business criticality: ${a.criticality}/5`)} hint={L('5 = joya de la corona (destino de las rutas de ataque)', '5 = crown jewel (target of attack paths)')}>
+      <Field label={L(`Criticidad de negocio: ${a.criticality}/5`, `Business criticality: ${a.criticality}/5`)} hint={L('5 = activo crítico: su compromiso pararía el negocio o expondría sus datos más sensibles. Es el destino de las rutas de ataque.', '5 = critical asset: its compromise would stop the business or expose its most sensitive data. It is the target of attack paths.')}>
         <input type="range" min={1} max={5} step={1} value={a.criticality} onChange={(e) => set('criticality', Number(e.target.value) as Asset['criticality'])} className="accent-[var(--color-accent)]" />
       </Field>
       <div className="flex items-center justify-between rounded-xl px-3 py-2.5 shadow-[inset_0_0_0_1px_var(--color-hairline)]">

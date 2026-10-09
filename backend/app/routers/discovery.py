@@ -150,7 +150,7 @@ def parse_nmap_xml_content(content: bytes | str) -> dict:
 
         if is_dc:
             asset_type = "controlador_dominio"
-            criticality = 5  # Joya de la corona por excelencia
+            criticality = 5  # Activo crítico por excelencia
         elif is_db:
             asset_type = "base_datos"
             criticality = 4

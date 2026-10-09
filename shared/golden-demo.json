@@ -1,5 +1,5 @@
 {
-  "engineVersion": "1.2.0",
+  "engineVersion": "1.2.1",
   "input": {
     "assets": [
       {
@@ -501,7 +501,7 @@
         "band": "alta",
         "hopsToCrown": 1,
         "onAttackPath": true,
-        "explanation": "Prioridad Alta (75,7/100). CVSS 9,8; En el catálogo CISA KEV: explotación activa confirmada; A 1 salto de una joya de la corona."
+        "explanation": "Prioridad Alta (75,7/100). CVSS 9,8; En el catálogo CISA KEV: explotación activa confirmada; A 1 salto de un activo crítico."
       },
       {
         "id": "H-005",
@@ -541,7 +541,7 @@
         "band": "alta",
         "hopsToCrown": 1,
         "onAttackPath": true,
-        "explanation": "Prioridad Alta (67,7/100). CVSS 8,8; En el catálogo CISA KEV: explotación activa confirmada; A 1 salto de una joya de la corona."
+        "explanation": "Prioridad Alta (67,7/100). CVSS 8,8; En el catálogo CISA KEV: explotación activa confirmada; A 1 salto de un activo crítico."
       },
       {
         "id": "H-006",
@@ -549,7 +549,7 @@
         "band": "alta",
         "hopsToCrown": 1,
         "onAttackPath": true,
-        "explanation": "Prioridad Alta (62,7/100). CVSS 8,8; Exploit público disponible; A 1 salto de una joya de la corona."
+        "explanation": "Prioridad Alta (62,7/100). CVSS 8,8; Exploit público disponible; A 1 salto de un activo crítico."
       },
       {
         "id": "H-008",
@@ -557,7 +557,7 @@
         "band": "media",
         "hopsToCrown": 1,
         "onAttackPath": true,
-        "explanation": "Prioridad Media (58,8/100). CVSS 7,5; Exploit público disponible; A 1 salto de una joya de la corona."
+        "explanation": "Prioridad Media (58,8/100). CVSS 7,5; Exploit público disponible; A 1 salto de un activo crítico."
       },
       {
         "id": "H-009",
@@ -565,7 +565,7 @@
         "band": "media",
         "hopsToCrown": 1,
         "onAttackPath": true,
-        "explanation": "Prioridad Media (54,7/100). CVSS 7,8; Exploit público disponible; A 1 salto de una joya de la corona."
+        "explanation": "Prioridad Media (54,7/100). CVSS 7,8; Exploit público disponible; A 1 salto de un activo crítico."
       },
       {
         "id": "H-020",
@@ -581,7 +581,7 @@
         "band": "media",
         "hopsToCrown": 0,
         "onAttackPath": true,
-        "explanation": "Riesgo aceptado; puntuación de referencia (51,5/100). Criticidad de negocio 5/5 (ERP y base de datos financiera); CVSS 5,5; Afecta directamente a una joya de la corona."
+        "explanation": "Riesgo aceptado; puntuación de referencia (51,5/100). Criticidad de negocio 5/5 (ERP y base de datos financiera); CVSS 5,5; Afecta directamente a un activo crítico."
       },
       {
         "id": "H-011",
@@ -589,7 +589,7 @@
         "band": "media",
         "hopsToCrown": 1,
         "onAttackPath": true,
-        "explanation": "Prioridad Media (50,8/100). CVSS 6,5; Exploit público disponible; A 1 salto de una joya de la corona."
+        "explanation": "Prioridad Media (50,8/100). CVSS 6,5; Exploit público disponible; A 1 salto de un activo crítico."
       },
       {
         "id": "H-017",
@@ -605,7 +605,7 @@
         "band": "baja",
         "hopsToCrown": 1,
         "onAttackPath": true,
-        "explanation": "Prioridad Baja (15,1/100). CVSS 8,1; Exploit público disponible (EPSS 8,0 %); A 1 salto de una joya de la corona; Validado como no explotable (×0,25)."
+        "explanation": "Prioridad Baja (15,1/100). CVSS 8,1; Exploit público disponible (EPSS 8,0 %); A 1 salto de un activo crítico; Validado como no explotable (×0,25)."
       }
     ],
     "paths": 7,
@@ -699,25 +699,25 @@
             "id": "H-010",
             "score": 79.6,
             "band": "alta",
-            "explanation": "Prioridad Alta (79,6/100). Criticidad de negocio 5/5 (ERP y base de datos financiera); Afecta directamente a una joya de la corona; CVSS 8,8."
+            "explanation": "Prioridad Alta (79,6/100). Criticidad de negocio 5/5 (ERP y base de datos financiera); Afecta directamente a un activo crítico; CVSS 8,8."
           },
           {
             "id": "H-005",
             "score": 78.2,
             "band": "alta",
-            "explanation": "Prioridad Alta (78,2/100). Criticidad de negocio 5/5 (Controlador de dominio DC01); Afecta directamente a una joya de la corona; CVSS 8,1."
+            "explanation": "Prioridad Alta (78,2/100). Criticidad de negocio 5/5 (Controlador de dominio DC01); Afecta directamente a un activo crítico; CVSS 8,1."
           },
           {
             "id": "H-018",
             "score": 77,
             "band": "alta",
-            "explanation": "Prioridad Alta (77,0/100). Criticidad de negocio 5/5 (Controlador de dominio DC01); Afecta directamente a una joya de la corona; CVSS 7,5."
+            "explanation": "Prioridad Alta (77,0/100). Criticidad de negocio 5/5 (Controlador de dominio DC01); Afecta directamente a un activo crítico; CVSS 7,5."
           },
           {
             "id": "H-012",
             "score": 75.6,
             "band": "alta",
-            "explanation": "Prioridad Alta (75,6/100). Criticidad de negocio 5/5 (Controlador de dominio DC01); Afecta directamente a una joya de la corona; CVSS 6,8."
+            "explanation": "Prioridad Alta (75,6/100). Criticidad de negocio 5/5 (Controlador de dominio DC01); Afecta directamente a un activo crítico; CVSS 6,8."
           },
           {
             "id": "H-014",
@@ -729,31 +729,31 @@
             "id": "H-007",
             "score": 67.5,
             "band": "alta",
-            "explanation": "Prioridad Alta (67,5/100). Criticidad de negocio 4/5 (Entidad de certificación PKI-CA01); CVSS 9,0; A 1 salto de una joya de la corona."
+            "explanation": "Prioridad Alta (67,5/100). Criticidad de negocio 4/5 (Entidad de certificación PKI-CA01); CVSS 9,0; A 1 salto de un activo crítico."
           },
           {
             "id": "H-019",
             "score": 61,
             "band": "alta",
-            "explanation": "Riesgo aceptado; puntuación de referencia (61,0/100). Criticidad de negocio 5/5 (ERP y base de datos financiera); Afecta directamente a una joya de la corona; CVSS 5,5."
+            "explanation": "Riesgo aceptado; puntuación de referencia (61,0/100). Criticidad de negocio 5/5 (ERP y base de datos financiera); Afecta directamente a un activo crítico; CVSS 5,5."
           },
           {
             "id": "H-016",
             "score": 60.1,
             "band": "alta",
-            "explanation": "Prioridad Alta (60,1/100). En el catálogo CISA KEV: explotación activa confirmada; CVSS 8,8; A 1 salto de una joya de la corona."
+            "explanation": "Prioridad Alta (60,1/100). En el catálogo CISA KEV: explotación activa confirmada; CVSS 8,8; A 1 salto de un activo crítico."
           },
           {
             "id": "H-006",
             "score": 59.6,
             "band": "media",
-            "explanation": "Prioridad Media (59,6/100). CVSS 8,8; Criticidad de negocio 3/5 (Servidor de aplicaciones APP01); A 1 salto de una joya de la corona."
+            "explanation": "Prioridad Media (59,6/100). CVSS 8,8; Criticidad de negocio 3/5 (Servidor de aplicaciones APP01); A 1 salto de un activo crítico."
           },
           {
             "id": "H-008",
             "score": 57,
             "band": "media",
-            "explanation": "Prioridad Media (57,0/100). CVSS 7,5; Criticidad de negocio 3/5 (Servidor de aplicaciones APP01); A 1 salto de una joya de la corona."
+            "explanation": "Prioridad Media (57,0/100). CVSS 7,5; Criticidad de negocio 3/5 (Servidor de aplicaciones APP01); A 1 salto de un activo crítico."
           },
           {
             "id": "H-017",
@@ -771,19 +771,19 @@
             "id": "H-009",
             "score": 50.1,
             "band": "media",
-            "explanation": "Prioridad Media (50,1/100). CVSS 7,8; A 1 salto de una joya de la corona; Exploit público disponible."
+            "explanation": "Prioridad Media (50,1/100). CVSS 7,8; A 1 salto de un activo crítico; Exploit público disponible."
           },
           {
             "id": "H-011",
             "score": 47.5,
             "band": "media",
-            "explanation": "Prioridad Media (47,5/100). A 1 salto de una joya de la corona; CVSS 6,5; Exploit público disponible."
+            "explanation": "Prioridad Media (47,5/100). A 1 salto de un activo crítico; CVSS 6,5; Exploit público disponible."
           },
           {
             "id": "H-015",
             "score": 14.6,
             "band": "baja",
-            "explanation": "Prioridad Baja (14,6/100). CVSS 8,1; Criticidad de negocio 3/5 (Servidor de aplicaciones APP01); A 1 salto de una joya de la corona; Validado como no explotable (×0,25)."
+            "explanation": "Prioridad Baja (14,6/100). CVSS 8,1; Criticidad de negocio 3/5 (Servidor de aplicaciones APP01); A 1 salto de un activo crítico; Validado como no explotable (×0,25)."
           }
         ],
         "summary": {
@@ -869,7 +869,7 @@
             "id": "H-016",
             "score": 64.5,
             "band": "alta",
-            "explanation": "Prioridad Alta (64,5/100). En el catálogo CISA KEV: explotación activa confirmada; CVSS 8,8; A 1 salto de una joya de la corona."
+            "explanation": "Prioridad Alta (64,5/100). En el catálogo CISA KEV: explotación activa confirmada; CVSS 8,8; A 1 salto de un activo crítico."
           },
           {
             "id": "H-007",
@@ -899,7 +899,7 @@
             "id": "H-009",
             "score": 50,
             "band": "media",
-            "explanation": "Prioridad Media (50,0/100). CVSS 7,8; Exploit público disponible; A 1 salto de una joya de la corona."
+            "explanation": "Prioridad Media (50,0/100). CVSS 7,8; Exploit público disponible; A 1 salto de un activo crítico."
           },
           {
             "id": "H-017",
@@ -911,13 +911,13 @@
             "id": "H-011",
             "score": 46.8,
             "band": "media",
-            "explanation": "Prioridad Media (46,8/100). Exploit público disponible; CVSS 6,5; A 1 salto de una joya de la corona."
+            "explanation": "Prioridad Media (46,8/100). Exploit público disponible; CVSS 6,5; A 1 salto de un activo crítico."
           },
           {
             "id": "H-019",
             "score": 43.8,
             "band": "media",
-            "explanation": "Riesgo aceptado; puntuación de referencia (43,8/100). Criticidad de negocio 5/5 (ERP y base de datos financiera); CVSS 5,5; Afecta directamente a una joya de la corona."
+            "explanation": "Riesgo aceptado; puntuación de referencia (43,8/100). Criticidad de negocio 5/5 (ERP y base de datos financiera); CVSS 5,5; Afecta directamente a un activo crítico."
           },
           {
             "id": "H-015",

@@ -14,7 +14,7 @@ ficticios y encajan con el caso de demostración, *Industrias Meridiano*. Con tu
 ## 1. Alcance: qué entra y qué es crítico (1 minuto)
 
 Pulsa **Cargar datos de demo** para tener un escenario completo y entra en **Alcance y activos**. Allí están los rangos
-en alcance y los activos con su criticidad de negocio (1 a 5). Las **joyas de la corona** son los de criticidad 5: el
+en alcance y los activos con su criticidad de negocio (1 a 5). Los **activos críticos** son los de criticidad 5: el
 controlador de dominio y el ERP.
 
 Importa tu escaneo con **Importar Nmap XML**:
@@ -59,7 +59,7 @@ ALTA) ajusta los plazos. En una categoría ALTA, un hallazgo crítico pasa de 3 
 Cada hallazgo tiene una puntuación de 0 a 100 que se puede auditar:
 
 ```
-severidad (CVSS) + explotabilidad (KEV, exploit público, EPSS) + criticidad del activo + exposición + proximidad a una joya
+severidad (CVSS) + explotabilidad (KEV, exploit público, EPSS) + criticidad del activo + exposición + proximidad a un activo crítico
 ```
 
 ![Tabla de priorización ordenada por puntuación, con Log4Shell y ProxyShell en cabeza](guia/05-priorizacion.png)
@@ -72,7 +72,7 @@ las técnicas ATT&CK, los **controles afectados** (ENS, ISO/IEC 27001, NIS2, NIS
 
 ## 5. Rutas de ataque: dónde cortar (1 minuto)
 
-**Rutas de ataque** dibuja los caminos desde Internet hasta las joyas de la corona y marca los **puntos de
+**Rutas de ataque** dibuja los caminos desde Internet hasta los activos críticos y marca los **puntos de
 estrangulamiento**: los nodos por los que pasan muchas rutas. Corregir ahí rompe más caminos con menos esfuerzo.
 
 ![Grafo de ataque con las rutas hacia el controlador de dominio y los puntos de estrangulamiento](guia/07-rutas.png)
@@ -87,7 +87,7 @@ En **¿Y si…?** pulsa **Simular el plan**. La app propone el orden de correcci
 junta los que solo cortan su arista a la vez), y enseña el antes y el después del índice, los críticos y las rutas.
 Nada cambia en el proyecto hasta que tú lo decidas.
 
-![Simulación del plan: el índice baja y las rutas hacia las joyas de la corona llegan a cero](guia/08-simulacion.png)
+![Simulación del plan: el índice baja y las rutas hacia los activos críticos llegan a cero](guia/08-simulacion.png)
 
 ## 7. Movilización: plazos, tickets e informe (2 minutos)
 

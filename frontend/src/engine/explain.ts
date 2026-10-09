@@ -24,7 +24,7 @@ function detailEn(fa: Factor, f: Finding, asset: Asset | undefined, s: ScoredFin
     case 'exposicion': return asset?.internetExposed ? 'Exposed to the Internet' : 'Reachable only from the internal network';
     case 'proximidad': {
       const h = s.hopsToCrown;
-      return h === null ? 'No known path to a crown jewel' : h === 0 ? 'Directly affects a crown jewel' : `${h} ${h === 1 ? 'hop' : 'hops'} from a crown jewel`;
+      return h === null ? 'No known path to a critical asset' : h === 0 ? 'Directly affects a critical asset' : `${h} ${h === 1 ? 'hop' : 'hops'} from a critical asset`;
     }
     case 'validacion': return fa.points > 0 ? 'Validated as exploitable' : `Validated as not exploitable (×${NOT_EXPLOITABLE_FACTOR})`;
   }

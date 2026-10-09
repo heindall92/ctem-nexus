@@ -487,7 +487,7 @@ export function toNorvik(findings: Finding[], assets: Asset[], result: EngineRes
     ind('abiertos', 'Hallazgos abiertos', s.openFindings, 'hallazgos', 'menos'),
     ind('abiertos_criticos', 'Abiertos de prioridad crítica', s.byBand.critica, 'hallazgos', 'menos'),
     ind('kev_abiertos', 'Abiertos explotados activamente (CISA KEV)', s.kevOpen, 'hallazgos', 'menos'),
-    ind('rutas_ataque', 'Rutas de ataque hacia joyas de la corona', s.attackPaths, 'rutas', 'menos'),
+    ind('rutas_ataque', 'Rutas de ataque hacia activos críticos', s.attackPaths, 'rutas', 'menos'),
     ind('sla_cumplimiento', 'Cumplimiento de plazos (SLA)', sla.overall.compliance === null ? null : Math.round(sla.overall.compliance * 1000) / 10, '%', 'mas'),
     ind('vencidos', 'Hallazgos con el plazo vencido', sla.overall.openOverdue, 'hallazgos', 'menos'),
     ind('mttr_dias', 'Tiempo medio de corrección (MTTR)', s.mttrDays, 'días', 'menos'),

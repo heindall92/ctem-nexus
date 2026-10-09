@@ -43,7 +43,7 @@
     },
     {
       "indicador": "rutas_ataque",
-      "nombre": "Rutas de ataque hacia joyas de la corona",
+      "nombre": "Rutas de ataque hacia activos críticos",
       "valor": 7,
       "unidad": "rutas",
       "sentido": "menos",

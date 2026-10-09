@@ -38,5 +38,5 @@ def validate_scope(req: ScopeRequest) -> dict:
             issues.append(f"Activo «{a.name}» ({a.ip}) está fuera de los rangos en alcance.")
     crown = sum(1 for a in req.assets if a.criticality == 5)
     if req.assets and crown == 0:
-        issues.append("No hay joyas de la corona (criticidad 5): no se podrán calcular rutas de ataque.")
+        issues.append("No hay activos críticos (criticidad 5): no se podrán calcular rutas de ataque.")
     return {"ok": not issues, "issues": issues, "assets": len(req.assets), "crownJewels": crown}

@@ -1,5 +1,5 @@
 // Genera la cabecera y el pie del README (docs/assets/readme/) con iconos Lucide y un grafo de ataque estilizado:
-// Internet → entradas → estrangulamiento → joyas de la corona. Sin servicios de terceros.
+// Internet → entradas → estrangulamiento → activos críticos. Sin servicios de terceros.
 // Uso: node scripts/readme-header.mjs
 import fs from 'node:fs';
 import path from 'node:path';

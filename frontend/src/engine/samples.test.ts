@@ -5,7 +5,7 @@ import { expect, it } from 'vitest';
 import { parseBloodHoundJson } from './bloodhound';
 import { parseNmapXml } from './nmap';
 
-it('el Nmap de ejemplo (con el DOCTYPE real de Nmap) produce activos, joya de la corona y hallazgos', () => {
+it('el Nmap de ejemplo (con el DOCTYPE real de Nmap) produce activos, activo crítico y hallazgos', () => {
   const xml = readFileSync(resolve(__dirname, '../../../shared/samples/nmap-ejemplo.xml'), 'utf8');
   const r = parseNmapXml(xml);
   expect(r.totalHosts).toBe(3);
@@ -15,7 +15,7 @@ it('el Nmap de ejemplo (con el DOCTYPE real de Nmap) produce activos, joya de la
   expect(r.findings.some((f) => /telnet/i.test(f.title))).toBe(true);
 });
 
-it('el BloodHound de ejemplo produce el DC como joya, delegación, kerberoasting y AS-REP roasting', () => {
+it('el BloodHound de ejemplo produce el DC como activo crítico, delegación, kerberoasting y AS-REP roasting', () => {
   const json = readFileSync(resolve(__dirname, '../../../shared/samples/bloodhound-ejemplo.json'), 'utf8');
   const r = parseBloodHoundJson(json);
   expect(r.assets.some((a) => a.criticality === 5 && /DC01/i.test(a.name))).toBe(true);

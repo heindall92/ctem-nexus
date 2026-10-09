@@ -539,7 +539,7 @@ export function reportMarkdown(project: Pick<Project, 'name' | 'demo'> & Partial
     `| ${L('Críticos / Altos / Medios / Bajos', 'Critical / High / Medium / Low')} | ${s.byBand.critica} / ${s.byBand.alta} / ${s.byBand.media} / ${s.byBand.baja} |`,
     `| ${L('En CISA KEV', 'In CISA KEV')} | ${s.kevOpen} |`,
     `| ${L('Activos en riesgo', 'Assets at risk')} | ${s.assetsAtRisk} |`,
-    `| ${L('Rutas de ataque hacia joyas de la corona', 'Attack paths to crown jewels')} | ${s.attackPaths} |`,
+    `| ${L('Rutas de ataque hacia activos críticos', 'Attack paths to critical assets')} | ${s.attackPaths} |`,
     `| ${L('Puntos de estrangulamiento', 'Choke points')} | ${s.chokePoints} |`,
     `| ${L('MTTR (días)', 'MTTR (days)')} | ${s.mttrDays === null ? '—' : numIn(lang, s.mttrDays)} |`, '',
     `## ${L('Riesgos principales', 'Top risks')}`, '', `| # | ${L('Hallazgo', 'Finding')} | ${L('Activo', 'Asset')} | ${L('Prioridad', 'Priority')} | ${L('Puntuación', 'Score')} | SLA |`, '|---:|---|---|---|---:|---:|',
@@ -552,7 +552,7 @@ export function reportMarkdown(project: Pick<Project, 'name' | 'demo'> & Partial
       ? result.graph.chokePoints.map((c) => `- **${mdEsc(c.label)}** (${c.kind === 'nodo' ? L('nodo', 'node') : L('arista', 'edge')}): ${L(`presente en ${c.paths} de ${s.attackPaths} rutas`, `present in ${c.paths} of ${s.attackPaths} paths`)} (${Math.round(c.share * 100)} %).`)
       : [L('- No se han identificado puntos de estrangulamiento.', '- No choke points were identified.')]), '',
     `## ${L('Recomendación', 'Recommendation')}`, '',
-    L('Corregir primero los hallazgos que coinciden con puntos de estrangulamiento: cortan el mayor número de rutas hacia las joyas de la corona con el menor esfuerzo.', 'Fix first the findings on choke points: they break the most paths to the crown jewels with the least effort.'), '');
+    L('Corregir primero los hallazgos que coinciden con puntos de estrangulamiento: cortan el mayor número de rutas hacia los activos críticos con el menor esfuerzo.', 'Fix first the findings on choke points: they break the most paths to the critical assets with the least effort.'), '');
   const plan = fixPlan(result, findings, 5);
   if (plan.steps.length) {
     out.push(`## ${L('Cinco acciones', 'Five actions')}`, '');

@@ -241,7 +241,7 @@ export function parseBloodHoundJson(jsonText: string): BloodHoundParseResult {
     }
   }
 
-  // Si hay joyas de la corona y hallazgos huérfanos de destino, asociamos una ruta defensiva
+  // Si hay activos críticos y hallazgos huérfanos de destino, asociamos una ruta defensiva
   if (dcAssetId) {
     for (const f of findings) {
       if (f.leadsTo && f.leadsTo.length === 0 && f.assetId !== dcAssetId) {

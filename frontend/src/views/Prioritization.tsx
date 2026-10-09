@@ -80,7 +80,7 @@ export function Prioritization() {
           eyebrow={L('Fases 2 y 3 · Descubrimiento y priorización', 'Stages 2 & 3 · Discovery and prioritization')}
           title={L('Catálogo de exposición', 'Exposure catalog')}
           badge={project.demo ? <DemoBadge /> : undefined}
-          lead={L('Cada hallazgo con su puntuación de 0 a 100, explicada factor a factor: severidad, explotación real (KEV, EPSS), criticidad, exposición y cercanía a una joya de la corona.', 'Every finding with its 0–100 score, explained factor by factor: severity, real exploitation (KEV, EPSS), criticality, exposure and closeness to a crown jewel.')}
+          lead={L('Cada hallazgo con su puntuación de 0 a 100, explicada factor a factor: severidad, explotación real (KEV, EPSS), criticidad, exposición y cercanía a un activo crítico.', 'Every finding with its 0–100 score, explained factor by factor: severity, real exploitation (KEV, EPSS), criticality, exposure and closeness to a critical asset.')}
           actions={<>
             <input ref={fileRef} type="file" accept=".json,.csv,application/json,text/csv" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void onImport(f); e.target.value = ''; }} />
             <button type="button" className="btn" onClick={() => setShowScan(true)}><FileSearch className="size-4" />{L('Importar escáner', 'Import scanner')}</button>

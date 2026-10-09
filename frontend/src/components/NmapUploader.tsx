@@ -131,7 +131,7 @@ export function NmapUploader({ onDone }: Props) {
               <code className="rounded bg-surface-3 px-1.5 py-0.5 font-mono text-ink">
                 nmap -sV -sC -O -oX red_auditoria.xml &lt;{L('rango', 'range')}&gt;
               </code>
-              ). {L('CTEM-Nexus extraerá automáticamente hosts, puertos abiertos, joyas de la corona y posibles CVEs.', 'CTEM-Nexus automatically extracts hosts, open ports, crown jewels and possible CVEs.')}
+              ). {L('CTEM-Nexus extraerá automáticamente hosts, puertos abiertos, activos críticos y posibles CVEs.', 'CTEM-Nexus automatically extracts hosts, open ports, critical assets and possible CVEs.')}
             </p>
           </div>
         </div>
@@ -221,7 +221,7 @@ export function NmapUploader({ onDone }: Props) {
                 <div key={a.id} className="flex items-center justify-between px-3.5 py-2.5 text-xs">
                   <div className="flex items-center gap-2.5">
                     {a.criticality === 5 ? (
-                      <span title={L('Joya de la corona', 'Crown jewel')}><Crown className="size-3.5 text-accent" /></span>
+                      <span title={L('Activo crítico', 'Critical asset')}><Crown className="size-3.5 text-accent" /></span>
                     ) : (
                       <Server className="size-3.5 text-ink-3" />
                     )}

@@ -53,7 +53,7 @@ export function Dashboard() {
               <ul className="mt-4 grid gap-3 sm:grid-cols-3">
                 {[
                   { icon: <Sparkles />, title: c.loadDemo, text: L('Un caso ficticio completo: 8 activos, 20 hallazgos y 7 rutas de ataque.', 'A complete fictional case: 8 assets, 20 findings and 7 attack paths.'), primary: true, act: () => { loadDemo(); notify(c.demoLoaded); } },
-                  { icon: <Radar />, title: c.importNmapScan, text: L('Arrastra la salida XML de Nmap: activos, puertos, joyas de la corona y CVE.', 'Drop Nmap XML output: assets, ports, crown jewels and CVEs.'), act: () => setShowNmap(true) },
+                  { icon: <Radar />, title: c.importNmapScan, text: L('Arrastra la salida XML de Nmap: activos, puertos, activos críticos y CVE.', 'Drop Nmap XML output: assets, ports, critical assets and CVEs.'), act: () => setShowNmap(true) },
                   { icon: <Crosshair />, title: c.defineScope, text: L('Registra a mano los activos, su criticidad y los rangos autorizados.', 'Record assets, their criticality and the authorized ranges by hand.'), act: () => setView('alcance') },
                 ].map((o) => (
                   <li key={o.title}>
@@ -109,7 +109,7 @@ export function Dashboard() {
           eyebrow={`${L('Panel', 'Board')} · ${project.name}`}
           title={c.panelTitle}
           badge={project.demo ? <DemoBadge /> : undefined}
-          lead={L('Dónde estás expuesto, qué rutas llevan a tus joyas de la corona y qué corregir primero.', 'Where you are exposed, which paths lead to your crown jewels and what to fix first.')}
+          lead={L('Dónde estás expuesto, qué rutas llevan a tus activos críticos y qué corregir primero.', 'Where you are exposed, which paths lead to your critical assets and what to fix first.')}
           actions={<>
             <button type="button" className="btn" onClick={() => setView('rutas')}><Route />{c.paths}</button>
             <button type="button" className="btn btn-primary" onClick={() => setView('movilizacion')}><ListChecks />{L('Plan de remediación', 'Remediation plan')}</button>
@@ -161,7 +161,7 @@ export function Dashboard() {
             <Reveal as="section" delay={0.12} className="panel flex-1 overflow-hidden">
               <div className="px-5 pb-1 pt-4">
                 <h2 className="title-md">{L('Tres acciones para hoy', 'Three actions for today')}</h2>
-                <p className="mt-0.5 text-xs text-ink-3">{L('Las correcciones que más rutas hacia las joyas de la corona rompen.', 'The fixes that break the most paths to the crown jewels.')}</p>
+                <p className="mt-0.5 text-xs text-ink-3">{L('Las correcciones que más rutas hacia los activos críticos rompen.', 'The fixes that break the most paths to the critical assets.')}</p>
               </div>
               <ol className="divide-hair" data-testid="acciones-hoy">
                 {today.map(({ x, f, broken }, i) => (

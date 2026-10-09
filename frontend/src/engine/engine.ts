@@ -71,7 +71,7 @@ function adjacency(edges: GraphEdge[]): Map<string, string[]> {
   return adj;
 }
 
-/** Saltos mínimos desde cada nodo hasta la joya de la corona más cercana (BFS inverso multiorigen). */
+/** Saltos mínimos desde cada nodo hasta el activo crítico más cercano (BFS inverso multiorigen). */
 export function hopsToCrown(nodes: GraphNode[], edges: GraphEdge[]): Map<string, number> {
   const rev = new Map<string, string[]>();
   for (const e of edges) {
@@ -101,7 +101,7 @@ export function analyzeGraph(input: EngineInput): GraphAnalysis {
   const paths: AttackPath[] = [];
   let truncated = false;
 
-  // DFS de rutas simples desde Internet; se registra cada llegada a una joya de la corona y se sigue explorando.
+  // DFS de rutas simples desde Internet; se registra cada llegada a un activo crítico y se sigue explorando.
   const stack: string[] = [INTERNET_ID];
   const onPath = new Set<string>([INTERNET_ID]);
   const dfs = (cur: string): void => {
@@ -187,9 +187,9 @@ export function scoreFinding(f: Finding, asset: Asset | undefined, hops: number 
     { key: 'exposicion', label: 'Exposición', points: r1(exp), max: W.exposicion, detail: exposed ? 'Expuesto a Internet' : 'Solo accesible desde la red interna' },
     {
       key: 'proximidad', label: 'Proximidad', points: r1(prox), max: W.proximidad,
-      detail: hops === null ? 'Sin ruta conocida hacia una joya de la corona'
-        : hops === 0 ? 'Afecta directamente a una joya de la corona'
-          : `A ${hops} ${hops === 1 ? 'salto' : 'saltos'} de una joya de la corona`,
+      detail: hops === null ? 'Sin ruta conocida hacia un activo crítico'
+        : hops === 0 ? 'Afecta directamente a un activo crítico'
+          : `A ${hops} ${hops === 1 ? 'salto' : 'saltos'} de un activo crítico`,
     },
   ];
 

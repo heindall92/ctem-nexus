@@ -164,7 +164,7 @@ export function AttackGraph({ graph, highlight, focusNode, onNode }: {
         const count = graph.nodePathCount[n.id] ?? 0;
         return (
           <g key={n.id} className="g-node cursor-pointer" opacity={dim(n.id) ? 0.28 : 1} onClick={() => onNode(focused ? null : n.id)}
-            role="button" tabIndex={0} aria-label={`${n.label}${n.crown ? L(', joya de la corona', ', crown jewel') : ''}${choke ? L(', punto de estrangulamiento', ', choke point') : ''}`}
+            role="button" tabIndex={0} aria-label={`${n.label}${n.crown ? L(', activo crítico', ', critical asset') : ''}${choke ? L(', punto de estrangulamiento', ', choke point') : ''}`}
             onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); onNode(focused ? null : n.id); } }}>
             <rect x={p.x} y={p.y} width={NW} height={NH} rx={12} fill={n.id === 'internet' ? 'var(--color-surface-3)' : 'var(--color-surface-2)'} stroke={ring} strokeWidth={focused || choke || sel ? 1.75 : 1} />
             <Icon x={p.x + 12} y={p.y + NH / 2 - 9} width={18} height={18} color={n.crown ? 'var(--color-accent)' : choke ? 'var(--color-alta)' : 'var(--color-ink-2)'} strokeWidth={1.75} />
@@ -179,7 +179,7 @@ export function AttackGraph({ graph, highlight, focusNode, onNode }: {
               );
             })()}
             <text x={p.x + 40} y={p.y + (n.label.length > (n.crown ? 21 : 24) ? 52 : 44)} fill={choke ? 'var(--color-alta)' : 'var(--color-ink-3)'} fontSize={10.5}>
-              {n.id === 'internet' ? L('Origen de las rutas', 'Where paths start') : choke ? L(`Estrangulamiento · ${count} rutas`, `Choke point · ${count} paths`) : n.crown ? L('Joya de la corona', 'Crown jewel') : n.entry ? L('Punto de entrada', 'Entry point') : count ? L(`En ${count} rutas`, `On ${count} paths`) : L(`Criticidad ${n.criticality}/5`, `Criticality ${n.criticality}/5`)}
+              {n.id === 'internet' ? L('Origen de las rutas', 'Where paths start') : choke ? L(`Estrangulamiento · ${count} rutas`, `Choke point · ${count} paths`) : n.crown ? L('Activo crítico', 'Critical asset') : n.entry ? L('Punto de entrada', 'Entry point') : count ? L(`En ${count} rutas`, `On ${count} paths`) : L(`Criticidad ${n.criticality}/5`, `Criticality ${n.criticality}/5`)}
             </text>
             {n.crown && <Crown x={p.x + NW - 22} y={p.y + 8} width={13} height={13} color="var(--color-accent)" strokeWidth={2} />}
           </g>

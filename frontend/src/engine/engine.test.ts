@@ -14,7 +14,7 @@ describe('fórmula de puntuación', () => {
   it('los pesos suman 100', () => {
     expect(Object.values(WEIGHTS).reduce((a, b) => a + b, 0)).toBe(100);
   });
-  it('caso máximo: CVSS 10, KEV, criticidad 5, expuesto y sobre la joya → 100', () => {
+  it('caso máximo: CVSS 10, KEV, criticidad 5, expuesto y sobre un activo crítico → 100', () => {
     const s = scoreFinding(finding({ cvss: 10, kev: true }), asset({ criticality: 5, internetExposed: true }), 0, true);
     expect(s.score).toBe(100);
     expect(s.band).toBe('critica');
@@ -50,7 +50,7 @@ describe('fórmula de puntuación', () => {
 
 describe('grafo y rutas de ataque', () => {
   const g = analyzeGraph(demo);
-  it('encuentra rutas desde Internet hasta las joyas de la corona', () => {
+  it('encuentra rutas desde Internet hasta los activos críticos', () => {
     expect(g.paths.length).toBeGreaterThan(3);
     for (const p of g.paths) {
       expect(p.nodes[0]).toBe('internet');
@@ -68,7 +68,7 @@ describe('grafo y rutas de ataque', () => {
     const g2 = analyzeGraph({ ...demo, findings });
     expect(g2.edges.find((e) => e.id === 'a04->a08')).toBeUndefined();
   });
-  it('sin joyas de la corona no hay rutas', () => {
+  it('sin activos críticos no hay rutas', () => {
     const assets = DEMO_ASSETS.map((a) => ({ ...a, criticality: Math.min(a.criticality, 4) as Asset['criticality'] }));
     expect(analyzeGraph({ ...demo, assets }).paths).toHaveLength(0);
   });

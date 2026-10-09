@@ -2,6 +2,11 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico. La hoja de ruta está en [ROADMAP.md](ROADMAP.md).
 
+## [1.1.1] - 2026-10-09
+
+### Cambiado
+- **«Activo crítico» en lugar de «joya de la corona»** en toda la interfaz, la ayuda, los informes, las explicaciones del motor (TypeScript y Python, motor 1.2.1, con paridad), la documentación y la guía. La jerga no se entendía fuera del sector. La definición está en el glosario, en el campo de criticidad y en el README: activo de criticidad 5, aquel cuyo compromiso pararía el negocio o expondría su información más sensible; es el destino final de las rutas de ataque. En inglés, *critical asset*.
+
 ## [1.1.0] - 2026-10-09
 
 Fase 6 de la hoja de ruta: validación ofensiva.

@@ -10,7 +10,7 @@ import math
 from datetime import date
 from typing import Any
 
-ENGINE_VERSION = "1.2.0"
+ENGINE_VERSION = "1.2.1"
 
 PROFILES = {
     "defecto": {"severidad": 30, "explotabilidad": 25, "criticidad": 20, "exposicion": 10, "proximidad": 15},
@@ -133,7 +133,7 @@ def _adjacency(edges: list[Json]) -> dict[str, list[str]]:
 
 
 def hops_to_crown(nodes: list[Json], edges: list[Json]) -> dict[str, int]:
-    """Saltos mínimos desde cada nodo hasta la joya de la corona más cercana (BFS inverso multiorigen)."""
+    """Saltos mínimos desde cada nodo hasta el activo crítico más cercano (BFS inverso multiorigen)."""
     rev: dict[str, list[str]] = {}
     for e in edges:
         rev.setdefault(e["to"], []).append(e["from"])
@@ -260,11 +260,11 @@ def score_finding(f: Json, asset: Json | None, hops: int | None, on_attack_path:
     base = sev + expl + crt + exp + prox
 
     if hops is None:
-        prox_detail = "Sin ruta conocida hacia una joya de la corona"
+        prox_detail = "Sin ruta conocida hacia un activo crítico"
     elif hops == 0:
-        prox_detail = "Afecta directamente a una joya de la corona"
+        prox_detail = "Afecta directamente a un activo crítico"
     else:
-        prox_detail = f"A {hops} {'salto' if hops == 1 else 'saltos'} de una joya de la corona"
+        prox_detail = f"A {hops} {'salto' if hops == 1 else 'saltos'} de un activo crítico"
     crit_detail = f"Criticidad de negocio {crit}/5" + (f" ({asset['name']})" if asset else " (activo desconocido)")
     factors: list[Json] = [
         {"key": "severidad", "label": "Severidad", "points": r1(sev), "max": w["severidad"], "detail": f"CVSS {fmt(cvss)}"},

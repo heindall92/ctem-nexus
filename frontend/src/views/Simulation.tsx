@@ -62,7 +62,7 @@ export function Simulation() {
   const exportPlan = () => {
     const lines = [
       `# ${L('Plan de corrección', 'Fix plan')} · ${project.name}`, '',
-      L(`Orden voraz sobre el grafo de ataque: en cada paso, lo que más rutas rompe por hallazgo (${plan.totalPaths} rutas hacia joyas de la corona).`, `Greedy order over the attack graph: each step breaks the most paths per finding (${plan.totalPaths} paths to crown jewels).`), '',
+      L(`Orden voraz sobre el grafo de ataque: en cada paso, lo que más rutas rompe por hallazgo (${plan.totalPaths} rutas hacia activos críticos).`, `Greedy order over the attack graph: each step breaks the most paths per finding (${plan.totalPaths} paths to critical assets).`), '',
       ...plan.steps.map((st, i) => `${i + 1}. ${st.ids.map((id) => `${id} · ${fById.get(id)?.title ?? id}`).join(' + ')} — ${st.newlyBroken ? L(`rompe ${st.newlyBroken} (acumuladas ${st.cumulativeBroken}/${plan.totalPaths})`, `breaks ${st.newlyBroken} (cumulative ${st.cumulativeBroken}/${plan.totalPaths})`) : L(`puntuación ${n1(st.score)}`, `score ${n1(st.score)}`)}`),
       '', plan.unbreakable ? L(`${plan.unbreakable} rutas dependen de aristas manuales: no se cortan corrigiendo hallazgos.`, `${plan.unbreakable} paths depend on manual edges: fixing findings does not cut them.`) : '',
     ];
@@ -76,7 +76,7 @@ export function Simulation() {
       eyebrow={L('Movilización · simulación', 'Mobilization · simulation')}
       title={L('¿Y si…?', 'What if…?')}
       badge={project.demo ? <DemoBadge /> : undefined}
-      lead={L('Marca hallazgos como corregidos y mira al momento cómo cambian el índice, los críticos, el KEV y las rutas hacia las joyas de la corona. Es un borrador: el proyecto no cambia.', 'Mark findings as fixed and instantly see how the index, critical findings, KEV and paths to the crown jewels change. It is a draft: the project does not change.')}
+      lead={L('Marca hallazgos como corregidos y mira al momento cómo cambian el índice, los críticos, el KEV y las rutas hacia los activos críticos. Es un borrador: el proyecto no cambia.', 'Mark findings as fixed and instantly see how the index, critical findings, KEV and paths to the critical assets change. It is a draft: the project does not change.')}
       actions={candidates.length ? <>
         <button type="button" className="btn" onClick={exportPlan}><FileText />{L('Plan .md', 'Plan .md')}</button>
         {fixed.length > 0 && <button type="button" className="btn" onClick={() => setFixed([])}><Eraser />{L('Vaciar', 'Clear')}</button>}
@@ -181,13 +181,13 @@ export function Simulation() {
         <Reveal as="section" delay={0.16} className="panel overflow-hidden" aria-label={L('Grafo tras las correcciones', 'Graph after the fixes')}>
           <SectionTitle
             title={L('Grafo tras las correcciones', 'Graph after the fixes')}
-            detail={L(`Quedan ${a.attackPaths} de ${b.attackPaths} rutas hacia las joyas de la corona.`, `${a.attackPaths} of ${b.attackPaths} paths to the crown jewels remain.`)}
+            detail={L(`Quedan ${a.attackPaths} de ${b.attackPaths} rutas hacia los activos críticos.`, `${a.attackPaths} of ${b.attackPaths} paths to the critical assets remain.`)}
             actions={<button type="button" className="btn btn-sm" onClick={() => { const top = fixed[0]; setView('priorizacion'); if (top) selectFinding(top); }} disabled={!fixed.length}><Sparkles />{L('Ver el primero en priorización', 'Open the first in prioritization')}</button>}
           />
           <div className="border-t border-hairline bg-ground/40 px-4 py-5">
             {a.attackPaths > 0 || after.graph.edges.length > 0
               ? <AttackGraph graph={after.graph} highlight={null} focusNode={null} onNode={() => undefined} />
-              : <p className="py-8 text-center text-[0.875rem] text-ink-2">{L('Sin rutas: ningún camino lleva ya desde Internet hasta una joya de la corona.', 'No paths: nothing leads from the Internet to a crown jewel any more.')}</p>}
+              : <p className="py-8 text-center text-[0.875rem] text-ink-2">{L('Sin rutas: ningún camino lleva ya desde Internet hasta un activo crítico.', 'No paths: nothing leads from the Internet to a critical asset any more.')}</p>}
           </div>
         </Reveal>
 

@@ -50,7 +50,7 @@ def abrir(browser, ancho=1440, alto=900, tema="dark"):
     return ctx, page, problemas
 
 
-ESPANOL = re.compile(r"[áéíóúñ¿¡]|\\b(de|del|los|las|para|con|sin|una|hallazgos?|activos?|rutas?|importar|añadir|guardar|cerrar|todas|joyas?|corona|ajustes|panel|inicio|alcance|exposición|criticidad|validación|movilización|priorización|puntuación|abiertos?|mitigados?|días)\\b", re.I)
+ESPANOL = re.compile(r"[áéíóúñ¿¡]|\\b(de|del|los|las|para|con|sin|una|hallazgos?|activos?|rutas?|importar|añadir|guardar|cerrar|todas|cr[ií]ticos?|ajustes|panel|inicio|alcance|exposición|criticidad|validación|movilización|priorización|puntuación|abiertos?|mitigados?|días)\\b", re.I)
 
 
 def texto_sin_datos(page):
@@ -324,7 +324,7 @@ def escritorio(b, tmp):
     page.get_by_label("Dar por corregido H-001").check()
     check("marcar un hallazgo lo simula al instante", J(f"{S}.simFixed") == ["H-001"] and "antes" in page.get_by_test_id("sim-indice").inner_text())
     page.get_by_role("button", name="Simular el plan").click()
-    check("el plan simulado deja cero rutas hacia las joyas de la corona", re.search(r"\n0\n", page.get_by_test_id("sim-rutas").inner_text()) is not None, page.get_by_test_id("sim-rutas").inner_text())
+    check("el plan simulado deja cero rutas hacia los activos críticos", re.search(r"\n0\n", page.get_by_test_id("sim-rutas").inner_text()) is not None, page.get_by_test_id("sim-rutas").inner_text())
     check("el plan propone juntos los dos fallos de Citrix", page.get_by_test_id("pasos-plan").get_by_text("solo juntos cortan su arista").count() == 1)
     check("la simulación no modifica el proyecto", J(f"JSON.stringify({S}.project)") == proyecto)
     nav(page, "Inicio"); nav(page, "¿Y si…?")

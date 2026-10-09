@@ -2,7 +2,7 @@
  * (lo comprueban frontend/src/engine/engine.test.ts y backend/tests/test_parity.py). */
 import type { Band, ProfileId, SlaPolicy } from './types';
 
-export const ENGINE_VERSION = '1.2.0';
+export const ENGINE_VERSION = '1.2.1';
 
 export interface Weights { severidad: number; explotabilidad: number; criticidad: number; exposicion: number; proximidad: number }
 
@@ -21,7 +21,7 @@ export const WEIGHTS = PROFILES.defecto;
 
 /** Explotabilidad: KEV = 1; exploit público = 0,6; si no, EPSS. Se toma el máximo. */
 export const EXPLOIT_PUBLIC_FLOOR = 0.6;
-/** Proximidad: 1 − saltos / PROXIMITY_HOPS (0 a 4 o más saltos de una joya de la corona). */
+/** Proximidad: 1 − saltos / PROXIMITY_HOPS (0 a 4 o más saltos de un activo crítico). */
 export const PROXIMITY_HOPS = 4;
 /** Hallazgo confirmado (validado) en la fase de Validación. */
 export const VALIDATED_BONUS = 5;

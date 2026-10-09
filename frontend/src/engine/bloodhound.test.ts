@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { parseBloodHoundJson } from './bloodhound';
 
 describe('bloodhound active directory parser', () => {
-  it('parsea computadoras y usuarios detectando DC como joya de la corona y kerberoasting', () => {
+  it('parsea computadoras y usuarios detectando DC como activo crítico y kerberoasting', () => {
     const sampleData = {
       data: [
         {
@@ -49,7 +49,7 @@ describe('bloodhound active directory parser', () => {
     expect(res.summary.asrepRoastable).toBe(1);
     expect(res.summary.unconstrainedDelegation).toBe(1);
 
-    // Comprobar que DC01 se clasifica como Joya de la corona (criticidad 5)
+    // Comprobar que DC01 se clasifica como Activo crítico (criticidad 5)
     const dc = res.assets.find((a) => a.name === 'DC01.CORP.LOCAL');
     expect(dc).toBeDefined();
     expect(dc?.type).toBe('controlador_dominio');

@@ -139,7 +139,7 @@ export function BloodHoundUploader({ onDone }: Props) {
               <code className="rounded bg-surface-3 px-1.5 py-0.5 font-mono text-ink">
                 *_users.json
               </code>
-              ). {L('CTEM-Nexus mapeará controladores de dominio, joyas de la corona, cuentas expuestas a Kerberoasting y caminos de escalada hacia Domain Admins.', 'CTEM-Nexus maps domain controllers, crown jewels, Kerberoastable accounts and escalation paths to Domain Admins.')}
+              ). {L('CTEM-Nexus mapeará controladores de dominio, activos críticos, cuentas expuestas a Kerberoasting y caminos de escalada hacia Domain Admins.', 'CTEM-Nexus maps domain controllers, critical assets, Kerberoastable accounts and escalation paths to Domain Admins.')}
             </p>
           </div>
         </div>
@@ -254,7 +254,7 @@ export function BloodHoundUploader({ onDone }: Props) {
                 <div key={a.id} className="flex items-center justify-between px-3.5 py-2.5 text-xs">
                   <div className="flex items-center gap-2.5">
                     {a.criticality === 5 ? (
-                      <span title={L('Controlador de dominio / joya de la corona', 'Domain controller / crown jewel')}>
+                      <span title={L('Controlador de dominio / activo crítico', 'Domain controller / critical asset')}>
                         <Crown className="size-3.5 text-accent" />
                       </span>
                     ) : (

@@ -33,7 +33,9 @@
 
 ## <img src="docs/assets/icons/crosshair.svg" width="20" height="20" valign="middle"/> Qué problema resuelve
 
-Los escáneres devuelven cientos de CVE sin decir cuál importa hoy. CTEM-Nexus los cruza con la **explotación real** (CISA KEV, EPSS), la **criticidad de negocio** (también desde el BIA) y las **rutas de ataque** hacia las joyas de la corona, y devuelve un plan ordenado con plazos, tickets e informe para la dirección. Todo en un único HTML local: **ningún dato sale del equipo**.
+Los escáneres devuelven cientos de CVE sin decir cuál importa hoy. CTEM-Nexus los cruza con la **explotación real** (CISA KEV, EPSS), la **criticidad de negocio** (también desde el BIA) y las **rutas de ataque** hacia los activos críticos, y devuelve un plan ordenado con plazos, tickets e informe para la dirección. Todo en un único HTML local: **ningún dato sale del equipo**.
+
+**Activo crítico** es el de criticidad 5: aquel cuyo compromiso pararía el negocio o expondría su información más sensible (el controlador de dominio, el ERP, la base de datos de clientes). Es el destino final de las rutas de ataque, y cuanto más cerca está un hallazgo de uno, más sube su prioridad.
 
 **Demo en vivo:** <https://heindall92.github.io/ctem-nexus/> (pulsa *Cargar datos de demo*). **Sin conexión:** descarga [`ctem-nexus.html`](ctem-nexus.html) y ábrelo con doble clic.
 
@@ -58,9 +60,9 @@ Los escáneres devuelven cientos de CVE sin decir cuál importa hoy. CTEM-Nexus 
       <td width="50%" valign="top"><code>├─</code> <img src="docs/assets/icons/calculator.svg" width="16" height="16" alt="" valign="middle"/> <code>motor_y_analisis:</code><br><br>
         <img src="docs/assets/icons/calculator.svg" height="42" alt="Scoring explicable">
         <img src="docs/assets/icons/network.svg" height="42" alt="Grafo SVG">
-        <img src="docs/assets/icons/crown.svg" height="42" alt="Joyas de la corona">
+        <img src="docs/assets/icons/crown.svg" height="42" alt="Activos críticos">
         <img src="docs/assets/icons/flame.svg" height="42" alt="Choke Points"><br>
-        <sub><code>Scoring 0–100 · Grafo de ataque SVG · Joyas (crit. 5) · Puntos de estrangulamiento</code></sub>
+        <sub><code>Scoring 0–100 · Grafo de ataque SVG · Activos críticos (crit. 5) · Puntos de estrangulamiento</code></sub>
       </td>
     </tr>
     <tr>
@@ -92,7 +94,7 @@ Los escáneres devuelven cientos de CVE sin decir cuál importa hoy. CTEM-Nexus 
   </tbody>
   <tfoot>
     <tr>
-      <td colspan="2"><code>version: 1.1.0&nbsp;&nbsp;·&nbsp;&nbsp;motor: TS + FastAPI&nbsp;&nbsp;·&nbsp;&nbsp;Gartner CTEM · MITRE ATT&amp;CK · ecosistema GRC&nbsp;&nbsp;·&nbsp;&nbsp;pruebas: Vitest 167 · Pytest 27 · e2e 158&nbsp;&nbsp;·&nbsp;&nbsp;licencia: GPLv2</code></td>
+      <td colspan="2"><code>version: 1.1.1&nbsp;&nbsp;·&nbsp;&nbsp;motor: TS + FastAPI&nbsp;&nbsp;·&nbsp;&nbsp;Gartner CTEM · MITRE ATT&amp;CK · ecosistema GRC&nbsp;&nbsp;·&nbsp;&nbsp;pruebas: Vitest 167 · Pytest 27 · e2e 158&nbsp;&nbsp;·&nbsp;&nbsp;licencia: GPLv2</code></td>
     </tr>
   </tfoot>
 </table>
@@ -122,17 +124,17 @@ Las cinco fases del ciclo CTEM de Gartner. La [guía práctica](docs/GUIA.md) la
 
 | Paso | Vista | Qué haces |
 |---|---|---|
-| **1. Alcance** | Alcance y activos | Activos con su criticidad 1–5 (las **joyas de la corona** son la 5) y rangos en alcance. Importa un **Nmap XML** o trae la criticidad del **BIA de KAIROS**. |
+| **1. Alcance** | Alcance y activos | Activos con su criticidad 1–5 (los **activos críticos** son la 5) y rangos en alcance. Importa un **Nmap XML** o trae la criticidad del **BIA de KAIROS**. |
 | **2. Descubrimiento** | Priorización | Importa **Nessus, OpenVAS, Nuclei, Trivy, SARIF, BloodHound** o **ENS AD Auditor** con vista previa y sin duplicar entre fuentes, y aplica **CISA KEV** y **FIRST EPSS**. |
 | **3. Priorización** | Priorización | Puntuación 0–100 explicada factor a factor, con perfiles **General, OT/industrial y Banca**. Ficha con guía paso a paso, técnicas ATT&CK, controles afectados y **riesgo aceptado** con caducidad. |
-| **4. Validación** | Rutas de ataque · Mapa ATT&CK · Priorización | Grafo de rutas hacia las joyas y **puntos de estrangulamiento**; resultados de **OWASP ZAP, Burp Suite, PingCastle y Certipy**; **evidencia de validación** (quién, cuándo, técnica y prueba) y ***retest***: un mitigado queda pendiente hasta que un escaneo posterior deja de verlo. Matriz ATT&CK con capa para Navigator. |
+| **4. Validación** | Rutas de ataque · Mapa ATT&CK · Priorización | Grafo de rutas hacia los activos críticos y **puntos de estrangulamiento**; resultados de **OWASP ZAP, Burp Suite, PingCastle y Certipy**; **evidencia de validación** (quién, cuándo, técnica y prueba) y ***retest***: un mitigado queda pendiente hasta que un escaneo posterior deja de verlo. Matriz ATT&CK con capa para Navigator. |
 | **5. Movilización** | ¿Y si…? · Movilización · Ecosistema | Plan que más rutas rompe, **cumplimiento de SLA** (también por categoría ENS), ciclos con tendencia, informe para la dirección y tickets para **Jira** y **GitHub**. La evidencia sale hacia **Rosetta** y **Compliance Studio**. |
 
 ## <img src="docs/assets/icons/calculator.svg" width="20" height="20" valign="middle"/> Fórmula
 
 ```
 puntuación = severidad (CVSS × 30) + explotabilidad (máx. de KEV, exploit público 0,6 y EPSS × 25)
-           + criticidad del activo × 20 + exposición a Internet × 10 + proximidad a una joya × 15
+           + criticidad del activo × 20 + exposición a Internet × 10 + proximidad a un activo crítico × 15
            (+5 si está validado; × 0,25 si no es explotable)
 ```
 
@@ -254,7 +256,7 @@ Un hallazgo existente se reconoce por activo y CVE (también los relacionados) o
 **Nmap XML (`-oX`).**
 - **Identificación de Activos:** Extrae IPs activas, nombres de host DNS y puertos abiertos como etiquetas de contexto.
 - **Inferencia de Tipo y Criticidad:**
-  - Si detecta Kerberos (88) o LDAP (389/636), clasifica el nodo como `controlador_dominio` y asigna **criticidad 5 (Joya de la corona)**.
+  - Si detecta Kerberos (88) o LDAP (389/636), clasifica el nodo como `controlador_dominio` y asigna **criticidad 5 (activo crítico)**.
   - Si detecta bases de datos (PostgreSQL, MySQL, MSSQL, Oracle), clasifica como `base_datos` (criticidad 4).
   - Si la IP no pertenece a rangos privados (RFC 1918), clasifica como `perimetro` y marca `internetExposed = true`.
 - **Generación de Hallazgos y Rutas:**

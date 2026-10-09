@@ -63,7 +63,7 @@ export function AttackPaths() {
           eyebrow={L('Fase 4 · Validación', 'Stage 4 · Validation')}
           title={c.pathsTitle}
           badge={project.demo ? <DemoBadge /> : undefined}
-          lead={L(`${g.paths.length} rutas desde Internet hasta las joyas de la corona y ${g.chokePoints.length} puntos de estrangulamiento. Valida cada hallazgo para confirmar o descartar sus rutas.`, `${g.paths.length} paths from the Internet to the crown jewels and ${g.chokePoints.length} choke points. Validate each finding to confirm or rule out its paths.`)}
+          lead={L(`${g.paths.length} rutas desde Internet hasta los activos críticos y ${g.chokePoints.length} puntos de estrangulamiento. Valida cada hallazgo para confirmar o descartar sus rutas.`, `${g.paths.length} paths from the Internet to the critical assets and ${g.chokePoints.length} choke points. Validate each finding to confirm or rule out its paths.`)}
           actions={<button type="button" className="btn" onClick={() => setShowBloodhound(true)}><Users className="size-4" />{L('Importar BloodHound (AD)', 'Import BloodHound (AD)')}</button>}
         />
         <div className="flex flex-col gap-5">
@@ -82,7 +82,7 @@ export function AttackPaths() {
             </div>
             <div className="flex flex-wrap gap-4 border-t border-hairline px-5 py-2.5 text-xs text-ink-3">
               <Legend color="var(--color-alta)" text={L('Punto de estrangulamiento', 'Choke point')} />
-              <Legend color="var(--color-accent)" text={L('Ruta seleccionada / joya de la corona', 'Selected path / crown jewel')} />
+              <Legend color="var(--color-accent)" text={L('Ruta seleccionada / activo crítico', 'Selected path / critical asset')} />
               <Legend color="var(--color-ink-4)" text={L('Arista', 'Edge')} dashed={false} />
               <Legend color="var(--color-ink-4)" text={L('Arista manual', 'Manual edge')} dashed />
             </div>
@@ -120,7 +120,7 @@ export function AttackPaths() {
                     </button>
                   </li>
                 ))}
-                {visiblePaths.length === 0 && <li className="px-5 py-4 text-ink-3">{focusNode ? L('No hay rutas por este nodo.', 'No paths through this node.') : L('No hay rutas.', 'No paths.')} {L('Revisa que haya activos expuestos y joyas de la corona.', 'Check that there are exposed assets and crown jewels.')}</li>}
+                {visiblePaths.length === 0 && <li className="px-5 py-4 text-ink-3">{focusNode ? L('No hay rutas por este nodo.', 'No paths through this node.') : L('No hay rutas.', 'No paths.')} {L('Revisa que haya activos expuestos y activos críticos.', 'Check that there are exposed assets and critical assets.')}</li>}
               </ol>
             </section>
           </div>
