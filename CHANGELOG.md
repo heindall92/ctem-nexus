@@ -9,7 +9,7 @@ Fase 5 de la hoja de ruta: documentación, rendimiento y lanzamiento. Primera ve
 ### Añadido
 - **Guía práctica** [`docs/GUIA.md`](docs/GUIA.md): «De un Nmap a un plan de remediación con SLA en 10 minutos», con diez capturas generadas desde la interfaz real (`npm run guia`).
 - **Ficheros de ejemplo descargables** desde la ayuda (Ingesta de datos): Nmap, BloodHound, Nessus, OpenVAS, Nuclei, Trivy, SARIF, KEV, EPSS, KAIROS, Compliance Studio, ENS AD Auditor y Norvik. Son los mismos que usan las pruebas.
-- **Release automática**: al subir una etiqueta `vX.Y.Z`, la CI pasa las pruebas, compila y publica la release con `ctem-nexus.html` adjunto, su SHA-256 y las notas de este fichero.
+- **Release automática**: al subir una etiqueta `vX.Y.Z` o al lanzarla desde Actions (crea la etiqueta con la versión de `package.json`), la CI pasa las pruebas, compila y publica la release con `ctem-nexus.html` adjunto, su SHA-256 y las notas de este fichero.
 - Captura de la vista Ecosistema en claro, oscuro y móvil.
 
 ### Cambiado

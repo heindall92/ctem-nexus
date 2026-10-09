@@ -174,7 +174,7 @@ Tareas:
 - [x] `docs/SCORING.md` y `docs/ARCHITECTURE.md` actualizados con los factores nuevos y el formato de intercambio.
 - [x] Ficheros de ejemplo descargables (Nmap, BloodHound, Nessus, OpenVAS, Nuclei, Trivy, SARIF, KEV, EPSS, KAIROS, Studio, ENS AD Auditor y Norvik) desde la ayuda de la app, con prueba e2e de que son idénticos a `shared/samples`.
 - [x] **Recuperar ≥ 95 de rendimiento en Lighthouse**: vistas, ayuda y búsqueda con `React.lazy` y precarga en reposo. Mediana con gzip: **96** en Pages (93 en la 0.5.1). El HTML autocontenido, que no se puede dividir, da 94.
-- [x] Publicación en Pages y *release* en GitHub con el HTML autocontenido adjunto, su SHA-256 y sus notas (`.github/workflows/release.yml`, al subir la etiqueta).
+- [x] Publicación en Pages y *release* en GitHub con el HTML autocontenido adjunto, su SHA-256 y sus notas (`.github/workflows/release.yml`, al subir la etiqueta o lanzándolo desde Actions).
 - [ ] Lanzamiento escalonado (3–4 días entre publicaciones): primero la herramienta, después la guía práctica y por último la integración con el ecosistema. *Lo decide el autor; los textos están preparados.*
 
 **Estado: cerrada en 1.0.0** (salvo el calendario de publicaciones, que depende del autor).

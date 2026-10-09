@@ -1,10 +1,12 @@
 name: Publicar versión
 
-# Al subir una etiqueta vX.Y.Z: pasa las pruebas, compila y crea la release de GitHub con el HTML autocontenido
-# adjunto y, como notas, la entrada de esa versión en CHANGELOG.md.
+# Al subir una etiqueta vX.Y.Z, o a mano desde Actions (crea la etiqueta v<versión de package.json> sobre el commit),
+# pasa las pruebas, compila y crea la release de GitHub con el HTML autocontenido adjunto y, como notas, la entrada
+# de esa versión en CHANGELOG.md.
 on:
   push:
     tags: ['v*.*.*']
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -25,13 +27,16 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci && npm test && npm run build
         working-directory: frontend
-      - name: La etiqueta coincide con la versión de package.json
+      - name: Etiqueta de la versión
         run: |
           v="$(node -p "require('./frontend/package.json').version")"
-          test "v${v}" = "${GITHUB_REF_NAME}" || { echo "La etiqueta ${GITHUB_REF_NAME} no coincide con package.json (${v})"; exit 1; }
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            test "v${v}" = "${GITHUB_REF_NAME}" || { echo "La etiqueta ${GITHUB_REF_NAME} no coincide con package.json (${v})"; exit 1; }
+          fi
+          echo "TAG=v${v}" >> "$GITHUB_ENV"
       - name: Notas desde CHANGELOG.md
         run: |
-          v="${GITHUB_REF_NAME#v}"
+          v="${TAG#v}"
           awk -v v="$v" '$0 ~ "^## \\[" v "\\]" {on=1; next} /^## \[/ && on {exit} on' CHANGELOG.md > notas.md
           test -s notas.md || { echo "No hay entrada para ${v} en CHANGELOG.md"; exit 1; }
           printf '\n---\nDescarga `ctem-nexus.html` y ábrelo con doble clic: funciona sin servidor ni conexión. Demo en vivo: https://heindall92.github.io/ctem-nexus/\n' >> notas.md
@@ -39,4 +44,4 @@ jobs:
       - name: Crear la release con el HTML adjunto
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "${GITHUB_REF_NAME}" frontend/dist/ctem-nexus.html --title "CTEM-Nexus ${GITHUB_REF_NAME}" --notes-file notas.md --verify-tag
+        run: gh release create "${TAG}" frontend/dist/ctem-nexus.html --title "CTEM-Nexus ${TAG}" --notes-file notas.md --target "${GITHUB_SHA}"
