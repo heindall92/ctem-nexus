@@ -33,7 +33,7 @@ export type FindingKind = 'cve' | 'configuracion' | 'identidad';
 export type FindingStatus = 'abierto' | 'validado' | 'no_explotable' | 'mitigado' | 'aceptado';
 
 /** Origen de un hallazgo (importador o alta manual). */
-export type FindingSource = 'manual' | 'csv' | 'nmap' | 'bloodhound' | 'nessus' | 'openvas' | 'nuclei' | 'trivy' | 'sarif' | 'adauditor';
+export type FindingSource = 'manual' | 'csv' | 'nmap' | 'bloodhound' | 'nessus' | 'openvas' | 'nuclei' | 'trivy' | 'sarif' | 'adauditor' | 'zap' | 'burp' | 'pingcastle' | 'certipy';
 
 /** Aceptación formal del riesgo: el hallazgo sale de los abiertos hasta que caduca (y vuelve a abierto). */
 export interface RiskException {
@@ -79,6 +79,10 @@ export interface Finding {
   attack?: string[];
   /** Aceptación del riesgo vigente o la última caducada. */
   exception?: RiskException | null;
+  /** Evidencia de la validación ofensiva (retest.ts). */
+  validation?: import('./retest').Validation | null;
+  /** Verificación de la corrección de un hallazgo mitigado (retest.ts). */
+  retest?: import('./retest').Retest | null;
 }
 
 export interface ManualEdge {

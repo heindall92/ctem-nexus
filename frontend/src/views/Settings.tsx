@@ -168,7 +168,7 @@ export function Settings() {
           </div>
         </section>
       </div>
-      <Modal open={showIntel} onClose={() => setShowIntel(false)} title={L('Importar escáner o inteligencia', 'Import scanner or intelligence')} subtitle={L('Nessus, OpenVAS, Nuclei, Trivy, SARIF, CISA KEV y FIRST EPSS', 'Nessus, OpenVAS, Nuclei, Trivy, SARIF, CISA KEV and FIRST EPSS')} maxWidth={720}>
+      <Modal open={showIntel} onClose={() => setShowIntel(false)} title={L('Importar escáner o inteligencia', 'Import scanner or intelligence')} subtitle={L('Escáneres, validación ofensiva (ZAP, Burp, PingCastle, Certipy), CISA KEV y FIRST EPSS', 'Scanners, offensive validation (ZAP, Burp, PingCastle, Certipy), CISA KEV and FIRST EPSS')} maxWidth={720}>
         <ScanUploader onDone={() => setShowIntel(false)} />
       </Modal>
     </>

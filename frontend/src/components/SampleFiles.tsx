@@ -10,6 +10,10 @@ import trivy from '../../../shared/samples/trivy-ejemplo.json?raw';
 import sarif from '../../../shared/samples/sarif-ejemplo.sarif?raw';
 import kev from '../../../shared/samples/kev-ejemplo.json?raw';
 import epss from '../../../shared/samples/epss-ejemplo.csv?raw';
+import zap from '../../../shared/samples/zap-ejemplo.json?raw';
+import burp from '../../../shared/samples/burp-ejemplo.xml?raw';
+import pingcastle from '../../../shared/samples/pingcastle-ejemplo.xml?raw';
+import certipy from '../../../shared/samples/certipy-ejemplo.json?raw';
 import kairos from '../../../shared/samples/ecosistema/kairos-meridiano.json?raw';
 import studio from '../../../shared/samples/ecosistema/studio-meridiano.json?raw';
 import adauditor from '../../../shared/samples/ecosistema/ens-ad-auditor-meridiano.json?raw';
@@ -27,6 +31,10 @@ export const SAMPLES: Array<{ file: string; tool: string; where: [string, string
   { file: 'sarif-ejemplo.sarif', tool: 'SARIF', where: ['Priorización → Importar escáner', 'Prioritization → Import scanner'], text: sarif, mime: 'application/json' },
   { file: 'kev-ejemplo.json', tool: 'CISA KEV', where: ['Priorización → Importar escáner', 'Prioritization → Import scanner'], text: kev, mime: 'application/json' },
   { file: 'epss-ejemplo.csv', tool: 'FIRST EPSS', where: ['Priorización → Importar escáner', 'Prioritization → Import scanner'], text: epss, mime: 'text/csv' },
+  { file: 'zap-ejemplo.json', tool: 'OWASP ZAP', where: ['Priorización → Importar escáner', 'Prioritization → Import scanner'], text: zap, mime: 'application/json' },
+  { file: 'burp-ejemplo.xml', tool: 'Burp Suite', where: ['Priorización → Importar escáner', 'Prioritization → Import scanner'], text: burp, mime: 'text/xml' },
+  { file: 'pingcastle-ejemplo.xml', tool: 'PingCastle', where: ['Priorización → Importar escáner', 'Prioritization → Import scanner'], text: pingcastle, mime: 'text/xml' },
+  { file: 'certipy-ejemplo.json', tool: 'Certipy', where: ['Priorización → Importar escáner', 'Prioritization → Import scanner'], text: certipy, mime: 'application/json' },
   { file: 'kairos-meridiano.json', tool: 'KAIROS', where: ['Ecosistema', 'Ecosystem'], text: kairos, mime: 'application/json' },
   { file: 'studio-meridiano.json', tool: 'Compliance Studio', where: ['Ecosistema', 'Ecosystem'], text: studio, mime: 'application/json' },
   { file: 'ens-ad-auditor-meridiano.json', tool: 'ENS AD Auditor', where: ['Ecosistema', 'Ecosystem'], text: adauditor, mime: 'application/json' },

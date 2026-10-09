@@ -5,11 +5,12 @@ import { describe, expect, it } from 'vitest';
 import { DEMO_ANCHOR, DEMO_ASSETS, DEMO_EDGES, DEMO_FINDINGS } from '../data/demo';
 import { SLA_POLICIES } from './constants';
 import {
-  applyKairos, bestAsset, contradictions, controlEvidence, detectEcosystem, ECO_FORMAT, ensCategoryOf, kairosPlan, levelFromRecovery,
+  AD_RULES, applyKairos, bestAsset, contradictions, controlEvidence, detectEcosystem, ECO_FORMAT, ensCategoryOf, kairosPlan, levelFromRecovery,
   makeEnvelope, nameSimilarity, ownerRows, parseAdAuditor, parseEnvelope, planOwners, rosettaStates, SLA_FOR_CATEGORY, studioCategory,
   studioInfo, toKairos, toNorvik, toStudio,
 } from './ecosystem';
 import { prioritize } from './engine';
+import { techniqueById } from './attack';
 import { parseProject } from './io';
 import { planImport } from './merge';
 
@@ -133,7 +134,11 @@ describe('ENS AD Auditor → hallazgos', () => {
     expect(plan.newAssets).toHaveLength(0);
     expect(plan.newFindings.every((f) => f.id.startsWith('ADA-') && f.sources?.includes('adauditor') && f.assetId === 'a06')).toBe(true);
     expect(plan.newFindings.length + plan.updatedFindings.length).toBe(6);
-    expect(plan.newFindings.find((f) => f.remediation === 'identity_generic')?.attack).toEqual(['T1003.006', 'T1222.001']);
+    expect(plan.newFindings.find((f) => f.remediation === 'identity_generic')?.attack).toEqual(['T1003.006', 'T1098']);
+  });
+  it('todas las técnicas ATT&CK de las reglas están en el catálogo de la matriz', () => {
+    const missing = Object.entries(AD_RULES).flatMap(([k, r]) => r.attack.filter((id) => !techniqueById(id)).map((id) => `${k}: ${id}`));
+    expect(missing).toEqual([]);
   });
   it('descarta alertas mal formadas', () => {
     const bad = parseAdAuditor({ alerts: [{ finding: { finding_type: 'x', title: 'y' }, risk: 'Enorme' }, 5, { risk: 'Alto' }] });

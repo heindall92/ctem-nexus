@@ -1,6 +1,6 @@
 # De un Nmap a un plan de remediación con SLA en 10 minutos
 
-Guía práctica de CTEM-Nexus 1.0. Partes de un escaneo de red y terminas con un plan ordenado, plazos de corrección,
+Guía práctica de CTEM-Nexus 1.1. Partes de un escaneo de red y terminas con un plan ordenado, plazos de corrección,
 tickets para Jira y un informe para la dirección. Todo ocurre en tu navegador: ningún fichero sale del equipo.
 
 **Qué necesitas.** La herramienta en <https://heindall92.github.io/ctem-nexus/> (o el fichero `ctem-nexus.html`, que se
@@ -77,6 +77,10 @@ estrangulamiento**: los nodos por los que pasan muchas rutas. Corregir ahí romp
 
 ![Grafo de ataque con las rutas hacia el controlador de dominio y los puntos de estrangulamiento](guia/07-rutas.png)
 
+**Valídalo.** Si tienes resultados de un pentest, importa también **OWASP ZAP**, **Burp Suite**, **PingCastle** o
+**Certipy** por el mismo importador. En la ficha de cada hallazgo, **Validar** registra quién lo probó, cuándo, con qué
+técnica y el resultado: «explotado» sube su prioridad y «no explotable» corta sus rutas en el grafo.
+
 ## 6. ¿Y si…?: el orden que más rutas rompe (1 minuto)
 
 En **¿Y si…?** pulsa **Simular el plan**. La app propone el orden de corrección que corta más rutas por hallazgo (y
@@ -95,6 +99,8 @@ Nada cambia en el proyecto hasta que tú lo decidas.
 - **Informe para la dirección**: portada, una página con cinco acciones y tendencia, y anexo técnico. Se imprime o se
   guarda en PDF desde el navegador ([ejemplo](informe-ejemplo.pdf)).
 - **Cierre de ciclo**: guarda una instantánea para comparar el mes que viene.
+- **Verificación (*retest*)**: lo que marcas como mitigado queda pendiente hasta que el escaneo siguiente de la misma
+  herramienta deja de verlo; si reaparece, se reabre y cuenta en la tasa de reapertura.
 
 ![Movilización con el informe ejecutivo, el cumplimiento de SLA y los tickets](guia/09-movilizacion.png)
 

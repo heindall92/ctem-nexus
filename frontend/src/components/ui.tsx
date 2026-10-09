@@ -26,11 +26,14 @@ export function ScoreBar({ value, max = 100, color }: { value: number; max?: num
   );
 }
 
-export function Score({ score, band }: { score: number; band: Band }) {
+/** Puntuación con su barra. `muted` (mitigados y no explotables) usa tinta secundaria en vez de transparencia: el color
+ * de banda atenuado con opacidad no llega a 4,5:1 sobre el fondo. */
+export function Score({ score, band, muted = false }: { score: number; band: Band; muted?: boolean }) {
+  const color = muted ? 'var(--color-ink-3)' : BAND_COLOR[band];
   return (
     <div className="flex w-[4.5rem] flex-col gap-1.5">
-      <span className="num text-[0.9375rem] font-semibold leading-none" style={{ color: BAND_COLOR[band] }}>{n1(score)}</span>
-      <ScoreBar value={score} color={BAND_COLOR[band]} />
+      <span className="num text-[0.9375rem] font-semibold leading-none" style={{ color }}>{n1(score)}</span>
+      <ScoreBar value={score} color={color} />
     </div>
   );
 }

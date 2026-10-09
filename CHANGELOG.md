@@ -2,6 +2,24 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico. La hoja de ruta está en [ROADMAP.md](ROADMAP.md).
 
+## [1.1.0] - 2026-10-09
+
+Fase 6 de la hoja de ruta: validación ofensiva.
+
+### Añadido
+- **Importadores de validación ofensiva** en el importador unificado, con plan previo y deduplicación: **OWASP ZAP** (JSON tradicional), **Burp Suite** (XML de *issues*), **PingCastle** (XML *healthcheck*) y **Certipy** (`find -json`, ESC1 a ESC16). De Burp nunca se guardan peticiones ni respuestas y de ZAP tampoco la carga del ataque, porque pueden llevar cookies, tokens o contraseñas. La DTD inerte de Burp se acepta; las entidades se siguen rechazando.
+- **Guías nuevas** para inyección web, XSS, bastionado web y reglas de higiene de AD, en español e inglés, con sus controles, su técnica ATT&CK y su máquina de ARGOS.
+- **Evidencia de validación** en cada hallazgo (botón «Validar»): resultado (explotado, no explotable, mitigado por un control), quién, cuándo, técnica ATT&CK y prueba. Ajusta el estado y sale en el informe.
+- **Retest**: al mitigar, la corrección queda pendiente de verificar hasta que un escaneo posterior de la misma herramienta cubre el activo y ya no la ve (verificación automática) o el analista la confirma. Panel «Validación y verificación» en Movilización con pendientes, verificadas, reabiertas y **tasa de reapertura**.
+- Ficheros de ejemplo de los cuatro formatos, descargables desde la ayuda.
+
+### Corregido
+- Las técnicas ATT&CK de ENS AD Auditor que no estaban en el catálogo se descartaban en silencio. El catálogo suma T1649 (certificados de AD CS), T1003.006 (DCSync) y T1484.001 (GPO), las reglas usan solo técnicas del catálogo y una prueba lo vigila.
+- Las filas de hallazgos mitigados o no explotables se atenuaban con transparencia, y una puntuación crítica atenuada bajaba a 2,6:1 de contraste. Ahora usan tinta secundaria (AA).
+
+### Pruebas
+- Vitest 167, Pytest 27, e2e 158/158 y axe-core 0 infracciones en 232 estados.
+
 ## [1.0.0] - 2026-10-09
 
 Fase 5 de la hoja de ruta: documentación, rendimiento y lanzamiento. Primera versión estable.

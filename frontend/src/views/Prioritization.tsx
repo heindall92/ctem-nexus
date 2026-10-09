@@ -1,10 +1,11 @@
-import { AlertTriangle, ExternalLink, FileSearch, FileSpreadsheet, Flame, Pencil, ShieldOff, Undo2, Plus, Radar, Search, Sparkles, Trash2, Upload, Users, Zap } from 'lucide-react';
+import { AlertTriangle, BadgeCheck, ExternalLink, Swords, FileSearch, FileSpreadsheet, Flame, Pencil, ShieldOff, Undo2, Plus, Radar, Search, Sparkles, Trash2, Upload, Users, Zap } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 import { BloodHoundUploader } from '../components/BloodHoundUploader';
 import { NmapUploader } from '../components/NmapUploader';
 import { ScanUploader } from '../components/ScanUploader';
 import { techniqueById, techniquesOf } from '../engine/attack';
 import { argosFor, argosUrl, CONTROLS, controlsFor } from '../engine/controls';
+import { validateValidation, VALIDATION_RESULTS, type Validation, type ValidationError, type ValidationResult } from '../engine/retest';
 import { isActive } from '../engine/engine';
 import { addDays, exceptionState, isoDay, MAX_ACCEPT_DAYS, validateException, type ExceptionError, type ExceptionInput } from '../engine/exceptions';
 import { CSV_TEMPLATE, importFindings } from '../engine/io';
@@ -36,6 +37,7 @@ export function Prioritization() {
   const [showClosed, setShowClosed] = useState(true);
   const [editing, setEditing] = useState<Finding | 'nuevo' | null>(null);
   const [accepting, setAccepting] = useState<Finding | null>(null);
+  const [validating, setValidating] = useState<Finding | null>(null);
   const [showNmap, setShowNmap] = useState(false);
   const [showScan, setShowScan] = useState(false);
   const [showBloodhound, setShowBloodhound] = useState(false);
@@ -123,15 +125,15 @@ export function Prioritization() {
                 const closed = f.status === 'mitigado' || f.status === 'no_explotable';
                 return (
                   <li key={sc.id}>
-                    <button type="button" className={`row-interactive flex w-full items-start gap-3 px-4 py-3 text-left ${closed ? 'opacity-55' : ''}`} aria-current={selected === sc.id ? 'true' : undefined} onClick={() => select(sc.id)}>
-                      <Score score={sc.score} band={sc.band} />
+                    <button type="button" className={`row-interactive flex w-full items-start gap-3 px-4 py-3 text-left ${closed ? 'row-closed' : ''}`} aria-current={selected === sc.id ? 'true' : undefined} onClick={() => select(sc.id)}>
+                      <Score score={sc.score} band={sc.band} muted={closed} />
                       <span className="min-w-0 flex-1">
                         <span className="line-clamp-2 font-medium">{f.title}</span>
                         <span className="mt-0.5 block truncate text-xs text-ink-3"><span className="num">{f.cve ?? f.id}</span> · {aById.get(f.assetId)?.name ?? f.assetId}</span>
                         <span className="mt-1.5 flex flex-wrap items-center gap-1">
-                          {f.kev && <span className="chip" style={{ color: 'var(--color-critica)' }}><Flame />KEV</span>}
+                          {f.kev && <span className="chip" style={closed ? undefined : { color: 'var(--color-critica)' }}><Flame />KEV</span>}
                           {f.exploitPublic && <span className="chip"><Zap />Exploit</span>}
-                          {sc.onAttackPath && <span className="chip" style={{ color: 'var(--color-accent)' }}>{L('Ruta', 'Path')}</span>}
+                          {sc.onAttackPath && <span className="chip" style={closed ? undefined : { color: 'var(--color-accent)' }}>{L('Ruta', 'Path')}</span>}
                           <StatusPill status={f.status} />
                         </span>
                       </span>
@@ -159,8 +161,8 @@ export function Prioritization() {
                     const f = fById.get(s.id)!;
                     const closed = f.status === 'mitigado' || f.status === 'no_explotable';
                     return (
-                      <tr key={s.id} className={`row-interactive ${closed ? 'opacity-55' : ''}`} aria-selected={selected === s.id} onClick={() => select(s.id)} tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(s.id); } }}>
-                        <td><Score score={s.score} band={s.band} /></td>
+                      <tr key={s.id} className={`row-interactive ${closed ? 'row-closed' : ''}`} aria-selected={selected === s.id} onClick={() => select(s.id)} tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(s.id); } }}>
+                        <td><Score score={s.score} band={s.band} muted={closed} /></td>
                         <td className="max-w-[26rem]">
                           <div className="truncate font-medium">{f.title}</div>
                           <div className="mt-0.5 flex items-center gap-2 text-xs text-ink-3">
@@ -174,9 +176,9 @@ export function Prioritization() {
                         <td className="num text-right text-ink-2">{f.epss == null ? '—' : pct(f.epss)}</td>
                         <td>
                           <div className="flex gap-1">
-                            {f.kev && <span className="chip" style={{ color: 'var(--color-critica)' }} title={L('En el catálogo CISA KEV', 'In the CISA KEV catalog')}><Flame />KEV</span>}
+                            {f.kev && <span className="chip" style={closed ? undefined : { color: 'var(--color-critica)' }} title={L('En el catálogo CISA KEV', 'In the CISA KEV catalog')}><Flame />KEV</span>}
                             {f.exploitPublic && <span className="chip" title={L('Exploit público disponible', 'Public exploit available')}><Zap />Exploit</span>}
-                            {s.onAttackPath && <span className="chip" style={{ color: 'var(--color-accent)' }} title={L('El activo está en una ruta de ataque', 'The asset is on an attack path')}>{L('Ruta', 'Path')}</span>}
+                            {s.onAttackPath && <span className="chip" style={closed ? undefined : { color: 'var(--color-accent)' }} title={L('El activo está en una ruta de ataque', 'The asset is on an attack path')}>{L('Ruta', 'Path')}</span>}
                           </div>
                         </td>
                         <td><StatusPill status={f.status} /></td>
@@ -193,7 +195,7 @@ export function Prioritization() {
       </div>
 
       <Drawer
-        open={!!(sel && selF) && !editing && !accepting}
+        open={!!(sel && selF) && !editing && !accepting && !validating}
         onClose={() => select(null)}
         title={selF && sel ? (
           <div>
@@ -201,7 +203,7 @@ export function Prioritization() {
             <h2 className="title-md mt-1">{selF.title}</h2>
           </div>
         ) : ''}
-        footer={selF && <FindingActions finding={selF} onEdit={() => setEditing(selF)} onAccept={() => setAccepting(selF)} />}
+        footer={selF && <FindingActions finding={selF} onEdit={() => setEditing(selF)} onAccept={() => setAccepting(selF)} onValidate={() => setValidating(selF)} />}
       >
         {sel && selF && <FindingDetail findingId={selF.id} />}
       </Drawer>
@@ -210,11 +212,15 @@ export function Prioritization() {
         {accepting && <AcceptForm finding={accepting} band={result.scored.find((x) => x.id === accepting.id)?.band ?? 'media'} onDone={() => setAccepting(null)} />}
       </Drawer>
 
+      <Drawer open={!!validating} onClose={() => setValidating(null)} title={validating ? <div><div className="num text-xs text-ink-3">{validating.id}</div><h2 className="title-md mt-1">{L('Registrar la validación', 'Record the validation')}</h2></div> : ''} width={500}>
+        {validating && <ValidationForm finding={validating} onDone={() => setValidating(null)} />}
+      </Drawer>
+
       <Drawer open={!!editing} onClose={() => setEditing(null)} title={<h2 className="title-md">{editing === 'nuevo' ? L('Nuevo hallazgo', 'New finding') : L('Editar hallazgo', 'Edit finding')}</h2>} width={500}>
         {editing && <FindingForm initial={editing === 'nuevo' ? null : editing} onDone={() => setEditing(null)} />}
       </Drawer>
 
-      <Modal open={showScan} onClose={() => setShowScan(false)} title={L('Importar escáner o inteligencia', 'Import scanner or intelligence')} subtitle={L('Nessus, OpenVAS, Nuclei, Trivy, SARIF, CISA KEV y FIRST EPSS', 'Nessus, OpenVAS, Nuclei, Trivy, SARIF, CISA KEV and FIRST EPSS')} maxWidth={720}>
+      <Modal open={showScan} onClose={() => setShowScan(false)} title={L('Importar escáner o inteligencia', 'Import scanner or intelligence')} subtitle={L('Escáneres, validación ofensiva (ZAP, Burp, PingCastle, Certipy), CISA KEV y FIRST EPSS', 'Scanners, offensive validation (ZAP, Burp, PingCastle, Certipy), CISA KEV and FIRST EPSS')} maxWidth={720}>
         <ScanUploader onDone={() => setShowScan(false)} />
       </Modal>
 
@@ -269,6 +275,8 @@ function FindingDetail({ findingId }: { findingId: string }) {
       </div>
       <p className="rounded-xl bg-ground px-3.5 py-3 text-[0.8125rem] leading-relaxed text-ink-2 shadow-[inset_0_0_0_1px_var(--color-hairline)]">{explanationIn(lang, s, f, asset)}</p>
       {f.exception && <RiskCard finding={f} />}
+      {f.validation && <ValidationCard finding={f} />}
+      {f.status === 'mitigado' && <RetestCard finding={f} />}
       <div>
         <h3 className="label mb-2 font-medium">{L('Desglose de la puntuación', 'Score breakdown')}</h3>
         <ul className="flex flex-col gap-3">
@@ -390,7 +398,7 @@ function FindingControls({ finding: f, band }: { finding: Finding; band: Band })
   );
 }
 
-function FindingActions({ finding, onEdit, onAccept }: { finding: Finding; onEdit: () => void; onAccept: () => void }) {
+function FindingActions({ finding, onEdit, onAccept, onValidate }: { finding: Finding; onEdit: () => void; onAccept: () => void; onValidate: () => void }) {
   const L = useL();
   const setStatus = useStore((s) => s.setStatus);
   const revoke = useStore((s) => s.revokeRisk);
@@ -406,6 +414,7 @@ function FindingActions({ finding, onEdit, onAccept }: { finding: Finding; onEdi
       />
       <div className="flex gap-2">
         <button type="button" className="btn btn-sm" onClick={onEdit}><Pencil />{L('Editar', 'Edit')}</button>
+        {finding.status !== 'mitigado' && finding.status !== 'aceptado' && <button type="button" className="btn btn-sm" onClick={onValidate}><Swords />{L('Validar', 'Validate')}</button>}
         {canAccept && <button type="button" className="btn btn-sm" onClick={onAccept}><ShieldOff />{L('Aceptar riesgo', 'Accept risk')}</button>}
         {finding.status === 'aceptado' && <>
           <button type="button" className="btn btn-sm" onClick={onAccept}><ShieldOff />{L('Renovar', 'Renew')}</button>
@@ -414,6 +423,95 @@ function FindingActions({ finding, onEdit, onAccept }: { finding: Finding; onEdi
         <button type="button" className="btn btn-sm btn-ghost btn-danger ml-auto" onClick={() => { del(finding.id); notify(L(`Hallazgo ${finding.id} eliminado.`, `Finding ${finding.id} deleted.`), 'info'); }}><Trash2 />{L('Eliminar', 'Delete')}</button>
       </div>
     </div>
+  );
+}
+
+const RESULT_LABEL = (L: (es: string, en: string) => string): Record<ValidationResult, string> => ({ explotado: L('Explotado', 'Exploited'), no_explotable: L('No explotable', 'Not exploitable'), mitigado_control: L('Mitigado por un control', 'Mitigated by a control') });
+
+function ValidationCard({ finding: f }: { finding: Finding }) {
+  const L = useL();
+  const v = f.validation!;
+  const tone = v.result === 'explotado' ? 'var(--color-critica)' : 'var(--color-ok)';
+  return (
+    <section className="rounded-xl px-3.5 py-3 text-[0.8125rem]" style={{ background: `color-mix(in oklab, ${tone} 8%, transparent)`, boxShadow: `inset 0 0 0 1px color-mix(in oklab, ${tone} 30%, transparent)` }} data-testid="ficha-validacion" aria-label={L('Validación ofensiva', 'Offensive validation')}>
+      <h3 className="flex items-center gap-2 font-semibold" style={{ color: tone }}><Swords className="size-4" />{L('Validación', 'Validation')}: {RESULT_LABEL(L)[v.result]}</h3>
+      <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-2">
+        <div><dt className="label">{L('Por', 'By')}</dt><dd>{v.by}</dd></div>
+        <div><dt className="label">{L('Fecha', 'Date')}</dt><dd className="num">{v.at}</dd></div>
+        {v.technique && <div className="col-span-2"><dt className="label">ATT&amp;CK</dt><dd className="num">{v.technique}{techniqueById(v.technique) ? ` · ${L(techniqueById(v.technique)!.nameEs, techniqueById(v.technique)!.name)}` : ''}</dd></div>}
+        <div className="col-span-2"><dt className="label">{L('Prueba', 'Proof')}</dt><dd className="whitespace-pre-wrap break-words text-ink-2">{v.proof}</dd></div>
+      </dl>
+    </section>
+  );
+}
+
+function RetestCard({ finding: f }: { finding: Finding }) {
+  const L = useL();
+  const confirm = useStore((s) => s.confirmRetest);
+  const notify = useStore((s) => s.notify);
+  const author = useStore((s) => s.settings.profile?.nombre?.trim() || '');
+  const r = f.retest;
+  const verified = r?.state === 'verificado';
+  const tone = verified ? 'var(--color-ok)' : 'var(--color-media)';
+  return (
+    <section className="flex flex-wrap items-center justify-between gap-3 rounded-xl px-3.5 py-3 text-[0.8125rem]" style={{ background: `color-mix(in oklab, ${tone} 8%, transparent)`, boxShadow: `inset 0 0 0 1px color-mix(in oklab, ${tone} 30%, transparent)` }} data-testid="ficha-retest">
+      <div>
+        <h3 className="flex items-center gap-2 font-semibold" style={{ color: tone }}><BadgeCheck className="size-4" />{verified ? L('Corrección verificada', 'Fix verified') : L('Pendiente de verificar', 'Pending verification')}</h3>
+        <p className="mt-0.5 text-xs text-ink-3">{verified ? L(`El ${r?.verifiedAt ?? '—'} · ${r?.by ?? 'analista'}`, `On ${r?.verifiedAt ?? '—'} · ${r?.by ?? 'analyst'}`) : L(`Mitigado el ${r?.since ?? f.resolvedAt ?? '—'}. Se verifica solo cuando un escaneo de la misma herramienta ya no lo ve, o confírmalo tú.`, `Mitigated on ${r?.since ?? f.resolvedAt ?? '—'}. It is verified when a scan by the same tool no longer sees it, or confirm it yourself.`)}</p>
+      </div>
+      {!verified && <button type="button" className="btn btn-sm" onClick={() => { confirm(f.id, author ? L(`analista (${author})`, `analyst (${author})`) : L('analista', 'analyst')); notify(L(`${f.id}: corrección verificada.`, `${f.id}: fix verified.`)); }}><BadgeCheck />{L('Confirmar verificación', 'Confirm verification')}</button>}
+    </section>
+  );
+}
+
+function ValidationForm({ finding, onDone }: { finding: Finding; onDone: () => void }) {
+  const L = useL();
+  const record = useStore((s) => s.recordValidation);
+  const notify = useStore((s) => s.notify);
+  const author = useStore((s) => s.settings.profile?.nombre?.trim() || '');
+  const today = isoDay(new Date());
+  const suggested = techniquesOf(finding)[0] ?? '';
+  const [v, setV] = useState<Validation>(() => finding.validation ?? { result: 'explotado', at: today, by: author, technique: suggested, proof: '' });
+  const [tried, setTried] = useState(false);
+  const errors = validateValidation(v, today);
+  const MSG: Record<ValidationError, string> = {
+    resultado: L('Elige un resultado.', 'Choose a result.'),
+    responsable: L('Indica quién hizo la prueba.', 'Say who ran the test.'),
+    fecha: L('Fecha no válida.', 'Invalid date.'),
+    futura: L('La fecha no puede ser futura.', 'The date cannot be in the future.'),
+    tecnica: L('Formato ATT&CK: T1234 o T1234.001.', 'ATT&CK format: T1234 or T1234.001.'),
+    prueba: L('Describe la prueba con al menos 10 caracteres (sin credenciales).', 'Describe the proof in at least 10 characters (no credentials).'),
+  };
+  const err = (k: ValidationError) => (tried && errors.includes(k) ? MSG[k] : null);
+  const set = <K extends keyof Validation>(k: K, val: Validation[K]) => setV((p) => ({ ...p, [k]: val }));
+  const RL = RESULT_LABEL(L);
+  return (
+    <form className="flex flex-col gap-4" data-testid="form-validacion" noValidate onSubmit={(e) => {
+      e.preventDefault();
+      setTried(true);
+      if (errors.length) return;
+      record(finding.id, { ...v, by: v.by.trim(), technique: v.technique.trim().toUpperCase(), proof: v.proof.trim() });
+      notify(L(`${finding.id}: validación registrada (${RL[v.result].toLowerCase()}).`, `${finding.id}: validation recorded (${RL[v.result].toLowerCase()}).`));
+      onDone();
+    }}>
+      <p className="rounded-xl bg-ground px-3.5 py-3 text-[0.8125rem] leading-relaxed text-ink-2 shadow-[inset_0_0_0_1px_var(--color-hairline)]">
+        <span className="font-medium text-ink">{finding.title}</span><br />
+        {L('«Explotado» deja el hallazgo validado (+5 puntos). «No explotable» o «mitigado por un control» lo dejan como no explotable (× 0,25) y cortan sus aristas en el grafo.', '“Exploited” marks the finding as validated (+5 points). “Not exploitable” or “mitigated by a control” mark it not exploitable (× 0.25) and cut its edges in the graph.')}
+      </p>
+      <Segmented<ValidationResult> label={L('Resultado de la prueba', 'Test result')} value={v.result} onChange={(r) => set('result', r)} options={VALIDATION_RESULTS.map((r) => ({ value: r, label: RL[r] }))} />
+      <div className="grid grid-cols-2 gap-3">
+        <Field label={L('Probado por', 'Tested by')} error={err('responsable')}><input className="field" value={v.by} aria-invalid={!!err('responsable')} onChange={(e) => set('by', e.target.value)} placeholder={L('Persona o equipo', 'Person or team')} /></Field>
+        <Field label={L('Fecha', 'Date')} error={err('fecha') ?? err('futura')}><input className="field num" type="date" max={today} value={v.at} aria-invalid={!!(err('fecha') ?? err('futura'))} onChange={(e) => set('at', e.target.value)} /></Field>
+      </div>
+      <Field label={L('Técnica ATT&CK usada (opcional)', 'ATT&CK technique used (optional)')} error={err('tecnica')} hint={suggested ? L(`Sugerida: ${suggested}`, `Suggested: ${suggested}`) : undefined}><input className="field num" value={v.technique} aria-invalid={!!err('tecnica')} onChange={(e) => set('technique', e.target.value)} placeholder="T1190" /></Field>
+      <Field label={L('Prueba', 'Proof')} error={err('prueba')} hint={L('Comando, salida resumida o captura descrita. No pegues contraseñas ni tokens.', 'Command, summarised output or described screenshot. Do not paste passwords or tokens.')}>
+        <textarea className="field" rows={4} value={v.proof} aria-invalid={!!err('prueba')} onChange={(e) => set('proof', e.target.value)} />
+      </Field>
+      <div className="flex justify-end gap-2 pt-1">
+        <button type="button" className="btn btn-ghost" onClick={onDone}>{L('Cancelar', 'Cancel')}</button>
+        <button type="submit" className="btn btn-primary">{L('Guardar validación', 'Save validation')}</button>
+      </div>
+    </form>
   );
 }
 

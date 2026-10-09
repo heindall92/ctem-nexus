@@ -70,6 +70,7 @@ export const TECHNIQUES: AttackTechnique[] = [
   { id: 'T1070',     name: 'Indicator Removal',                 nameEs: 'Borrado de indicadores',         tactic: 'defense-evasion' },
   { id: 'T1140',     name: 'Deobfuscate/Decode Files',          nameEs: 'Deofuscar ficheros',             tactic: 'defense-evasion' },
   { id: 'T1078.001', name: 'Default Accounts',                  nameEs: 'Cuentas por defecto',            tactic: 'defense-evasion' },
+  { id: 'T1484.001', name: 'Group Policy Modification',         nameEs: 'Modificación de GPO',            tactic: 'defense-evasion' },
 
   // Credential Access
   { id: 'T1110',     name: 'Brute Force',                       nameEs: 'Fuerza bruta',                   tactic: 'credential-access' },
@@ -82,6 +83,8 @@ export const TECHNIQUES: AttackTechnique[] = [
   { id: 'T1040',     name: 'Network Sniffing',                   nameEs: 'Captura de red',                 tactic: 'credential-access' },
   { id: 'T1557',     name: 'Adversary-in-the-Middle',           nameEs: 'Adversario en medio',            tactic: 'credential-access' },
   { id: 'T1557.001', name: 'LLMNR/NBT-NS Poisoning',            nameEs: 'Envenenamiento LLMNR/NBT-NS',    tactic: 'credential-access' },
+  { id: 'T1649',     name: 'Steal or Forge Authentication Certificates', nameEs: 'Robo o forja de certificados (AD CS)', tactic: 'credential-access' },
+  { id: 'T1003.006', name: 'DCSync',                            nameEs: 'DCSync',                         tactic: 'credential-access' },
 
   // Discovery
   { id: 'T1046',     name: 'Network Service Discovery',         nameEs: 'Descubrimiento de servicios',    tactic: 'discovery' },
@@ -122,7 +125,7 @@ const REMEDIATION_TECHNIQUES: Record<string, string[]> = {
   kerberoast:               ['T1558.003'],
   asrep_roast:              ['T1558.004'],
   unconstrained_delegation: ['T1134.001', 'T1558'],
-  adcs_esc1:                ['T1068', 'T1558'],
+  adcs_esc1:                ['T1649', 'T1068', 'T1558'],
   smb_signing:              ['T1557.001', 'T1021.002'],
   llmnr:                    ['T1557.001', 'T1040'],
   laps:                     ['T1552', 'T1550.002'],
@@ -130,6 +133,9 @@ const REMEDIATION_TECHNIQUES: Record<string, string[]> = {
   print_spooler:            ['T1068', 'T1543.003'],
   tls_hardening:            ['T1040', 'T1557'],
   identity_generic:         ['T1078', 'T1552'],
+  web_injection:            ['T1190', 'T1059'],
+  web_xss:                  ['T1059.007', 'T1189'],
+  // web_hardening y ad_hygiene son genéricas: deciden el título o el tipo.
   // patch_cve y weak_config son genéricas: deciden el título o el tipo.
 };
 
@@ -167,7 +173,9 @@ const TITLE_PATTERNS: Array<{ re: RegExp; ids: string[] }> = [
   { re: /privilege escalat|escalada de privilegios/i,         ids: ['T1068'] },
   { re: /web.?shell/i,                                        ids: ['T1505.003'] },
   { re: /delegaci[oó]n|delegation/i,                          ids: ['T1134.001'] },
-  { re: /\badcs\b|certificate template|plantilla de certificado|\besc\d\b/i, ids: ['T1068', 'T1558'] },
+  { re: /\badcs\b|certificate template|plantilla de certificado|\besc\d{1,2}\b/i, ids: ['T1649', 'T1068', 'T1558'] },
+  { re: /dcsync|replicating directory changes|replicaci[oó]n de directorio/i, ids: ['T1003.006'] },
+  { re: /\bgpo\b|group policy|directiva de grupo/i,          ids: ['T1484.001'] },
   { re: /\brdp\b|remote desktop|escritorio remoto/i,          ids: ['T1133', 'T1021.001'] },
   { re: /\bssh\b/i,                                           ids: ['T1021.004'] },
   { re: /\bvpn\b|gateway|netscaler|citrix|fortigate|pulse secure|globalprotect/i, ids: ['T1133'] },

@@ -230,25 +230,25 @@ interface AdRule { remediation: string; attack: string[]; kind: Finding['kind'] 
 export const AD_RULES: Record<string, AdRule> = {
   kerberoasting: { remediation: 'kerberoast', attack: ['T1558.003'], kind: 'identidad' },
   asrep_roasting: { remediation: 'asrep_roast', attack: ['T1558.004'], kind: 'identidad' },
-  unconstrained_delegation: { remediation: 'unconstrained_delegation', attack: ['T1558', 'T1187'], kind: 'identidad' },
+  unconstrained_delegation: { remediation: 'unconstrained_delegation', attack: ['T1558', 'T1134.001'], kind: 'identidad' },
   constrained_rbcd_delegation: { remediation: 'unconstrained_delegation', attack: ['T1134.001'], kind: 'identidad' },
   adcs_esc: { remediation: 'adcs_esc1', attack: ['T1649'], kind: 'identidad' },
   smb_signing_disabled: { remediation: 'smb_signing', attack: ['T1557.001'], kind: 'configuracion' },
-  laps_not_deployed: { remediation: 'laps', attack: ['T1078.003', 'T1550.002'], kind: 'configuracion' },
-  weak_password_policy: { remediation: 'weak_credentials', attack: ['T1110.003'], kind: 'identidad' },
+  laps_not_deployed: { remediation: 'laps', attack: ['T1552', 'T1550.002'], kind: 'configuracion' },
+  weak_password_policy: { remediation: 'weak_credentials', attack: ['T1110'], kind: 'identidad' },
   weak_lockout_policy: { remediation: 'weak_credentials', attack: ['T1110'], kind: 'identidad' },
-  krbtgt_password_age: { remediation: 'identity_generic', attack: ['T1558.001'], kind: 'identidad' },
-  protected_users_gap: { remediation: 'identity_generic', attack: ['T1550'], kind: 'identidad' },
+  krbtgt_password_age: { remediation: 'identity_generic', attack: ['T1558'], kind: 'identidad' },
+  protected_users_gap: { remediation: 'identity_generic', attack: ['T1550.002'], kind: 'identidad' },
   admin_with_spn: { remediation: 'kerberoast', attack: ['T1558.003'], kind: 'identidad' },
-  stale_privileged_account: { remediation: 'identity_generic', attack: ['T1078.002'], kind: 'identidad' },
+  stale_privileged_account: { remediation: 'identity_generic', attack: ['T1078'], kind: 'identidad' },
   ldap_signing_not_required: { remediation: 'weak_config', attack: ['T1557'], kind: 'configuracion' },
   ldap_channel_binding_weak: { remediation: 'weak_config', attack: ['T1557'], kind: 'configuracion' },
-  trust_sid_filtering: { remediation: 'identity_generic', attack: ['T1134.005'], kind: 'identidad' },
-  machine_account_quota: { remediation: 'identity_generic', attack: ['T1136.002'], kind: 'identidad' },
-  acl_control_path: { remediation: 'identity_generic', attack: ['T1003.006', 'T1222.001'], kind: 'identidad' },
+  trust_sid_filtering: { remediation: 'identity_generic', attack: ['T1134'], kind: 'identidad' },
+  machine_account_quota: { remediation: 'identity_generic', attack: ['T1098'], kind: 'identidad' },
+  acl_control_path: { remediation: 'identity_generic', attack: ['T1003.006', 'T1098'], kind: 'identidad' },
   cleartext_secret_attr: { remediation: 'identity_generic', attack: ['T1552'], kind: 'identidad' },
   gpo_weak_setting: { remediation: 'weak_config', attack: ['T1484.001'], kind: 'configuracion' },
-  audit_policy_gap: { remediation: 'weak_config', attack: ['T1562.002'], kind: 'configuracion' },
+  audit_policy_gap: { remediation: 'weak_config', attack: ['T1562'], kind: 'configuracion' },
 };
 /** Riesgo ENS (MAGERIT) → CVSS equivalente: el mismo criterio que ENS AD Auditor usa al exportar a Compliance Studio. */
 export const AD_RISK_CVSS: Record<string, number> = { Critico: 9, Alto: 7.5, Medio: 5, Bajo: 2.5 };
@@ -321,6 +321,7 @@ export function studioCategory(f: Pick<Finding, 'kind' | 'remediation' | 'cve'>)
     kerberoast: 'AUTH_MFA', asrep_roast: 'AUTH_MFA', adcs_esc1: 'AUTH_MFA', weak_credentials: 'BRUTE',
     unconstrained_delegation: 'IDOR', identity_generic: 'IDOR', laps: 'DEFCREDS',
     smb_signing: 'TLS', tls_hardening: 'TLS', llmnr: 'NETSEG', print_spooler: 'NETSEG', weak_config: 'NETSEG',
+    web_injection: 'SQLI', web_xss: 'XSS', web_hardening: 'INFOLEAK', ad_hygiene: 'IDOR',
   };
   return byGuide[f.remediation] ?? (f.cve || f.kind === 'cve' ? 'OUTDATED' : f.kind === 'identidad' ? 'IDOR' : 'NETSEG');
 }

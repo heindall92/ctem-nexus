@@ -3,6 +3,7 @@ import { CalendarCheck2, Gauge, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { NO_OWNER, slaCompliance, type SlaBucket } from '../engine/compliance';
 import { snapshotOf, trendOf } from '../engine/history';
+import { retestStats } from '../engine/retest';
 import type { Band } from '../engine/types';
 import { screen, useL } from '../i18n';
 import { useResult } from '../lib/analysis';
@@ -179,6 +180,58 @@ export function CyclesPanel() {
             </ul>
           )}
         </div>
+      </div>
+    </section>
+  );
+}
+
+/** Validación ofensiva y verificación de las correcciones (retest). */
+export function RetestPanel() {
+  const L = useL();
+  const project = useStore((s) => s.project);
+  const confirm = useStore((s) => s.confirmRetest);
+  const notify = useStore((s) => s.notify);
+  const setView = useStore((s) => s.setView);
+  const select = useStore((s) => s.selectFinding);
+  const author = useStore((s) => s.settings.profile?.nombre?.trim() || '');
+  const st = useMemo(() => retestStats(project.findings, project.imports ?? []), [project.findings, project.imports]);
+  const validated = project.findings.filter((f) => f.validation);
+  const exploited = validated.filter((f) => f.validation!.result === 'explotado').length;
+  const fById = new Map(project.findings.map((f) => [f.id, f]));
+  const aName = new Map(project.assets.map((a) => [a.id, a.name]));
+  const tiles: Array<[string, string, string | undefined]> = [
+    [L('Pendientes de verificar', 'Pending verification'), String(st.pending), st.pending ? 'var(--color-media)' : undefined],
+    [L('Verificadas', 'Verified'), String(st.verified), st.verified ? 'var(--color-ok)' : undefined],
+    [L('Reabiertas', 'Reopened'), String(st.reopened), st.reopened ? 'var(--color-critica)' : undefined],
+    [L('Tasa de reapertura', 'Reopen rate'), pct(st.reopenRate), st.reopenRate !== null && st.reopenRate > 0.1 ? 'var(--color-critica)' : undefined],
+  ];
+  return (
+    <section className="panel no-print overflow-hidden" aria-label={L('Validación y verificación', 'Validation and verification')} data-testid="panel-retest">
+      <SectionTitle title={L('Validación y verificación', 'Validation and verification')} detail={L(`Un mitigado queda pendiente hasta que un escaneo de la misma herramienta deja de verlo o lo confirmas. ${validated.length} hallazgos con validación ofensiva registrada (${exploited} explotados).`, `A mitigated finding stays pending until a scan by the same tool no longer sees it or you confirm it. ${validated.length} findings with recorded offensive validation (${exploited} exploited).`)} />
+      <div className="flex flex-col gap-4 border-t border-hairline px-5 py-5">
+        <dl className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {tiles.map(([label, value, color]) => (
+            <div key={label} className="flex flex-col-reverse rounded-xl bg-ground px-3 py-2.5 shadow-[inset_0_0_0_1px_var(--color-hairline)]">
+              <dt className="text-xs text-ink-3">{label}</dt>
+              <dd className="num text-[1.375rem] font-semibold leading-tight" style={{ color }}>{value}</dd>
+            </div>
+          ))}
+        </dl>
+        {st.pendingList.length > 0 ? (
+          <ul className="divide-hair rounded-xl text-[0.8125rem] shadow-[inset_0_0_0_1px_var(--color-hairline)]" data-testid="retest-pendientes">
+            {st.pendingList.slice(0, 8).map(({ id, since }) => {
+              const f = fById.get(id)!;
+              return (
+                <li key={id} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2">
+                  <button type="button" className="min-w-0 flex-1 text-left hover:text-accent" onClick={() => { setView('priorizacion'); select(id); }}>
+                    <span className="num text-ink-3">{id}</span> {f.title} <span className="text-ink-3">· {aName.get(f.assetId) ?? f.assetId} · {L(`desde el ${since}`, `since ${since}`)}</span>
+                  </button>
+                  <button type="button" className="btn btn-sm" onClick={() => { confirm(id, author ? L(`analista (${author})`, `analyst (${author})`) : L('analista', 'analyst')); notify(L(`${id}: corrección verificada.`, `${id}: fix verified.`)); }} aria-label={L(`Confirmar la verificación de ${id}`, `Confirm verification of ${id}`)}><CalendarCheck2 />{L('Confirmar', 'Confirm')}</button>
+                </li>
+              );
+            })}
+          </ul>
+        ) : <p className="text-[0.8125rem] text-ink-3">{L('No hay correcciones pendientes de verificar.', 'No fixes pending verification.')}</p>}
       </div>
     </section>
   );

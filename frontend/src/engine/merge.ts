@@ -11,7 +11,7 @@ import type { ScanItem, ScanParse } from './scanners';
 import type { Asset, Finding, FindingSource } from './types';
 
 export const EVIDENCE_MAX = 4000;
-const PREFIX: Record<string, string> = { nessus: 'NES', openvas: 'OVS', nuclei: 'NUC', trivy: 'TRV', sarif: 'SRF', adauditor: 'ADA' };
+const PREFIX: Record<string, string> = { nessus: 'NES', openvas: 'OVS', nuclei: 'NUC', trivy: 'TRV', sarif: 'SRF', adauditor: 'ADA', zap: 'ZAP', burp: 'BRP', pingcastle: 'PGC', certipy: 'CTP' };
 
 export const normTitle = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
 
@@ -45,7 +45,7 @@ const appendEvidence = (a: string | undefined, b: string | undefined): string | 
 };
 
 /** Guías genéricas: no sirven para decir que dos hallazgos sin CVE son el mismo. */
-const GENERIC = new Set(['', 'patch_cve', 'weak_config', 'identity_generic']);
+const GENERIC = new Set(['', 'patch_cve', 'weak_config', 'identity_generic', 'web_hardening', 'ad_hygiene']);
 const SPECIFIC_GUIDE = (key: string) => !GENERIC.has(key);
 
 const cvesOf = (f: Pick<Finding, 'cve' | 'relatedCves'>) => [f.cve, ...(f.relatedCves ?? [])].filter((x): x is string => !!x);
@@ -71,6 +71,7 @@ export function mergeFinding(base: Finding, incoming: Finding): { merged: Findin
     detectedAt: [base.detectedAt, incoming.detectedAt].filter(Boolean).sort()[0],
     ...(reopened ? { status: 'abierto' as const, resolvedAt: null } : {}),
   };
+  if (reopened) delete merged.retest;
   if (!merged.relatedCves?.length) delete merged.relatedCves;
   const attack = [...new Set([...(base.attack ?? []), ...(incoming.attack ?? [])])];
   if (attack.length) merged.attack = attack; else delete merged.attack;
@@ -95,6 +96,8 @@ export interface ImportPlan {
   /** Duplicados fundidos dentro del propio fichero. */
   duplicatesInFile: number;
   skipped: number;
+  /** Mitigados pendientes de verificar que este escaneo ya no ve en su activo (misma herramienta): quedan verificados. */
+  verifiedIds: string[];
 }
 
 export interface PlanOptions {
@@ -199,9 +202,15 @@ export function planImport(parse: ScanParse, project: { assets: Asset[]; finding
       newFindings.push({ ...f, id: nextFreeId(`${PREFIX[parse.source] ?? 'IMP'}-`, findingIds) });
     }
   }
+  // 3) Retest: un mitigado pendiente queda verificado si la misma herramienta escanea su activo y ya no lo ve.
+  const scanned = new Set(hostToAsset.values());
+  const verifiedIds = project.findings
+    .filter((f) => f.status === 'mitigado' && f.retest?.state === 'pendiente' && scanned.has(f.assetId) && (f.sources ?? []).includes(parse.source) && !updated.has(f.id))
+    .map((f) => f.id);
   return {
     source: parse.source,
     tool: parse.tool,
+    verifiedIds,
     newAssets,
     matchedAssets,
     newFindings,

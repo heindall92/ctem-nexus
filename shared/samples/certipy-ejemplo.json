@@ -1,0 +1,36 @@
+{
+  "Certificate Authorities": {
+    "0": {
+      "CA Name": "meridiano-PKI-CA01",
+      "DNS Name": "pki-ca01.meridiano.local",
+      "Certificate Subject": "CN=meridiano-PKI-CA01, DC=meridiano, DC=local",
+      "Web Enrollment": "Enabled",
+      "User Specified SAN": "Disabled",
+      "[!] Vulnerabilities": {
+        "ESC8": "Web Enrollment is enabled and Request Disposition is set to Issue"
+      }
+    }
+  },
+  "Certificate Templates": {
+    "0": {
+      "Template Name": "UserAuth",
+      "Display Name": "User Authentication",
+      "Certificate Authorities": ["meridiano-PKI-CA01"],
+      "Enabled": true,
+      "Client Authentication": true,
+      "Enrollee Supplies Subject": true,
+      "Permissions": { "Enrollment Permissions": { "Enrollment Rights": ["MERIDIANO.LOCAL\\Domain Users", "MERIDIANO.LOCAL\\Domain Admins"] } },
+      "[!] Vulnerabilities": {
+        "ESC1": "'MERIDIANO.LOCAL\\\\Domain Users' can enroll, enrollee supplies subject and template allows client authentication"
+      }
+    },
+    "1": {
+      "Template Name": "WebServer",
+      "Display Name": "Web Server",
+      "Certificate Authorities": ["meridiano-PKI-CA01"],
+      "Enabled": true,
+      "Client Authentication": false,
+      "Enrollee Supplies Subject": true
+    }
+  }
+}

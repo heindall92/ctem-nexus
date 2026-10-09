@@ -4,6 +4,47 @@ import type { RemediationGuide } from './remediation';
 type Text = Pick<RemediationGuide, 'title' | 'owner' | 'steps' | 'verify'>;
 
 export const GUIDES_EN: Record<string, Text> = {
+  web_injection: {
+    title: 'Close the injection in the web application', owner: 'Application development team',
+    steps: [
+      'Reproduce the finding in pre-production with the scanner request (no real data).',
+      'Use parameterised queries or an ORM; never concatenate user input into SQL, commands, templates or paths.',
+      'Validate input on the server with allow-lists and strict types.',
+      'Run the application and its database account with least privilege.',
+      'As containment while fixing, add a specific WAF rule for the affected parameter.',
+      'Add an automated test (SAST or DAST in CI) that fails if it comes back.',
+    ],
+    verify: 'Re-run the ZAP or Burp active scan on the affected URL and parameter and attach the clean result.',
+  },
+  web_xss: {
+    title: 'Fix the cross-site scripting', owner: 'Application development team',
+    steps: [
+      'Encode output for its context (HTML, attribute, JavaScript, URL) with the framework function.',
+      'Avoid inserting unsanitised HTML (innerHTML, dangerouslySetInnerHTML, |safe); if unavoidable, sanitise with a maintained library.',
+      'Publish a Content-Security-Policy without unsafe-inline, using nonces or hashes.',
+      'Mark session cookies HttpOnly, Secure and SameSite.',
+    ],
+    verify: 'Re-run the ZAP or Burp scan on the affected URL and check the Content-Security-Policy header in the response.',
+  },
+  web_hardening: {
+    title: 'Harden the web application', owner: 'Development team / Systems',
+    steps: [
+      'Add the missing security headers (Content-Security-Policy, Strict-Transport-Security, X-Content-Type-Options, frame-ancestors).',
+      'Set cookies with HttpOnly, Secure and SameSite.',
+      'Remove version banners, verbose error pages and published sample or backup files.',
+      'Review the TLS configuration and redirect all traffic to HTTPS.',
+    ],
+    verify: 'curl -sI https://app.example | grep -iE "strict-transport|content-security|x-content-type|set-cookie"',
+  },
+  ad_hygiene: {
+    title: 'Fix the Active Directory hygiene rule', owner: 'Identity / Active Directory',
+    steps: [
+      'Read the rule detail in the PingCastle report and the affected object.',
+      'Apply the recommended fix in a test environment and then in production, through change management.',
+      'Document the exception if the rule cannot be fixed and add monitoring.',
+    ],
+    verify: 'PingCastle.exe --healthcheck --server corp.example   # the rule no longer appears and the score drops',
+  },
   log4shell: {
     title: 'Remove Log4Shell (Log4j 2)', owner: 'Application development team',
     steps: [

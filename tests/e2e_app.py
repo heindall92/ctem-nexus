@@ -283,6 +283,8 @@ def escritorio(b, tmp):
     page.get_by_role("button", name="Aplicar inteligencia").click()
     check("el CSV de EPSS se aplica y queda versionado", J(f"{S}.project.intel.epss.count") == 11)
 
+    validacion_ofensiva(page, J)
+
     # Riesgo aceptado: reglas de gobierno, ficha, retirada y caducidad al cargar
     J(f"{S}.selectFinding('H-014')")
     page.get_by_role("dialog").get_by_role("button", name="Aceptar riesgo").click()
@@ -404,7 +406,7 @@ def escritorio(b, tmp):
     page.get_by_role("tab", name="Ingesta de datos").click()
     with page.expect_download() as d:
         page.get_by_role("button", name=re.compile("Descargar el ejemplo de KAIROS")).click()
-    check("la ayuda descarga los ficheros de ejemplo, idénticos a shared/samples", pathlib.Path(d.value.path()).read_bytes() == (ROOT / "shared" / "samples" / "ecosistema" / "kairos-meridiano.json").read_bytes() and page.get_by_test_id("ficheros-ejemplo").get_by_role("button").count() == 13)
+    check("la ayuda descarga los ficheros de ejemplo, idénticos a shared/samples", pathlib.Path(d.value.path()).read_bytes() == (ROOT / "shared" / "samples" / "ecosistema" / "kairos-meridiano.json").read_bytes() and page.get_by_test_id("ficheros-ejemplo").get_by_role("button").count() == 17)
     page.get_by_role("tab", name="Acerca de").click()
     check("«Acerca de» enlaza las webs del ecosistema", page.get_by_role("link", name="Abrir ARGOS").count() == 1 and page.get_by_role("link", name="Abrir Rosetta").count() == 1)
     page.keyboard.press("Escape")
@@ -454,6 +456,45 @@ def escritorio(b, tmp):
 
     check("sin errores de consola ni peticiones externas", not problemas, problemas[:5])
     ctx.close()
+
+
+def validacion_ofensiva(page, J):
+    """Fase 6: Burp, ZAP, PingCastle y Certipy por el importador unificado; validación registrada y retest."""
+    antes = J(f"{S}.project.findings.length")
+    page.get_by_role("button", name="Importar escáner").first.click()
+    imp = page.get_by_test_id("importador-escaner")
+    for fichero, herramienta in [("zap-ejemplo.json", "OWASP ZAP"), ("pingcastle-ejemplo.xml", "PingCastle"), ("certipy-ejemplo.json", "Certipy")]:
+        imp.locator('input[type="file"]').set_input_files(str(ROOT / "shared" / "samples" / fichero))
+        expect(page.get_by_test_id("plan-importacion")).to_contain_text(herramienta)
+        check(f"{fichero}: plan previo de {herramienta} sin tocar el proyecto", J(f"{S}.project.findings.length") == antes)
+    imp.locator('input[type="file"]').set_input_files(str(ROOT / "shared" / "samples" / "burp-ejemplo.xml"))
+    expect(page.get_by_test_id("plan-importacion")).to_contain_text("Burp Suite")
+    page.get_by_role("button", name="Incorporar al proyecto").click()
+    burp = J(f"{S}.project.findings.filter(f => f.id.startsWith('BRP-')).map(f => f.assetId)")
+    check("Burp (con su DTD inerte) añade 2 hallazgos al portal por su IP y sin guardar peticiones", burp == ["a01", "a01"] and "SECRETO" not in J(f"JSON.stringify({S}.project)"), burp)
+    # Validación ofensiva registrada en la ficha
+    J(f"{S}.selectFinding('H-002')")
+    page.get_by_role("dialog").get_by_role("button", name="Validar").click()
+    form = page.get_by_test_id("form-validacion")
+    form.locator("textarea").fill("")
+    form.get_by_role("button", name="Guardar validación").click()
+    check("sin prueba no se guarda la validación y se explica", form.get_by_text("Describe la prueba").count() == 1 and not J(f"{S}.project.findings.find(f => f.id === 'H-002').validation"))
+    form.get_by_role("textbox", name="Probado por").fill("Equipo rojo")
+    form.locator("textarea").fill("Ejecución remota confirmada con el módulo de ProxyShell en preproducción; shell como SYSTEM.")
+    form.get_by_role("button", name="Guardar validación").click()
+    page.get_by_test_id("ficha-validacion").wait_for()
+    h2 = J(f"{S}.project.findings.find(f => f.id === 'H-002')")
+    check("«Explotado» deja el hallazgo validado y la ficha enseña la prueba", h2["status"] == "validado" and h2["validation"]["result"] == "explotado" and page.get_by_test_id("ficha-validacion").count() == 1)
+    page.keyboard.press("Escape")
+    # Retest: mitigar deja pendiente; confirmar lo verifica
+    J(f"{S}.setStatus('H-003', 'mitigado')")
+    check("mitigar deja la corrección pendiente de verificar", J(f"{S}.project.findings.find(f => f.id === 'H-003').retest.state") == "pendiente")
+    nav(page, "Movilización")
+    panel = page.get_by_test_id("panel-retest")
+    check("Movilización lista las correcciones pendientes de verificar", "H-003" in panel.get_by_test_id("retest-pendientes").inner_text())
+    panel.get_by_role("button", name="Confirmar la verificación de H-003").click()
+    check("confirmar la verificación la deja verificada", J(f"{S}.project.findings.find(f => f.id === 'H-003').retest.state") == "verificado")
+    nav(page, "Priorización")
 
 
 ECO = ROOT / "shared" / "samples" / "ecosistema"

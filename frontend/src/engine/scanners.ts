@@ -7,8 +7,9 @@ import { safeJsonParse } from './io';
 import { isPrivateIp } from './nmap';
 import type { AssetType, FindingKind, FindingSource } from './types';
 import { child, childrenOf, descendants, parseXml, textOf, type XNode } from './xml';
+import { parseBurp, parseCertipy, parsePingCastle, parseZap } from './offensive';
 
-export type ScanSource = Extract<FindingSource, 'nessus' | 'openvas' | 'nuclei' | 'trivy' | 'sarif' | 'adauditor'>;
+export type ScanSource = Extract<FindingSource, 'nessus' | 'openvas' | 'nuclei' | 'trivy' | 'sarif' | 'adauditor' | 'zap' | 'burp' | 'pingcastle' | 'certipy'>;
 export type DetectedFormat = ScanSource | 'nmap' | 'bloodhound' | 'kev' | 'epss' | 'proyecto' | 'desconocido';
 
 export interface ScanHost {
@@ -100,7 +101,10 @@ export function detectFormat(text: string, filename = ''): DetectedFormat {
   if (head.startsWith('<')) {
     if (lower.includes('<nessusclientdata_v2')) return 'nessus';
     if (lower.includes('<nmaprun')) return 'nmap';
+    if (/<issues[\s>]/.test(lower) && /burp/i.test(head)) return 'burp';
+    if (lower.includes('<healthcheckdata')) return 'pingcastle';
     if (/<report[\s>]/.test(lower) || lower.includes('<get_reports_response')) return 'openvas';
+    if (/<issues[\s>]/.test(lower)) return 'burp';
     return 'desconocido';
   }
   if (lower.startsWith('#model_version') || /^cve,epss(,percentile)?\s*$/m.test(lower.split('\n').slice(0, 2).join('\n'))) return 'epss';
@@ -110,6 +114,8 @@ export function detectFormat(text: string, filename = ''): DetectedFormat {
     if (/"template-id"\s*:/.test(head) || /"template"\s*:\s*"[^"]+\.ya?ml"/.test(head)) return 'nuclei';
     if (/"catalogVersion"\s*:/.test(head) && /"vulnerabilities"\s*:/.test(text.slice(0, 20000))) return 'kev';
     if (/"format"\s*:\s*"ctem-nexus"/.test(head)) return 'proyecto';
+    if (/"@programName"\s*:\s*"ZAP"/i.test(head) || (/"site"\s*:/.test(head) && /"alerts"\s*:/.test(text.slice(0, 20000)))) return 'zap';
+    if (/"Certificate (Templates|Authorities)"\s*:/.test(head)) return 'certipy';
     if (/"(meta|data)"\s*:/.test(head) && /"(computers|users|groups|domains)"/i.test(text.slice(0, 20000))) return 'bloodhound';
   }
   if (fn.endsWith('.sarif')) return 'sarif';
@@ -448,16 +454,20 @@ export function parseScan(text: string, filename = '', opts: { includeInfo?: boo
     case 'nuclei': return parseNuclei(text, opts);
     case 'trivy': return parseTrivy(text);
     case 'sarif': return parseSarif(text, opts);
+    case 'zap': return parseZap(text);
+    case 'burp': return parseBurp(text);
+    case 'pingcastle': return parsePingCastle(text);
+    case 'certipy': return parseCertipy(text);
     case 'nmap': throw new Error('Es un escaneo de Nmap: usa «Importar Nmap».');
     case 'bloodhound': throw new Error('Es una exportación de BloodHound: usa «Importar BloodHound».');
     case 'kev': case 'epss': throw new Error('Es un catálogo de inteligencia (KEV/EPSS): impórtalo en «Señales de inteligencia».');
     case 'proyecto': throw new Error('Es un proyecto de CTEM-Nexus: impórtalo en Ajustes.');
-    default: throw new Error('Formato no reconocido. Se admiten Nessus (.nessus), OpenVAS/Greenbone (XML), Nuclei (JSONL), Trivy (JSON) y SARIF 2.1.0.');
+    default: throw new Error('Formato no reconocido. Se admiten Nessus (.nessus), OpenVAS/Greenbone (XML), Nuclei (JSONL), Trivy (JSON), SARIF 2.1.0, OWASP ZAP (JSON), Burp Suite (XML), PingCastle (XML) y Certipy (JSON).');
   }
 }
 
 export const SOURCE_LABEL: Record<FindingSource, string> = {
-  manual: 'Manual', csv: 'CSV', nmap: 'Nmap', bloodhound: 'BloodHound', nessus: 'Nessus', openvas: 'OpenVAS', nuclei: 'Nuclei', trivy: 'Trivy', sarif: 'SARIF', adauditor: 'ENS AD Auditor',
+  manual: 'Manual', csv: 'CSV', nmap: 'Nmap', bloodhound: 'BloodHound', nessus: 'Nessus', openvas: 'OpenVAS', nuclei: 'Nuclei', trivy: 'Trivy', sarif: 'SARIF', adauditor: 'ENS AD Auditor', zap: 'OWASP ZAP', burp: 'Burp Suite', pingcastle: 'PingCastle', certipy: 'Certipy',
 };
 
 export type { XNode };

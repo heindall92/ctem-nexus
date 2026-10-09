@@ -1,6 +1,6 @@
 import { AlarmClock, Check, Waypoints, ChevronDown, Copy, FileDown, FileJson, FileSpreadsheet, FileText, ListChecks, Printer } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { CyclesPanel, SlaPanel } from '../components/MobilizationPanels';
+import { CyclesPanel, RetestPanel, SlaPanel } from '../components/MobilizationPanels';
 import { buildTickets, githubIssues, jiraCsv, reportMarkdown, ticketsCsv, ticketsMarkdown } from '../engine/io';
 import { fixPlan } from '../engine/simulate';
 import { slaInfo, type SlaState } from '../engine/sla';
@@ -226,6 +226,7 @@ export function Mobilization() {
             </article>
 
             <SlaPanel />
+            <RetestPanel />
             <CyclesPanel />
 
             {/* Guías y tickets */}

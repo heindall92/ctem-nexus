@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<HealthcheckData xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <EngineVersion>3.3.0.1</EngineVersion>
+  <GenerationDate>2026-09-16T09:00:00</GenerationDate>
+  <DomainFQDN>meridiano.local</DomainFQDN>
+  <GlobalScore>70</GlobalScore>
+  <RiskRules>
+    <HealthcheckRiskRule>
+      <Points>30</Points><Category>PrivilegedAccounts</Category><Model>AccountTakeOver</Model><RiskId>P-Kerberoasting</RiskId>
+      <Rationale>Presence of Admin accounts which have a Service Principal Name (SPN): 1</Rationale>
+      <Details><string>Account: svc_sql</string></Details>
+    </HealthcheckRiskRule>
+    <HealthcheckRiskRule>
+      <Points>20</Points><Category>Anomalies</Category><Model>PassTheCredential</Model><RiskId>A-LAPS-Not-Installed</RiskId>
+      <Rationale>LAPS doesn't seem to be installed</Rationale>
+    </HealthcheckRiskRule>
+    <HealthcheckRiskRule>
+      <Points>10</Points><Category>Anomalies</Category><Model>Reconnaissance</Model><RiskId>A-DC-Spooler</RiskId>
+      <Rationale>The spooler service is remotely accessible from 1 DC</Rationale>
+      <Details><string>DC: DC01</string></Details>
+    </HealthcheckRiskRule>
+    <HealthcheckRiskRule>
+      <Points>15</Points><Category>StaleObjects</Category><Model>ObjectConfig</Model><RiskId>S-SMB-v1</RiskId>
+      <Rationale>At least one DC supports SMB v1</Rationale>
+    </HealthcheckRiskRule>
+    <HealthcheckRiskRule>
+      <Points>5</Points><Category>Anomalies</Category><Model>Audit</Model><RiskId>A-AuditDC</RiskId>
+      <Rationale>Number of DC with audit policy not correctly configured: 1</Rationale>
+    </HealthcheckRiskRule>
+    <HealthcheckRiskRule>
+      <Points>0</Points><Category>Trusts</Category><Model>OldTrustProtocol</Model><RiskId>T-Downlevel</RiskId>
+      <Rationale>No problem detected</Rationale>
+    </HealthcheckRiskRule>
+  </RiskRules>
+</HealthcheckData>

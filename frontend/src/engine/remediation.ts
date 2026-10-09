@@ -143,6 +143,51 @@ export const GUIDES: Record<string, RemediationGuide> = {
     steps: ['Aplicar la línea base de bastionado (CIS / guías CCN-STIC) correspondiente.', 'Documentar la excepción si no puede corregirse y añadir un control compensatorio.'],
     verify: 'Repetir la comprobación de configuración y adjuntar la evidencia al ticket.',
   }),
+  web_injection: G({
+    key: 'web_injection', title: 'Cerrar la inyección en la aplicación web', owner: 'Equipo de desarrollo de la aplicación',
+    steps: [
+      'Reproducir el hallazgo en preproducción con la petición del escáner (sin datos reales).',
+      'Usar consultas parametrizadas u ORM; nunca concatenar entrada del usuario en SQL, comandos, plantillas ni rutas.',
+      'Validar la entrada en el servidor con listas de permitidos y tipos estrictos.',
+      'Ejecutar la aplicación y su cuenta de base de datos con el mínimo privilegio.',
+      'Como contención mientras se corrige, regla específica en el WAF para el parámetro afectado.',
+      'Añadir una prueba automática (SAST o DAST en la CI) que falle si vuelve a aparecer.',
+    ],
+    verify: 'Repetir el escaneo activo de ZAP o Burp sobre la URL y el parámetro afectados y adjuntar el resultado sin alertas.',
+    reference: 'https://cheatsheetseries.owasp.org/cheatsheets/Injection_Prevention_Cheat_Sheet.html',
+  }),
+  web_xss: G({
+    key: 'web_xss', title: 'Corregir el cross-site scripting', owner: 'Equipo de desarrollo de la aplicación',
+    steps: [
+      'Codificar la salida según el contexto (HTML, atributo, JavaScript, URL) con la función del framework.',
+      'Evitar insertar HTML sin sanear (innerHTML, dangerouslySetInnerHTML, |safe); si es imprescindible, sanear con una librería mantenida.',
+      'Publicar una Content-Security-Policy sin unsafe-inline y con nonces o hashes.',
+      'Marcar las cookies de sesión como HttpOnly, Secure y SameSite.',
+    ],
+    verify: 'Repetir el escaneo de ZAP o Burp sobre la URL afectada y comprobar la cabecera Content-Security-Policy en la respuesta.',
+    reference: 'https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html',
+  }),
+  web_hardening: G({
+    key: 'web_hardening', title: 'Bastionar la aplicación web', owner: 'Equipo de desarrollo / Sistemas',
+    steps: [
+      'Añadir las cabeceras de seguridad que falten (Content-Security-Policy, Strict-Transport-Security, X-Content-Type-Options, frame-ancestors).',
+      'Configurar las cookies con HttpOnly, Secure y SameSite.',
+      'Retirar banners de versión, páginas de error detalladas y ficheros de ejemplo o copias de seguridad publicados.',
+      'Revisar la configuración TLS y redirigir todo el tráfico a HTTPS.',
+    ],
+    verify: 'curl -sI https://app.example | grep -iE "strict-transport|content-security|x-content-type|set-cookie"',
+    reference: 'https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Headers_Cheat_Sheet.html',
+  }),
+  ad_hygiene: G({
+    key: 'ad_hygiene', title: 'Corregir la regla de higiene del directorio activo', owner: 'Identidad / Directorio Activo',
+    steps: [
+      'Leer el detalle de la regla en el informe de PingCastle y el objeto afectado.',
+      'Aplicar la corrección recomendada en un entorno de pruebas y después en producción, dentro del proceso de cambios.',
+      'Documentar la excepción si la regla no puede corregirse y añadir supervisión.',
+    ],
+    verify: 'PingCastle.exe --healthcheck --server corp.example   # la regla ya no aparece y la puntuación baja',
+    reference: 'https://www.pingcastle.com/documentation/',
+  }),
   identity_generic: G({
     key: 'identity_generic', title: 'Corregir el problema de identidad', owner: 'Identidad / Directorio Activo',
     steps: ['Aplicar el principio de privilegio mínimo a la cuenta o grupo afectado.', 'Rotar las credenciales expuestas.', 'Añadir supervisión de su uso.'],

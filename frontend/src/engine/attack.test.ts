@@ -28,7 +28,7 @@ describe('catálogo', () => {
 describe('inferencia', () => {
   it('cada guía específica de remediation.ts produce al menos una técnica', () => {
     for (const key of Object.keys(GUIDES)) {
-      if (key === 'patch_cve' || key === 'weak_config') continue;
+      if (['patch_cve', 'weak_config', 'web_hardening', 'ad_hygiene'].includes(key)) continue; // genéricas: deciden el título o el tipo
       expect(inferAttack('—', null, 'configuracion', key).length, key).toBeGreaterThan(0);
     }
   });

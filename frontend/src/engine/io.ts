@@ -6,6 +6,7 @@ import { guideIn } from './remediation';
 import { slaInfo } from './sla';
 import { fixPlan } from './simulate';
 import { CONTROLS, controlsFor } from './controls';
+import { parseRetest, parseValidation, retestStats } from './retest';
 import { PROFILE_IDS } from './constants';
 import type { IntelMeta } from './intel';
 import type { Asset, AssetType, Band, EngineResult, Finding, FindingKind, FindingSource, FindingStatus, ManualEdge, NetworkRange, ProfileId, RiskException, SlaPolicy } from './types';
@@ -56,6 +57,8 @@ export interface ImportLog {
   newFindings: number;
   updated: number;
   reopened: number;
+  /** Mitigados que el escaneo ya no ve y quedan verificados (retest). */
+  verified?: number;
 }
 
 export interface Snapshot {
@@ -80,7 +83,7 @@ const ASSET_TYPES: AssetType[] = ['servidor', 'estacion', 'aplicacion_web', 'bas
 const KINDS: FindingKind[] = ['cve', 'configuracion', 'identidad'];
 const STATUSES: FindingStatus[] = ['abierto', 'validado', 'no_explotable', 'mitigado', 'aceptado'];
 const CVE_RE = /^CVE-\d{4}-\d{4,7}$/i;
-const SOURCES: FindingSource[] = ['manual', 'csv', 'nmap', 'bloodhound', 'nessus', 'openvas', 'nuclei', 'trivy', 'sarif', 'adauditor'];
+const SOURCES: FindingSource[] = ['manual', 'csv', 'nmap', 'bloodhound', 'nessus', 'openvas', 'nuclei', 'trivy', 'sarif', 'adauditor', 'zap', 'burp', 'pingcastle', 'certipy'];
 const ATTACK_RE = /^T\d{4}(\.\d{3})?$/;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -250,6 +253,10 @@ function optionalFields(raw: Record<string, unknown>): Partial<Finding> {
   if (attack.length) out.attack = attack;
   const ex = parseException(raw.exception);
   if (ex) out.exception = ex;
+  const val = parseValidation(raw.validation);
+  if (val) out.validation = val;
+  const rt = parseRetest(raw.retest);
+  if (rt && str(raw.status) === 'mitigado') out.retest = rt;
   return out;
 }
 
@@ -358,7 +365,7 @@ function parseImportLog(r: Record<string, unknown>): ImportLog | null {
   const at = str(r.at, 10);
   if (!SOURCES.includes(source) || !DATE_RE.test(at)) return null;
   const n = (x: unknown) => Math.max(0, Math.round(num(x) ?? 0));
-  return { at, source, tool: str(r.tool, 80), file: str(r.file, 120), newAssets: n(r.newAssets), newFindings: n(r.newFindings), updated: n(r.updated), reopened: n(r.reopened) };
+  return { at, source, tool: str(r.tool, 80), file: str(r.file, 120), newAssets: n(r.newAssets), newFindings: n(r.newFindings), updated: n(r.updated), reopened: n(r.reopened), ...(n(r.verified) ? { verified: n(r.verified) } : {}) };
 }
 
 function parseSnapshot(r: Record<string, unknown>): Snapshot | null {
@@ -493,7 +500,7 @@ export function githubIssues(findings: Finding[], assets: Asset[], result: Engin
   });
 }
 
-export function reportMarkdown(project: Pick<Project, 'name' | 'demo'> & Partial<Pick<Project, 'profile' | 'intel' | 'snapshots' | 'slaPolicy' | 'ens' | 'rosetta'>>, findings: Finding[], assets: Asset[], result: EngineResult, date = new Date(), author = '', lang: Lang = 'es'): string {
+export function reportMarkdown(project: Pick<Project, 'name' | 'demo'> & Partial<Pick<Project, 'profile' | 'intel' | 'snapshots' | 'slaPolicy' | 'ens' | 'rosetta' | 'imports'>>, findings: Finding[], assets: Asset[], result: EngineResult, date = new Date(), author = '', lang: Lang = 'es'): string {
   const L = (es: string, en: string) => (lang === 'en' ? en : es);
   const s = result.summary;
   const fById = new Map(findings.map((f) => [f.id, f]));
@@ -579,6 +586,19 @@ export function reportMarkdown(project: Pick<Project, 'name' | 'demo'> & Partial
         const clash = st === 'implantado' && e.serious > 0;
         return `| ${id} · ${mdEsc(lang === 'en' ? c.titleEn : c.title)} | ${c.ens.join(', ') || '—'} | ${c.iso27001.join(', ') || '—'} | ${c.nis2.join(', ') || '—'} | ${e.n} | ${e.serious}${project.rosetta ? ` | ${st ? ST[st] : '—'}${clash ? L(' ⚠ contradicción', ' ⚠ contradiction') : ''}` : ''} |`;
       }), '');
+  }
+  // Validación ofensiva y verificación de las correcciones
+  const validated = findings.filter((f) => f.validation);
+  const rs = retestStats(findings, project.imports ?? []);
+  if (validated.length || rs.pending || rs.verified || rs.reopened) {
+    const RES: Record<string, string> = { explotado: L('explotado', 'exploited'), no_explotable: L('no explotable', 'not exploitable'), mitigado_control: L('mitigado por un control', 'mitigated by a control') };
+    out.push(`## ${L('Validación y verificación', 'Validation and verification')}`, '',
+      L(`Correcciones pendientes de verificar: ${rs.pending} · verificadas: ${rs.verified} · reabiertas por un escaneo posterior: ${rs.reopened}${rs.reopenRate === null ? '' : ` (tasa de reapertura ${numIn(lang, rs.reopenRate * 100)} %)`}.`,
+        `Fixes pending verification: ${rs.pending} · verified: ${rs.verified} · reopened by a later scan: ${rs.reopened}${rs.reopenRate === null ? '' : ` (reopen rate ${numIn(lang, rs.reopenRate * 100)} %)`}.`), '');
+    if (validated.length) {
+      out.push(`| ${L('Hallazgo', 'Finding')} | ${L('Resultado', 'Result')} | ${L('Fecha', 'Date')} | ${L('Por', 'By')} | ATT&CK | ${L('Prueba', 'Proof')} |`, '|---|---|---|---|---|---|',
+        ...validated.map((f) => `| ${mdEsc(f.id)} · ${mdEsc(f.title)} | ${RES[f.validation!.result]} | ${f.validation!.at} | ${mdEsc(f.validation!.by)} | ${f.validation!.technique || '—'} | ${mdEsc(f.validation!.proof.slice(0, 160))} |`), '');
+    }
   }
   const accepted = findings.filter((f) => f.status === 'aceptado' && f.exception);
   if (accepted.length) {

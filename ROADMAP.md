@@ -20,7 +20,7 @@ al BIA (KAIROS) y a la formación (ARGOS) sin copiar datos a mano y sin que nada
 | 0.5.0 | 3 · Funciones | Importadores, excepciones de riesgo, histórico y tendencias, ATT&CK, simulación |
 | 0.6.0 ✓ | 4 · Ecosistema | Formato de intercambio común e integración con las 6 herramientas hermanas |
 | 1.0.0 ✓ | 5 · Lanzamiento | Documentación, guía práctica, capturas, publicación |
-| 1.1.0 | 6 · Validación ofensiva | ZAP, Burp, PingCastle y Certipy; evidencias de explotación y ciclo de *retest* |
+| 1.1.0 ✓ | 6 · Validación ofensiva | ZAP, Burp, PingCastle y Certipy; evidencias de explotación y ciclo de *retest* |
 | 1.2.0 | 7 · Ecosistema 2 | Las herramientas hermanas exportan e importan el sobre; bloque «Suite» común |
 | 1.3.0 | 8 · Superficie externa y amenaza | Exposición externa (Shodan, Censys, crt.sh, subfinder), ransomware y STIX 2.1 |
 | 1.4.0 | 9 · Gobierno de la remediación | Registro de riesgos, burndown, calendario de plazos (.ics) y cuadro para el comité |
@@ -186,16 +186,18 @@ Tareas:
 El ciclo CTEM se queda cojo si la fase de **validación** se limita a un botón. Esta fase trae los resultados de las
 herramientas con las que se valida de verdad y cierra el bucle con el *retest*.
 
-- [ ] **Importadores ofensivos**, con el mismo plan previo y la misma deduplicación que los escáneres:
+- [x] **Importadores ofensivos**, con el mismo plan previo y la misma deduplicación que los escáneres:
   - **OWASP ZAP** (informe JSON tradicional): alertas por URL con riesgo, confianza, CWE y referencias.
   - **Burp Suite** (exportación XML de *issues*): gravedad, certeza, ruta y evidencia en base64 recortada y sin cuerpo.
   - **PingCastle** (informe XML *healthcheck*): reglas de riesgo del directorio activo con su categoría y puntos.
   - **Certipy** (`find -json`): plantillas y CA vulnerables con su ESC (1 a 16) y quién puede inscribirse.
-- [ ] **Evidencia de validación** por hallazgo: quién, cuándo, técnica ATT&CK usada, resultado (explotado, no explotable, mitigado por un control) y prueba en texto (comando, captura descrita). Sale en el informe y en el anexo técnico.
-- [ ] **Retest**: un hallazgo mitigado pasa a «pendiente de verificar» hasta que un escaneo posterior no lo ve (verificado automáticamente) o el analista confirma la prueba. Indicador de **tasa de reapertura** en Movilización.
-- [ ] Ficheros de ejemplo, pruebas unitarias con entradas hostiles y pasos e2e de cada importador.
+- [x] **Evidencia de validación** por hallazgo: quién, cuándo, técnica ATT&CK usada, resultado (explotado, no explotable, mitigado por un control) y prueba en texto (comando, captura descrita). Sale en el informe y en el anexo técnico.
+- [x] **Retest**: un hallazgo mitigado pasa a «pendiente de verificar» hasta que un escaneo posterior no lo ve (verificado automáticamente) o el analista confirma la prueba. Indicador de **tasa de reapertura** en Movilización.
+- [x] Ficheros de ejemplo, pruebas unitarias con entradas hostiles y pasos e2e de cada importador.
 
 **Aceptación:** cada importador tiene su ejemplo y sus pruebas; un ciclo mitigar → reimportar → verificado queda cubierto por una prueba de motor y otra e2e; axe 0.
+
+**Estado: cerrada en 1.1.0.** La verificación automática se prueba en el motor (misma herramienta y mismo activo; otra herramienta u otro activo no verifican) y la confirmación manual en el e2e. Vitest 167, e2e 158/158 y axe 0 infracciones en 232 estados.
 
 ## Fase 7 · Ecosistema 2 (1.2.0)
 

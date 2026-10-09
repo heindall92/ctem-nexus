@@ -223,6 +223,14 @@ export function HelpModal() {
                       <p className="mt-1 text-xs text-ink-3">{L('Jira: Ajustes del sistema → Importación externa → CSV, con formato de fecha «yyyy-MM-dd». GitHub: el JSON trae un issue por ticket; se envía sin pasar los textos por la shell:', 'Jira: System settings → External system import → CSV, with date format “yyyy-MM-dd”. GitHub: the JSON has one issue per ticket; send it without passing the texts through the shell:')}</p>
                       <pre className="code mt-2">{"jq -c '.[]' github-issues.json | while read -r i; do\n  printf '%s' \"$i\" | gh api --method POST repos/ORG/REPO/issues --input -\ndone"}</pre>
                     </div>
+                    <div className="rounded-2xl border border-hairline bg-surface p-4" data-testid="ayuda-ofensiva">
+                      <div className="flex items-center gap-2 font-medium text-ink">
+                        <Terminal className="size-4 text-accent" />
+                        <span>{L('Validación ofensiva: ZAP · Burp · PingCastle · Certipy', 'Offensive validation: ZAP · Burp · PingCastle · Certipy')}</span>
+                      </div>
+                      <p className="mt-1 text-xs text-ink-3">{L('Se importan igual que un escáner. De Burp nunca se guardan la petición ni la respuesta (pueden llevar cookies); de ZAP, tampoco la carga del ataque. En cada hallazgo, «Validar» registra quién lo probó, cuándo, con qué técnica y el resultado; al mitigarlo queda pendiente de verificar hasta que un escaneo de la misma herramienta deja de verlo.', 'They are imported like a scanner. Burp requests and responses are never stored (they may carry cookies), nor is the ZAP attack payload. On each finding, “Validate” records who tested it, when, with which technique and the result; once mitigated it stays pending verification until a scan by the same tool no longer sees it.')}</p>
+                      <pre className="code mt-2">{'zap.sh -cmd -quickurl https://app -quickout zap.json\ncertipy find -u auditor@dominio -dc-ip 10.0.0.5 -json -output certipy\nPingCastle.exe --healthcheck --server dominio.local'}</pre>
+                    </div>
                     <SampleFiles />
                     <div className="rounded-2xl border border-hairline bg-surface p-4" data-testid="ayuda-ecosistema">
                       <div className="flex items-center gap-2 font-medium text-ink">

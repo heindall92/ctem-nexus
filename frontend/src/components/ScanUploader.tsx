@@ -61,7 +61,7 @@ export function ScanUploader({ onDone }: { onDone?: () => void }) {
       if (fmt === 'kev') setParsed({ kind: 'kev', file: file.name, kev: parseKev(text) });
       else if (fmt === 'epss') setParsed({ kind: 'epss', file: file.name, epss: parseEpss(text) });
       else if (wrongTool(fmt)) throw new Error(wrongTool(fmt));
-      else if (fmt === 'desconocido') throw new Error(L('Formato no reconocido. Admite Nessus (.nessus), OpenVAS/Greenbone (XML), Nuclei (JSONL/JSON), Trivy (JSON), SARIF 2.1.0, CISA KEV (JSON) y FIRST EPSS (CSV o .gz).', 'Unrecognised format. Supported: Nessus (.nessus), OpenVAS/Greenbone (XML), Nuclei (JSONL/JSON), Trivy (JSON), SARIF 2.1.0, CISA KEV (JSON) and FIRST EPSS (CSV or .gz).'));
+      else if (fmt === 'desconocido') throw new Error(L('Formato no reconocido. Admite Nessus (.nessus), OpenVAS/Greenbone (XML), Nuclei (JSONL/JSON), Trivy (JSON), SARIF 2.1.0, OWASP ZAP (JSON), Burp Suite (XML), PingCastle (XML), Certipy (JSON), CISA KEV (JSON) y FIRST EPSS (CSV o .gz).', 'Unrecognised format. Supported: Nessus (.nessus), OpenVAS/Greenbone (XML), Nuclei (JSONL/JSON), Trivy (JSON), SARIF 2.1.0, OWASP ZAP (JSON), Burp Suite (XML), PingCastle (XML), Certipy (JSON), CISA KEV (JSON) and FIRST EPSS (CSV or .gz).'));
       else {
         const parse = parseScan(text, file.name);
         if (!parse.items.length) throw new Error(L(`El informe de ${parse.tool} no trae resultados con severidad (${parse.skipped} informativos omitidos).`, `The ${parse.tool} report has no rated results (${parse.skipped} informational skipped).`));
@@ -117,7 +117,7 @@ export function ScanUploader({ onDone }: { onDone?: () => void }) {
         <div className="grid size-11 place-items-center rounded-xl bg-surface-2 text-accent"><FileSearch className="size-5" /></div>
         <p className="mt-3 text-[0.875rem] font-medium">{L('Arrastra aquí el informe o elígelo', 'Drop the report here or choose it')}</p>
         <p className="mt-1 max-w-[52ch] text-xs leading-relaxed text-ink-3">
-          Nessus · OpenVAS / Greenbone · Nuclei · Trivy · SARIF 2.1.0 · CISA KEV · FIRST EPSS (.csv / .gz).{' '}
+          Nessus · OpenVAS / Greenbone · Nuclei · Trivy · SARIF 2.1.0 · OWASP ZAP · Burp Suite · PingCastle · Certipy · CISA KEV · FIRST EPSS (.csv / .gz).{' '}
           {L('Se detecta el formato solo. El archivo no sale de este navegador.', 'The format is detected automatically. The file never leaves this browser.')}
         </p>
         <label className="btn btn-sm mt-4 cursor-pointer focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-accent">

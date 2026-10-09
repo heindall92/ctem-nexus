@@ -3,6 +3,7 @@ import { create } from 'zustand';
 import { DEMO_ANCHOR, DEMO_ASSETS, DEMO_EDGES, DEMO_FINDINGS, DEMO_RANGES } from '../data/demo';
 import { daysBetween, shiftDate } from '../engine/sla';
 import { acceptRisk, expireExceptions, isoDay, revokeRisk, type ExceptionInput } from '../engine/exceptions';
+import { statusForValidation, withStatus, type Validation } from '../engine/retest';
 import { applyIntel, type EpssCatalog, type IntelMeta, type KevCatalog } from '../engine/intel';
 import { MAX_ECO_LOG, MAX_IMPORTS, MAX_SNAPSHOTS, type EcoLog, type EnsLink, type ImportLog, type Project, type RosettaLinkData, type Snapshot } from '../engine/io';
 import type { ImportPlan } from '../engine/merge';
@@ -59,6 +60,10 @@ interface State extends Persisted {
   importNmapResult: (data: { assets?: Asset[]; findings?: Finding[]; ranges?: NetworkRange[]; edges?: ManualEdge[] }) => void;
   deleteFinding: (id: string) => void;
   setStatus: (id: string, status: FindingStatus) => void;
+  /** Guarda la evidencia de validación y ajusta el estado (explotado → validado; si no, no explotable). */
+  recordValidation: (id: string, v: Validation) => void;
+  /** El analista confirma que la corrección de un mitigado está verificada. */
+  confirmRetest: (id: string, by: string) => void;
   toggleStep: (findingId: string, step: number) => void;
   addEdge: (e: ManualEdge) => void;
   deleteEdge: (id: string) => void;
@@ -227,10 +232,13 @@ export const useStore = create<State>()((set, get) => ({
   }),
   deleteFinding: (id) => set((s) => ({ project: { ...s.project, findings: s.project.findings.filter((f) => f.id !== id) }, selectedFinding: null })),
   setStatus: (id, status) => set((s) => ({
-    project: {
-      ...s.project,
-      findings: s.project.findings.map((f) => (f.id === id ? { ...f, status, resolvedAt: status === 'mitigado' ? f.resolvedAt ?? new Date().toISOString().slice(0, 10) : null } : f)),
-    },
+    project: { ...s.project, findings: s.project.findings.map((f) => (f.id === id ? withStatus(f, status, today()) : f)) },
+  })),
+  recordValidation: (id, v) => set((s) => ({
+    project: { ...s.project, findings: s.project.findings.map((f) => (f.id === id ? { ...withStatus(f, statusForValidation(v.result), today()), validation: v } : f)) },
+  })),
+  confirmRetest: (id, by) => set((s) => ({
+    project: { ...s.project, findings: s.project.findings.map((f) => (f.id === id && f.status === 'mitigado' ? { ...f, retest: { state: 'verificado' as const, since: f.retest?.since ?? today(), verifiedAt: today(), by } } : f)) },
   })),
   toggleStep: (findingId, step) => set((s) => {
     const cur = s.project.progress?.[findingId] ?? [];
@@ -253,9 +261,12 @@ export const useStore = create<State>()((set, get) => ({
     for (const a of plan.newAssets) assets = upsert(assets, a);
     let findings = s.project.findings;
     for (const f of [...plan.updatedFindings, ...plan.newFindings]) findings = upsert(findings, f);
+    const verified = new Set(plan.verifiedIds ?? []);
+    if (verified.size) findings = findings.map((f) => (verified.has(f.id) && f.retest ? { ...f, retest: { ...f.retest, state: 'verificado' as const, verifiedAt: today(), by: plan.tool.slice(0, 60) } } : f));
     const log: ImportLog = {
       at: today(), source: plan.source, tool: plan.tool.slice(0, 80), file: file.slice(0, 120),
       newAssets: plan.newAssets.length, newFindings: plan.newFindings.length, updated: plan.updatedFindings.length, reopened: plan.reopened,
+      ...(verified.size ? { verified: verified.size } : {}),
     };
     return { project: { ...s.project, assets, findings, imports: [log, ...(s.project.imports ?? [])].slice(0, MAX_IMPORTS) } };
   }),

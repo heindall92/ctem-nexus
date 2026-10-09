@@ -61,6 +61,10 @@ export const REMEDIATION_CONTROLS: Record<string, string[]> = {
   patch_cve: ['OPE-04', 'OPE-05'],
   weak_config: ['OPE-01', 'OPE-02'],
   identity_generic: ['ACC-01', 'ACC-03'],
+  web_injection: ['DES-07', 'OPE-05'],
+  web_xss: ['DES-07', 'OPE-05'],
+  web_hardening: ['DES-07', 'OPE-01'],
+  ad_hygiene: ['OPE-01', 'ACC-02'],
 };
 
 /** Controles de un hallazgo: por su guía o, si no la tiene, por su tipo. */
@@ -92,6 +96,7 @@ const REMEDIATION_ARGOS: Record<string, Array<keyof typeof ARGOS_MACHINES>> = {
   kerberoast: ['ad'], unconstrained_delegation: ['ad'], adcs_esc1: ['ad'], smb_signing: ['ad'], laps: ['ad'], asrep_roast: ['ad'], llmnr: ['ad'], print_spooler: ['ad'],
   weak_credentials: ['baja', 'ad'], identity_generic: ['baja', 'ad'],
   tls_hardening: ['vulns'], weak_config: ['vulns', 'despliegue'],
+  web_injection: ['vulns', 'despliegue'], web_xss: ['vulns', 'despliegue'], web_hardening: ['vulns'], ad_hygiene: ['ad'],
 };
 
 export function argosFor(f: Pick<Finding, 'remediation' | 'kind'>): ArgosLink[] {

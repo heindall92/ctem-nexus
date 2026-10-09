@@ -22,7 +22,7 @@
   <img alt="Tailwind CSS 4" src="https://img.shields.io/badge/Tailwind%20CSS-4-06B6D4?style=flat&logo=tailwindcss&logoColor=white"/>
   <img alt="FastAPI opcional" src="https://img.shields.io/badge/API-FastAPI%20(opcional)-009688?style=flat&logo=fastapi&logoColor=white"/>
   <img alt="Un solo HTML" src="https://img.shields.io/badge/un%20solo-HTML%20sin%20servidor-2E8B57?style=flat"/>
-  <img alt="Pruebas 100% OK" src="https://img.shields.io/badge/pruebas-Vitest%20148%20%C2%B7%20Pytest%2027%20%C2%B7%20e2e%20149-2E8B57?style=flat"/>
+  <img alt="Pruebas 100% OK" src="https://img.shields.io/badge/pruebas-Vitest%20167%20%C2%B7%20Pytest%2027%20%C2%B7%20e2e%20158-2E8B57?style=flat"/>
   <img alt="Ecosistema GRC" src="https://img.shields.io/badge/ecosistema-Rosetta%20%C2%B7%20KAIROS%20%C2%B7%20Studio%20%C2%B7%20AD%20Auditor-6D5DFC?style=flat"/>
   <img alt="Iconos Lucide" src="https://img.shields.io/badge/iconos-Lucide-F56565?style=flat&logo=lucide&logoColor=white"/>
 </p>
@@ -82,7 +82,7 @@ Los escáneres devuelven cientos de CVE sin decir cuál importa hoy. CTEM-Nexus 
       <td valign="top"><code>├─</code> <img src="docs/assets/icons/check-check.svg" width="16" height="16" alt="" valign="middle"/> <code>pruebas_calidad:</code><br><br>
         <img src="docs/assets/stack/vitest.svg" height="48" alt="Vitest">
         <img src="docs/assets/stack/pytest.svg" height="48" alt="Pytest"><br>
-        <sub><code>Vitest 148 pruebas · Pytest 27 pruebas · e2e 149 · axe-core 0 infracciones en 220 estados · Paridad exacta TS ↔ Python (golden-demo, 3 perfiles y 4 políticas de plazos)</code></sub>
+        <sub><code>Vitest 167 pruebas · Pytest 27 pruebas · e2e 158 · axe-core 0 infracciones en 232 estados · Paridad exacta TS ↔ Python (golden-demo, 3 perfiles y 4 políticas de plazos)</code></sub>
       </td>
       <td valign="top"><code>╰─</code> <img src="docs/assets/icons/shield-check.svg" width="16" height="16" alt="" valign="middle"/> <code>seguridad_privacidad:</code><br><br>
         <img src="docs/assets/stack/csp.svg" height="48" alt="CSP estricta"><br>
@@ -92,7 +92,7 @@ Los escáneres devuelven cientos de CVE sin decir cuál importa hoy. CTEM-Nexus 
   </tbody>
   <tfoot>
     <tr>
-      <td colspan="2"><code>version: 1.0.0&nbsp;&nbsp;·&nbsp;&nbsp;motor: TS + FastAPI&nbsp;&nbsp;·&nbsp;&nbsp;Gartner CTEM · MITRE ATT&amp;CK · ecosistema GRC&nbsp;&nbsp;·&nbsp;&nbsp;pruebas: Vitest 148 · Pytest 27 · e2e 149&nbsp;&nbsp;·&nbsp;&nbsp;licencia: GPLv2</code></td>
+      <td colspan="2"><code>version: 1.1.0&nbsp;&nbsp;·&nbsp;&nbsp;motor: TS + FastAPI&nbsp;&nbsp;·&nbsp;&nbsp;Gartner CTEM · MITRE ATT&amp;CK · ecosistema GRC&nbsp;&nbsp;·&nbsp;&nbsp;pruebas: Vitest 167 · Pytest 27 · e2e 158&nbsp;&nbsp;·&nbsp;&nbsp;licencia: GPLv2</code></td>
     </tr>
   </tfoot>
 </table>
@@ -125,7 +125,7 @@ Las cinco fases del ciclo CTEM de Gartner. La [guía práctica](docs/GUIA.md) la
 | **1. Alcance** | Alcance y activos | Activos con su criticidad 1–5 (las **joyas de la corona** son la 5) y rangos en alcance. Importa un **Nmap XML** o trae la criticidad del **BIA de KAIROS**. |
 | **2. Descubrimiento** | Priorización | Importa **Nessus, OpenVAS, Nuclei, Trivy, SARIF, BloodHound** o **ENS AD Auditor** con vista previa y sin duplicar entre fuentes, y aplica **CISA KEV** y **FIRST EPSS**. |
 | **3. Priorización** | Priorización | Puntuación 0–100 explicada factor a factor, con perfiles **General, OT/industrial y Banca**. Ficha con guía paso a paso, técnicas ATT&CK, controles afectados y **riesgo aceptado** con caducidad. |
-| **4. Validación** | Rutas de ataque · Mapa ATT&CK | Grafo de rutas hacia las joyas, **puntos de estrangulamiento**, validado o no explotable, y matriz ATT&CK con capa para Navigator. |
+| **4. Validación** | Rutas de ataque · Mapa ATT&CK · Priorización | Grafo de rutas hacia las joyas y **puntos de estrangulamiento**; resultados de **OWASP ZAP, Burp Suite, PingCastle y Certipy**; **evidencia de validación** (quién, cuándo, técnica y prueba) y ***retest***: un mitigado queda pendiente hasta que un escaneo posterior deja de verlo. Matriz ATT&CK con capa para Navigator. |
 | **5. Movilización** | ¿Y si…? · Movilización · Ecosistema | Plan que más rutas rompe, **cumplimiento de SLA** (también por categoría ENS), ciclos con tendencia, informe para la dirección y tickets para **Jira** y **GitHub**. La evidencia sale hacia **Rosetta** y **Compliance Studio**. |
 
 ## <img src="docs/assets/icons/calculator.svg" width="20" height="20" valign="middle"/> Fórmula
@@ -238,6 +238,10 @@ CTEM-Nexus es el puente entre lo ofensivo y el GRC de un conjunto de herramienta
 | SARIF 2.1.0 | Semgrep, CodeQL… | Regla, `security-severity`, fichero y línea; el repositorio pasa a ser un activo |
 | CISA KEV | `known_exploited_vulnerabilities.json` | Marca KEV (solo añade, nunca quita la del analista) |
 | FIRST EPSS | `epss_scores-AAAA-MM-DD.csv(.gz)` | EPSS más alto entre los CVE del hallazgo |
+| OWASP ZAP | Informe JSON tradicional (`-quickout zap.json`) | Alertas por URL con riesgo, confianza y CWE; omite informativos y falsos positivos y **nunca** guarda la carga del ataque |
+| Burp Suite | Exportación XML de *issues* | Gravedad, certeza, ubicación y CWE; acepta su DTD inerte (las entidades se siguen rechazando) y **nunca** guarda peticiones ni respuestas |
+| PingCastle | Informe XML *healthcheck* | Reglas con puntos → hallazgos del dominio con guía y técnica ATT&CK |
+| Certipy | `certipy find -json` | Plantillas y CA vulnerables (ESC1 a ESC16) y quién puede inscribirse |
 
 ```bash
 nuclei -l objetivos.txt -jsonl -o nuclei.jsonl
@@ -335,10 +339,10 @@ ctem-nexus/
 
 ## <img src="docs/assets/icons/check-check.svg" width="20" height="20" valign="middle"/> Calidad y pruebas
 
-- **Motor TypeScript:** 148 pruebas con Vitest: fórmula y grafo, importadores con casos hostiles, deduplicación, KEV/EPSS, perfiles y políticas de plazos, riesgo aceptado, ATT&CK y capa de Navigator, simulación, SLA, exportaciones, ecosistema (sobre común, KAIROS con dependencias, ENS AD Auditor, Studio, Rosetta de ida y vuelta, Norvik), correspondencias sin texto ISO, diccionarios ES/EN y coherencia del repositorio.
+- **Motor TypeScript:** 167 pruebas con Vitest: fórmula y grafo, importadores con casos hostiles (ZAP, Burp con su DTD inerte, PingCastle y Certipy incluidos), validación ofensiva y *retest*, deduplicación, KEV/EPSS, perfiles y políticas de plazos, riesgo aceptado, ATT&CK y capa de Navigator, simulación, SLA, exportaciones, ecosistema (sobre común, KAIROS con dependencias, ENS AD Auditor, Studio, Rosetta de ida y vuelta, Norvik), correspondencias sin texto ISO, diccionarios ES/EN y coherencia del repositorio.
 - **Motor Python y API:** 27 pruebas con Pytest: endpoints, Nmap multipart, XML con entidades, fórmulas CSV, paridad con el fichero dorado en los tres perfiles y las cuatro políticas de plazos, y validación de los sobres de ejemplo contra el esquema JSON.
-- **Navegador (e2e):** 149 comprobaciones con Playwright sobre el HTML autocontenido: CSP, red bloqueada, todas las vistas e importadores, grafo, simulación, informe en PDF, Jira y GitHub validados, vista Ecosistema con los cinco importadores y las cuatro exportaciones, ficheros de ejemplo descargables, inglés completo en 18 pantallas y móvil sin recortes.
-- **Accesibilidad:** axe-core (WCAG 2.2 A/AA) en 220 estados (vistas, diálogos, formularios, vistas previas de importación, ayuda y búsqueda; claro y oscuro; 1440 y 390 px) y barrido de contraste propio: **0 infracciones**.
+- **Navegador (e2e):** 158 comprobaciones con Playwright sobre el HTML autocontenido: CSP, red bloqueada, todas las vistas e importadores (también ZAP, Burp, PingCastle y Certipy), validación registrada y *retest*, grafo, simulación, informe en PDF, Jira y GitHub validados, vista Ecosistema con los cinco importadores y las cuatro exportaciones, ficheros de ejemplo descargables, inglés completo en 18 pantallas y móvil sin recortes.
+- **Accesibilidad:** axe-core (WCAG 2.2 A/AA) en 232 estados (vistas, diálogos, formularios de validación y aceptación, vistas previas de importación, ayuda y búsqueda; claro y oscuro; 1440 y 390 px) y barrido de contraste propio: **0 infracciones**.
 - **Lighthouse 12** (con gzip, como en Pages; mediana de tres pasadas en la 1.0.0): rendimiento **96** · accesibilidad 100 · buenas prácticas 100 · SEO 100. Las vistas se cargan bajo demanda; el HTML autocontenido, que lo lleva todo en un fichero, da 94.
 
 ## <img src="docs/assets/icons/list-checks.svg" width="20" height="20" valign="middle"/> Limitaciones conocidas
@@ -347,7 +351,7 @@ ctem-nexus/
 - Hay siete acentos: rosa, solar, glaciar, orquídea (malva), verde bosque, azul eléctrico y rojo. El modo claro arranca en azul eléctrico; orquídea se aplica al elegirla.
 - La barra lateral es de escritorio. En pantallas estrechas la navegación pasa a la barra inferior.
 - Los importadores interpretan el fichero en el navegador. No ejecutan el escáner, no consultan el directorio ni descargan catálogos: KEV y EPSS los aportas tú.
-- Las técnicas ATT&CK se infieren por heurística (guía, título y CVE) sobre un catálogo de 50 técnicas Enterprise v14; el analista puede fijarlas a mano en cada hallazgo.
+- Las técnicas ATT&CK se infieren por heurística (guía, título y CVE) sobre un catálogo de 53 técnicas Enterprise v14 (AD CS, DCSync y GPO incluidas); el analista puede fijarlas a mano en cada hallazgo.
 - El motor de puntuación no cambia con el tema ni con el idioma. La fórmula publicada en este README es la del código.
 
 - Los plazos por categoría ENS son una propuesta orientativa: el ENS no fija días. Puedes volver a la política estándar en un clic.
@@ -355,7 +359,7 @@ ctem-nexus/
 
 ## <img src="docs/assets/icons/route.svg" width="20" height="20" valign="middle"/> Hoja de ruta
 
-Las fases 0 a 5 están cerradas: de la higiene del repositorio a la 1.0.0 con ecosistema, guía y rendimiento. Lo que viene después (1.1 en adelante) está en [ROADMAP.md](ROADMAP.md); los cambios de cada versión, en [CHANGELOG.md](CHANGELOG.md), y cómo colaborar, en [CONTRIBUTING.md](CONTRIBUTING.md).
+Las fases 0 a 6 están cerradas: de la higiene del repositorio a la 1.1.0 con validación ofensiva y *retest*. Lo que viene (ecosistema 2, superficie externa, gobierno y riesgo en euros) está en [ROADMAP.md](ROADMAP.md); los cambios de cada versión, en [CHANGELOG.md](CHANGELOG.md), y cómo colaborar, en [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Licencia e independencia
 

@@ -62,6 +62,15 @@ def states(page, mobile):
     page.get_by_test_id("importador-escaner").locator('input[type="file"]').set_input_files(str(ROOT / "shared" / "samples" / "epss-ejemplo.csv"))
     page.get_by_test_id("plan-inteligencia").wait_for(); yield "ingesta/epss-plan"
     page.get_by_role("button", name="Cerrar ventana").click()
+    J(f"{S}.selectFinding('H-002')")
+    page.get_by_role("dialog").get_by_role("button", name="Validar").click()
+    page.get_by_test_id("form-validacion").get_by_role("button", name="Guardar validación").click(); yield "validacion/formulario-errores"
+    page.get_by_test_id("form-validacion").get_by_role("textbox", name="Probado por").fill("Equipo rojo")
+    page.get_by_test_id("form-validacion").locator("textarea").fill("Ejecución remota confirmada en preproducción.")
+    page.get_by_test_id("form-validacion").get_by_role("button", name="Guardar validación").click(); yield "detalle/validacion"
+    page.keyboard.press("Escape"); J(f"{S}.selectFinding(null)")
+    J(f"{S}.setStatus('H-003', 'mitigado')"); J(f"{S}.selectFinding('H-003')"); yield "detalle/retest-pendiente"
+    page.keyboard.press("Escape"); J(f"{S}.selectFinding(null)")
     J(f"{S}.setView('mitre')")
     page.locator("[data-testid^=tecnica-]:visible").first.click(); yield "attack/ficha-tecnica"
     page.keyboard.press("Escape")

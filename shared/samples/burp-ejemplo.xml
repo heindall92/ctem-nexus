@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+<!DOCTYPE issues [
+<!ELEMENT issues (issue*)>
+<!ATTLIST issues burpVersion CDATA "">
+<!ATTLIST issues exportTime CDATA "">
+<!ELEMENT issue (serialNumber, type, name, host, path, location, severity, confidence, issueBackground?, remediationBackground?, references?, vulnerabilityClassifications?, issueDetail?, issueDetailItems?, remediationDetail?, requestresponse*, collaboratorEvent*, infiltratorEvent*, staticAnalysis*, dynamicAnalysis*, prototypePollution*)>
+<!ELEMENT serialNumber (#PCDATA)>
+<!ELEMENT type (#PCDATA)>
+<!ELEMENT name (#PCDATA)>
+<!ELEMENT host (#PCDATA)>
+<!ATTLIST host ip CDATA "">
+]>
+<issues burpVersion="2026.8" exportTime="Wed Sep 16 09:00:00 CEST 2026">
+  <issue>
+    <serialNumber>1001</serialNumber>
+    <type>1049088</type>
+    <name>SQL injection</name>
+    <host ip="203.0.113.10">https://portal.meridiano.example</host>
+    <path><![CDATA[/pedidos]]></path>
+    <location><![CDATA[/pedidos [id URL parameter]]]></location>
+    <severity>High</severity>
+    <confidence>Certain</confidence>
+    <issueBackground><![CDATA[<p>SQL injection vulnerabilities arise when user-controllable data is incorporated into database SQL queries in an unsafe manner.</p>]]></issueBackground>
+    <vulnerabilityClassifications><![CDATA[<ul><li><a href="https://cwe.mitre.org/data/definitions/89.html">CWE-89: Improper Neutralization of Special Elements used in an SQL Command</a></li></ul>]]></vulnerabilityClassifications>
+    <issueDetail><![CDATA[The <b>id</b> URL parameter appears to be vulnerable to SQL injection attacks.]]></issueDetail>
+    <requestresponse>
+      <request method="GET" base64="true"><![CDATA[R0VUIC9wZWRpZG9zP2lkPTcnIEhUVFAvMS4xDQpDb29raWU6IHNlc3Npb249U0VDUkVUTyENCg0K]]></request>
+      <response base64="true"><![CDATA[SFRUUC8xLjEgNTAwIEVycm9yDQoNCg==]]></response>
+    </requestresponse>
+  </issue>
+  <issue>
+    <serialNumber>1002</serialNumber>
+    <type>5245344</type>
+    <name>Cookie without HttpOnly flag set</name>
+    <host ip="203.0.113.10">https://portal.meridiano.example</host>
+    <path><![CDATA[/login]]></path>
+    <location><![CDATA[/login]]></location>
+    <severity>Low</severity>
+    <confidence>Firm</confidence>
+    <issueDetail><![CDATA[The following cookie was issued by the application and does not have the HttpOnly flag set: <b>session</b>]]></issueDetail>
+  </issue>
+  <issue>
+    <serialNumber>1003</serialNumber>
+    <type>8389632</type>
+    <name>Strict transport security not enforced</name>
+    <host ip="203.0.113.10">https://portal.meridiano.example</host>
+    <path><![CDATA[/]]></path>
+    <location><![CDATA[/]]></location>
+    <severity>Information</severity>
+    <confidence>Certain</confidence>
+  </issue>
+</issues>
