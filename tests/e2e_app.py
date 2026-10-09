@@ -105,7 +105,7 @@ def escritorio(b, tmp):
     det = J(f"{S}.project.findings.find(f => f.id === 'H-001').detectedAt")
     check("las fechas de la demo se desplazan a hoy (no envejece)", det == "2026-09-24", det)
 
-    for nombre, vista in [("Alcance y activos", "alcance"), ("Priorización", "priorizacion"), ("Rutas de ataque", "rutas"), ("Mapa ATT&CK", "mitre"), ("¿Y si…?", "simulacion"), ("Movilización", "movilizacion"), ("Ajustes y datos", "ajustes"), ("Inicio", "panel")]:
+    for nombre, vista in [("Alcance y activos", "alcance"), ("Priorización", "priorizacion"), ("Rutas de ataque", "rutas"), ("Mapa ATT&CK", "mitre"), ("¿Y si…?", "simulacion"), ("Movilización", "movilizacion"), ("Ecosistema", "ecosistema"), ("Ajustes y datos", "ajustes"), ("Inicio", "panel")]:
         nav(page, nombre)
         check(f"navegación a {nombre}", J(f"{S}.view") == vista and page.get_by_role("navigation", name="Secciones").get_by_role("button", name=nombre).get_attribute("aria-current") == "page")
 
@@ -126,7 +126,7 @@ def escritorio(b, tmp):
     acciones.first.get_by_role("button").click()
     check("una acción abre su hallazgo en Priorización", J(f"{S}.view") == "priorizacion" and J(f"{S}.selectedFinding") is not None)
     page.keyboard.press("Escape")
-    for nombre in ["Inicio", "Alcance y activos", "Priorización", "Rutas de ataque", "Mapa ATT&CK", "¿Y si…?", "Movilización", "Ajustes y datos"]:
+    for nombre in ["Inicio", "Alcance y activos", "Priorización", "Rutas de ataque", "Mapa ATT&CK", "¿Y si…?", "Movilización", "Ecosistema", "Ajustes y datos"]:
         nav(page, nombre)
         h1 = page.locator("h1")
         if h1.count() != 1:
@@ -353,6 +353,8 @@ def escritorio(b, tmp):
     informe = pathlib.Path(d.value.path()).read_text(encoding="utf-8")
     check("el informe Markdown incluye perfil, cinco acciones y riesgos aceptados", all(x in informe for x in ("Perfil de ponderación", "## Cinco acciones", "## Riesgos aceptados")))
 
+    ecosistema(page, J)
+
     # Pasos de remediación con casillas: se guardan en el proyecto
     J(f"{S}.setView('priorizacion')"); J(f"{S}.selectFinding('H-001')")
     detalle = page.get_by_role("dialog")
@@ -424,7 +426,7 @@ def escritorio(b, tmp):
     # Inglés completo: ninguna vista, detalle, formulario ni pestaña de ayuda conserva texto de interfaz en español
     J(f"{S}.loadDemo()")
     restos = {}
-    for v in ["panel", "alcance", "priorizacion", "rutas", "mitre", "simulacion", "movilizacion", "ajustes"]:
+    for v in ["panel", "alcance", "priorizacion", "rutas", "mitre", "simulacion", "movilizacion", "ecosistema", "ajustes"]:
         J(f"{S}.setView('{v}')")
         restos[v] = restos_en_espanol(page)
     J(f"{S}.setView('mitre')"); page.locator("[data-testid^=tecnica-]:visible").first.click()
@@ -442,11 +444,89 @@ def escritorio(b, tmp):
         restos[f"ayuda/{t}"] = restos_en_espanol(page)
     J(f"{S}.setHelpOpen(false)")
     sucios = {k: v[:3] for k, v in restos.items() if v}
-    check("en inglés no queda texto de interfaz en español (17 pantallas)", not sucios, sucios)
+    check("en inglés no queda texto de interfaz en español (18 pantallas)", not sucios, sucios)
     J(f"{S}.setLang('es')")
 
     check("sin errores de consola ni peticiones externas", not problemas, problemas[:5])
     ctx.close()
+
+
+ECO = ROOT / "shared" / "samples" / "ecosistema"
+
+
+def ecosistema(page, J):
+    """Fase 4: KAIROS, Compliance Studio, ENS AD Auditor, Rosetta y Norvik por fichero, con vista previa antes de aplicar."""
+    J(f"{S}.loadDemo()")
+    nav(page, "Ecosistema")
+    zona = page.get_by_test_id("eco-importar")
+    entrada = zona.locator('input[type="file"]')
+    check("Ecosistema: seis herramientas con lo que reciben y envían", all(page.get_by_test_id(f"eco-tool-{t}").count() == 1 for t in ("rosetta", "studio", "kairos", "adauditor", "norvik", "argos")))
+    # Fichero que no es del ecosistema
+    entrada.set_input_files({"name": "otro.json", "mimeType": "application/json", "buffer": b'{"hola": 1}'})
+    zona.get_by_role("alert").wait_for()
+    check("un JSON ajeno se rechaza con un mensaje", zona.get_by_role("alert").count() == 1 and "No es un fichero del ecosistema" in zona.get_by_role("alert").inner_text())
+    # KAIROS: criticidad desde el BIA
+    antes = J(f"{S}.project.assets.find(a => a.id === 'a04').criticality")
+    entrada.set_input_files(str(ECO / "kairos-meridiano.json"))
+    prev = page.get_by_test_id("eco-kairos")
+    prev.locator("tbody tr").first.wait_for()
+    check("KAIROS: vista previa con 6 activos emparejados sin tocar el proyecto", prev.locator("tbody tr").count() == 6 and J(f"{S}.project.assets.find(a => a.id === 'a04').criticality") == antes, (prev.locator("tbody tr").count(), antes, J(f"{S}.project.assets.find(a => a.id === 'a04').criticality")))
+    prev.get_by_label("Activo de CTEM-Nexus para Exchange OWA (correo)").select_option("")
+    prev.get_by_role("button", name="Aplicar criticidades").click()
+    check("KAIROS: APP01 sube a criticidad 5 y queda etiquetado; el desvinculado no", J(f"{S}.project.assets.find(a => a.id === 'a04').criticality") == 5 and "kairos:A-04" in J(f"{S}.project.assets.find(a => a.id === 'a04').tags") and not any(t.startswith("kairos:") for t in J(f"{S}.project.assets.find(a => a.id === 'a02').tags")))
+    with page.expect_download() as d:
+        page.get_by_test_id("eco-tool-kairos").get_by_role("button", name="Riesgo de interrupción").click()
+    k = json.loads(pathlib.Path(d.value.path()).read_text(encoding="utf-8"))
+    check("KAIROS: el sobre de vuelta trae los 5 activos vinculados", k["format"] == "yrd-ecosistema" and k["tipo"] == "activos" and len(k["datos"]) == 5)
+    # Compliance Studio: categoría ENS → plazos
+    entrada.set_input_files(str(ECO / "studio-meridiano.json"))
+    page.get_by_test_id("eco-studio").get_by_role("button", name="Usar la categoría ENS").click()
+    check("Studio: categoría MEDIA y política de plazos ENS", J(f"{S}.project.ens.category") == "MEDIA" and J(f"{S}.project.slaPolicy") == "ens_media")
+    studio = page.get_by_test_id("eco-tool-studio")
+    studio.get_by_label("Activo de destino en Studio").fill("ACT-001")
+    with page.expect_download() as d:
+        studio.get_by_role("button", name="Evidencia técnica").click()
+    ev = json.loads(pathlib.Path(d.value.path()).read_text(encoding="utf-8"))
+    check("Studio: evidencia técnica en su formato y al activo elegido", ev["formato"] == "ens-studio-hallazgos" and ev["hallazgos"] and all(h["activoId"] == "ACT-001" for h in ev["hallazgos"]))
+    # ENS AD Auditor: hallazgos de identidad sobre el controlador de dominio
+    antes = J(f"{S}.project.findings.length")
+    entrada.set_input_files(str(ECO / "ens-ad-auditor-meridiano.json"))
+    ad = page.get_by_test_id("eco-adauditor")
+    ad.wait_for()
+    check("AD Auditor: avisa de datos de ejemplo y propone el DC", ad.get_by_role("status").count() == 1 and ad.get_by_role("combobox").input_value() == "a06")
+    ad.get_by_role("button", name="Importar hallazgos").click()
+    nuevos = J(f"{S}.project.findings.filter(f => f.id.startsWith('ADA-')).length")
+    check("AD Auditor: 6 alertas, sin duplicar las que ya estaban (se funden en el hallazgo existente)", nuevos >= 1 and J(f"{S}.project.findings.length") == antes + nuevos and J(f"{S}.project.findings.filter(f => (f.sources || []).includes('adauditor')).length") == 6, (nuevos, J(f"{S}.project.findings.length") - antes))
+    check("AD Auditor: queda en el registro de importaciones y de intercambios", J(f"{S}.project.imports[0].source") == "adauditor" and J(f"{S}.project.ecoLog.some(l => l.tool === 'ens-ad-auditor')"))
+    # Rosetta: evidencia por control y vuelta con los estados
+    with page.expect_download() as d:
+        page.get_by_test_id("eco-tool-rosetta").get_by_role("button", name=re.compile("Evidencia por control")).click()
+    ro = json.loads(pathlib.Path(d.value.path()).read_text(encoding="utf-8"))
+    check("Rosetta: sobre de hallazgos por control con identificadores ISO sin texto", ro["tipo"] == "hallazgos" and ro["datos"] and all(all(re.fullmatch(r"A\d+\.\d+", x) for x in c["iso27001"]) for c in ro["datos"]))
+    entrada.set_input_files(str(ECO / "rosetta-a-ctem.json"))
+    page.get_by_test_id("eco-rosetta").get_by_role("button", name="Vincular con Rosetta").click()
+    check("Rosetta: estados vinculados y contradicciones señaladas", J(f"Object.keys({S}.project.rosetta.estados).length") >= 100 and page.get_by_test_id("eco-contradicciones").locator("li").count() >= 1)
+    # Norvik: responsables por CSV
+    entrada.set_input_files(str(ECO / "responsables-norvik.csv"))
+    rsp = page.get_by_test_id("eco-responsables")
+    rsp.locator("tbody tr").first.wait_for()
+    check("Norvik: 3 cambios de responsable y el activo inexistente sin emparejar", rsp.locator("tbody tr").count() == 3 and "Servidor inexistente" in rsp.inner_text())
+    rsp.get_by_role("button", name="Aplicar responsables").click()
+    check("Norvik: responsables aplicados", J(f"{S}.project.assets.find(a => a.id === 'a01').owner") == "Lucía Romero (Product Owner web)")
+    with page.expect_download() as d:
+        page.get_by_test_id("eco-tool-norvik").get_by_role("button", name="Indicadores del ciclo").click()
+    nv = json.loads(pathlib.Path(d.value.path()).read_text(encoding="utf-8"))
+    check("Norvik: indicadores con índice, SLA y MTTR", {"indice_exposicion", "sla_cumplimiento", "mttr_dias"} <= {i["indicador"] for i in nv["datos"]})
+    check("el registro de intercambios guarda entradas y salidas", page.get_by_test_id("eco-registro").locator("tbody tr").count() >= 8)
+    # Ficha del hallazgo: controles con el estado de Rosetta y ARGOS
+    J(f"{S}.setView('priorizacion')"); J(f"{S}.selectFinding('H-001')")
+    det = page.get_by_role("dialog")
+    check("la ficha lista los controles afectados con ENS e ISO", "OPE-04" in det.get_by_test_id("controles-hallazgo").inner_text() and "op.exp.4" in det.get_by_test_id("controles-hallazgo").inner_text())
+    check("la ficha enlaza la máquina de ARGOS en otra pestaña", det.get_by_test_id("argos-hallazgo").get_by_role("link").first.get_attribute("href").startswith("https://heindall92.github.io/argos-grc/#maquina/") and det.get_by_test_id("argos-hallazgo").get_by_role("link").first.get_attribute("target") == "_blank")
+    page.keyboard.press("Escape")
+    # El proyecto exportado conserva el vínculo y se sanea al volver a cargarlo
+    p = json.loads(J(f"JSON.stringify({S}.project)"))
+    check("el proyecto guarda política de plazos, ENS, Rosetta y registro", p["slaPolicy"] == "ens_media" and p["ens"]["category"] == "MEDIA" and p["rosetta"]["estados"] and len(p["ecoLog"]) >= 8)
 
 
 def movil(b):
@@ -478,7 +558,7 @@ def movil(b):
       }
       return out.slice(0, 5);
     }"""
-    for v in ["panel", "alcance", "priorizacion", "rutas", "mitre", "simulacion", "movilizacion", "ajustes"]:
+    for v in ["panel", "alcance", "priorizacion", "rutas", "mitre", "simulacion", "movilizacion", "ecosistema", "ajustes"]:
         page.evaluate(f"{S}.setView('{v}')")
         page.wait_for_timeout(250)
         fuera = page.evaluate(recorte)

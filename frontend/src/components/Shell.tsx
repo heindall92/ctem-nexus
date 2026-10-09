@@ -27,6 +27,7 @@ import {
   SlidersHorizontal,
   Sun,
   User,
+  Blocks,
   X,
 } from 'lucide-react';
 import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
@@ -45,6 +46,7 @@ const NAV: Array<{ view: View; icon: ReactNode }> = [
   { view: 'mitre', icon: <Grid3x3 /> },
   { view: 'simulacion', icon: <FlaskConical /> },
   { view: 'movilizacion', icon: <ListChecks /> },
+  { view: 'ecosistema', icon: <Blocks /> },
 ];
 
 function initials(name: string) {
@@ -792,6 +794,9 @@ export function MobileTabBar() {
           </button>
           <button type="button" onClick={() => go('simulacion')} aria-current={view === 'simulacion' ? 'page' : undefined} className="flex h-11 items-center gap-2 rounded-xl px-3 text-sm text-ink active:scale-[0.97]">
             <FlaskConical className="size-4 text-accent" /> {t.simulacion}
+          </button>
+          <button type="button" onClick={() => go('ecosistema')} aria-current={view === 'ecosistema' ? 'page' : undefined} className="flex h-11 items-center gap-2 rounded-xl px-3 text-sm text-ink active:scale-[0.97]">
+            <Blocks className="size-4 text-accent" /> {t.ecosistema}
           </button>
           <button type="button" onClick={() => go('ajustes')} className="flex h-11 items-center gap-2 rounded-xl px-3 text-sm text-ink active:scale-[0.97]">
             <SettingsIcon className="size-4 text-accent" /> {t.ajustes}

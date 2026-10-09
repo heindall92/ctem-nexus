@@ -1,0 +1,23 @@
+{
+ "format": "yrd-ecosistema",
+ "version": 1,
+ "origen": {
+  "herramienta": "norvik",
+  "version": "1.0",
+  "generado": "2026-09-16T09:00:00Z"
+ },
+ "tipo": "responsables",
+ "proyecto": "Industrias Meridiano S.A. (ficticia)",
+ "datos": [
+  {
+   "activo": "Portal web de clientes",
+   "responsable": "Lucía Romero",
+   "rol": "Product Owner web"
+  },
+  {
+   "activo": "Citrix NetScaler Gateway",
+   "responsable": "Pablo Sanz",
+   "rol": "Responsable de Redes"
+  }
+ ]
+}

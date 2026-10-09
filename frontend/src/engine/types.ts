@@ -33,7 +33,7 @@ export type FindingKind = 'cve' | 'configuracion' | 'identidad';
 export type FindingStatus = 'abierto' | 'validado' | 'no_explotable' | 'mitigado' | 'aceptado';
 
 /** Origen de un hallazgo (importador o alta manual). */
-export type FindingSource = 'manual' | 'csv' | 'nmap' | 'bloodhound' | 'nessus' | 'openvas' | 'nuclei' | 'trivy' | 'sarif';
+export type FindingSource = 'manual' | 'csv' | 'nmap' | 'bloodhound' | 'nessus' | 'openvas' | 'nuclei' | 'trivy' | 'sarif' | 'adauditor';
 
 /** Aceptación formal del riesgo: el hallazgo sale de los abiertos hasta que caduca (y vuelve a abierto). */
 export interface RiskException {
@@ -90,12 +90,17 @@ export interface ManualEdge {
 
 export type ProfileId = 'defecto' | 'ot' | 'banca';
 
+/** Política de plazos de corrección por banda (la del ENS sale de la categoría del sistema). */
+export type SlaPolicy = 'estandar' | 'ens_basica' | 'ens_media' | 'ens_alta';
+
 export interface EngineInput {
   assets: Asset[];
   findings: Finding[];
   edges: ManualEdge[];
   /** Perfil de ponderación (por defecto, «defecto»). */
   profile?: ProfileId;
+  /** Política de plazos (por defecto, «estandar»). */
+  slaPolicy?: SlaPolicy;
 }
 
 export type Band = 'critica' | 'alta' | 'media' | 'baja';
@@ -178,6 +183,7 @@ export interface EngineResult {
   engine: 'ts' | 'python';
   version: string;
   profile: ProfileId;
+  slaPolicy: SlaPolicy;
   scored: ScoredFinding[];
   graph: GraphAnalysis;
   summary: Summary;

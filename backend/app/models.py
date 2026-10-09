@@ -10,6 +10,7 @@ AssetType = Literal["servidor", "estacion", "aplicacion_web", "base_datos", "con
 FindingKind = Literal["cve", "configuracion", "identidad"]
 FindingStatus = Literal["abierto", "validado", "no_explotable", "mitigado", "aceptado"]
 ProfileId = Literal["defecto", "ot", "banca"]
+SlaPolicy = Literal["estandar", "ens_basica", "ens_media", "ens_alta"]
 
 
 class CamelModel(BaseModel):
@@ -80,6 +81,7 @@ class EngineInput(CamelModel):
     findings: list[Finding] = Field(default_factory=list, max_length=20000)
     edges: list[ManualEdge] = Field(default_factory=list, max_length=5000)
     profile: ProfileId = "defecto"
+    sla_policy: SlaPolicy = "estandar"
 
     def to_engine(self) -> dict:
         """Diccionario camelCase que consume app.engine (idéntico al JSON de la interfaz)."""

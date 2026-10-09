@@ -20,7 +20,7 @@
   <img alt="Tailwind CSS 4" src="https://img.shields.io/badge/Tailwind%20CSS-4-06B6D4?style=flat&logo=tailwindcss&logoColor=white"/>
   <img alt="FastAPI opcional" src="https://img.shields.io/badge/API-FastAPI%20(opcional)-009688?style=flat&logo=fastapi&logoColor=white"/>
   <img alt="Un solo HTML" src="https://img.shields.io/badge/un%20solo-HTML%20sin%20servidor-2E8B57?style=flat"/>
-  <img alt="Pruebas 100% OK" src="https://img.shields.io/badge/pruebas-Vitest%20115%20%C2%B7%20Pytest%2022%20%C2%B7%20e2e%20127-2E8B57?style=flat"/>
+  <img alt="Pruebas 100% OK" src="https://img.shields.io/badge/pruebas-Vitest%20148%20%C2%B7%20Pytest%2027%20%C2%B7%20e2e%20148-2E8B57?style=flat"/>
   <img alt="Iconos Lucide" src="https://img.shields.io/badge/iconos-Lucide-F56565?style=flat&logo=lucide&logoColor=white"/>
 </p>
 
@@ -92,7 +92,7 @@ pesadas de auditoría.
       <td valign="top"><code>├─</code> <img src="docs/assets/icons/check-check.svg" width="16" height="16" alt="" valign="middle"/> <code>pruebas_calidad:</code><br><br>
         <img src="docs/assets/stack/vitest.svg" height="48" alt="Vitest">
         <img src="docs/assets/stack/pytest.svg" height="48" alt="Pytest"><br>
-        <sub><code>Vitest 115 pruebas · Pytest 22 pruebas · e2e 127 · axe-core 0 infracciones en 188 estados · Paridad exacta TS ↔ Python (golden-demo, 3 perfiles)</code></sub>
+        <sub><code>Vitest 148 pruebas · Pytest 27 pruebas · e2e 148 · axe-core 0 infracciones en 220 estados · Paridad exacta TS ↔ Python (golden-demo, 3 perfiles y 4 políticas de plazos)</code></sub>
       </td>
       <td valign="top"><code>╰─</code> <img src="docs/assets/icons/shield-check.svg" width="16" height="16" alt="" valign="middle"/> <code>seguridad_privacidad:</code><br><br>
         <img src="docs/assets/stack/csp.svg" height="48" alt="CSP estricta"><br>
@@ -102,7 +102,7 @@ pesadas de auditoría.
   </tbody>
   <tfoot>
     <tr>
-      <td colspan="2"><code>version: 0.5.1&nbsp;&nbsp;·&nbsp;&nbsp;motor: TS + FastAPI&nbsp;&nbsp;·&nbsp;&nbsp;Gartner CTEM · MITRE ATT&amp;CK&nbsp;&nbsp;·&nbsp;&nbsp;pruebas: Vitest 115 · Pytest 22 · e2e 127&nbsp;&nbsp;·&nbsp;&nbsp;licencia: GPLv2</code></td>
+      <td colspan="2"><code>version: 0.6.0&nbsp;&nbsp;·&nbsp;&nbsp;motor: TS + FastAPI&nbsp;&nbsp;·&nbsp;&nbsp;Gartner CTEM · MITRE ATT&amp;CK · ecosistema GRC&nbsp;&nbsp;·&nbsp;&nbsp;pruebas: Vitest 148 · Pytest 27 · e2e 148&nbsp;&nbsp;·&nbsp;&nbsp;licencia: GPLv2</code></td>
     </tr>
   </tfoot>
 </table>
@@ -119,6 +119,7 @@ pesadas de auditoría.
 - [Capturas](#capturas)
 - [Importar escáneres e inteligencia](#importar-escáneres-e-inteligencia)
 - [Ingesta activa con Nmap](#ingesta-activa-con-nmap)
+- [Ecosistema: Rosetta, Compliance Studio, KAIROS, ENS AD Auditor, Norvik y ARGOS](#ecosistema-rosetta-compliance-studio-kairos-ens-ad-auditor-norvik-y-argos)
 - [Arranque rápido](#arranque-rápido)
 - [Arquitectura](#arquitectura)
 - [Método de cálculo y scoring](#método-de-cálculo-y-scoring)
@@ -195,6 +196,7 @@ mindmap
 | <img src="docs/assets/icons/grid-3x3.svg" width="18"/> | **Mapa ATT&CK** | Matriz de 11 tácticas y 50 técnicas: cada celda toma el color de la peor banda de los hallazgos vivos que la habilitan; ficha con esos hallazgos, búsqueda por ID (Ctrl + K) y capa para ATT&CK Navigator. En el móvil, lista por táctica. |
 | <img src="docs/assets/icons/flask-conical.svg" width="18"/> | **¿Y si…?** | Marca hallazgos como corregidos sin tocar el proyecto y ve el antes y el después (índice, críticos, KEV, rutas, activos). Plan voraz que rompe más rutas por hallazgo y propone juntos los que solo cortan su arista a la vez. |
 | <img src="docs/assets/icons/file-text.svg" width="18"/> | **Movilización** | Informe ejecutivo con portada para imprimir o guardar en PDF ([ejemplo](docs/informe-ejemplo.pdf)), con cinco acciones, tendencia y riesgos aceptados; cumplimiento de SLA por prioridad y responsable; ciclos con tendencia; tickets con pasos, verificación y fecha límite en CSV, Markdown, Jira y GitHub Issues. |
+| <img src="docs/assets/icons/blocks.svg" width="18"/> | **Ecosistema** | Intercambio por fichero con las herramientas hermanas: criticidad desde el BIA de KAIROS, categoría ENS y plazos desde Compliance Studio, hallazgos de ENS AD Auditor, estado de los controles de Rosetta (con contradicciones) y responsables de Norvik; exporta evidencia por control, riesgo de interrupción, evidencia técnica e indicadores. Registro de intercambios. |
 | <img src="docs/assets/icons/settings.svg" width="18"/> | **Ajustes y datos** | Perfil de ponderación con su efecto en el proyecto, catálogos KEV/EPSS en uso y registro de importaciones, motor de cálculo (local o API FastAPI), exportación/importación completa en JSON y borrado seguro de datos. |
 
 ## <img src="docs/assets/icons/camera.svg" width="20" height="20" valign="middle"/> Capturas
@@ -299,6 +301,21 @@ nmap -sV --script vuln -oX escaneo_vulnerabilidades.xml 10.10.10.0/24
   - Detecta protocolos en texto plano (Telnet en puerto 23) y exposición de SMB (puerto 445).
   - Sugiere automáticamente los rangos de subred descubiertos para la fase de Alcance.
 
+## <img src="docs/assets/icons/blocks.svg" width="20" height="20" valign="middle"/> Ecosistema: Rosetta, Compliance Studio, KAIROS, ENS AD Auditor, Norvik y ARGOS
+
+CTEM-Nexus es el puente entre lo ofensivo y el GRC. Las herramientas no se llaman por red: el usuario mueve ficheros con un sobre común (`yrd-ecosistema`, versión 1), con [esquema JSON](shared/schemas/yrd-ecosistema.schema.json) y [especificación](docs/ECOSISTEMA.md). Cada importación enseña qué cambiará antes de aplicarlo.
+
+| Herramienta | CTEM-Nexus recibe | CTEM-Nexus envía |
+|---|---|---|
+| [Rosetta Multinorma](https://github.com/heindall92/rosetta_multinorma) | Estado de los 152 controles: si uno figura como implantado con hallazgos críticos o altos abiertos, se marca como contradicción | Hallazgos abiertos por control, con identificadores ENS, ISO/IEC 27001, NIS2, NIST CSF 2.0 y DORA (Rosetta los enseña y lanza la regla CO-23) |
+| [ENS Compliance Studio](https://github.com/heindall92/grc_ens_compliance_studio) | Categoría del sistema → plazos de corrección (ENS BÁSICA, MEDIA o ALTA) | Evidencia técnica en el formato que Studio ya importa |
+| [KAIROS](https://github.com/heindall92/kairos) | Funciones con RTO y MTPD → criticidad 1–5 de los activos que las soportan, también por dependencias | Riesgo de interrupción de cada activo del BIA |
+| [ENS AD Auditor](https://github.com/heindall92/ens_ad-auditor) | Alertas de directorio activo → hallazgos de identidad con técnica ATT&CK y medidas `op.acc` | — |
+| [Norvik](https://github.com/heindall92/Norvik_Gobernanza) | Responsables y roles (sobre o CSV) | Indicadores del ciclo (índice, SLA, MTTR, KEV, rutas e histórico) |
+| [ARGOS](https://github.com/heindall92/argos-grc) | — | «Practica esto en ARGOS» en cada hallazgo |
+
+La ida y vuelta con Rosetta se prueba en los dos repositorios con el mismo par de ficheros, y todos los ejemplos de [`shared/samples/ecosistema/`](shared/samples/ecosistema/) se validan contra el esquema.
+
 ## <img src="docs/assets/icons/terminal.svg" width="20" height="20" valign="middle"/> Arranque rápido
 
 ### Opción 1: Un solo fichero HTML (Recomendado)
@@ -371,10 +388,10 @@ Detalles completos y ejemplo resuelto en [`docs/SCORING.md`](docs/SCORING.md).
 
 ## <img src="docs/assets/icons/shield-check.svg" width="20" height="20" valign="middle"/> Calidad y pruebas
 
-- **Motor TypeScript:** 115 pruebas con Vitest (importadores de Nessus, OpenVAS, Nuclei, Trivy y SARIF con casos hostiles, deduplicación entre fuentes, KEV y EPSS, perfiles, aceptación de riesgo y caducidad, inferencia ATT&CK sin falsos positivos y capa de Navigator, simulación y plan voraz, cumplimiento de SLA, instantáneas, exportaciones a Jira y GitHub y, de antes, (fórmulas, clasificaciones, grafo, rutas, estrangulamientos, parseador Nmap XML, BloodHound, importaciones CSV/JSON, fichero dorado, rechazo de XML con entidades, plazos de SLA, impacto de cada corrección sobre las rutas, progreso de remediación, ficheros de ejemplo, explicaciones, guías y exportaciones en inglés, paridad de los diccionarios ES/EN y coherencia del repositorio).
-- **Motor Python y API:** 22 pruebas con Pytest (endpoints de FastAPI, carga multipart de Nmap, rechazo de XML con entidades, neutralización de fórmulas CSV, los tres perfiles de ponderación, riesgo aceptado y paridad con `shared/golden-demo.json`).
-- **Navegador (e2e):** 127 comprobaciones con Playwright sobre el HTML autocontenido (`tests/e2e_app.py`): CSP, red bloqueada, navegación, ingesta de Nmap real y con entidades, BloodHound, rutas que se cortan al validar, SLA vencidos, exportar y reimportar, diálogos con Escape y foco, fórmula de la ayuda igual a la del motor, franjas de exposición y tres acciones para hoy, zoom y «solo esta ruta» en el grafo, pasos con casillas, informe impreso en PDF, importación de Nessus y KEV con plan previo, aceptación de riesgo con sus reglas y su caducidad, perfiles, mapa ATT&CK con capa de Navigator validada, simulación que no altera el proyecto, ciclos, CSV de Jira y JSON de GitHub validados, tema, inglés completo en 17 pantallas y móvil con tarjetas y sin texto recortado en ninguna vista.
-- **Accesibilidad:** axe-core (WCAG 2.2 A/AA) en 188 estados (47 por combinación: vistas, diálogos, menús, formularios, resultados de ingesta, ayuda y búsqueda, en claro y oscuro, a 1440 y 390 px), más un barrido de contraste propio para lo que axe deja sin decidir: **0 infracciones** (`tests/a11y_app.py`), incluido el tamaño mínimo de 24 × 24 px de los objetivos táctiles. Ambas suites se ejecutan en la CI.
+- **Motor TypeScript:** 148 pruebas con Vitest (ecosistema: sobre común, detección de cada fichero, KAIROS con dependencias, ENS AD Auditor fundido sin duplicar, categoría ENS y plazos, evidencia para Studio y Rosetta, contradicciones, responsables, indicadores, ida y vuelta con Rosetta y correspondencias sin texto ISO; importadores de Nessus, OpenVAS, Nuclei, Trivy y SARIF con casos hostiles, deduplicación entre fuentes, KEV y EPSS, perfiles, aceptación de riesgo y caducidad, inferencia ATT&CK sin falsos positivos y capa de Navigator, simulación y plan voraz, cumplimiento de SLA, instantáneas, exportaciones a Jira y GitHub y, de antes, (fórmulas, clasificaciones, grafo, rutas, estrangulamientos, parseador Nmap XML, BloodHound, importaciones CSV/JSON, fichero dorado, rechazo de XML con entidades, plazos de SLA, impacto de cada corrección sobre las rutas, progreso de remediación, ficheros de ejemplo, explicaciones, guías y exportaciones en inglés, paridad de los diccionarios ES/EN y coherencia del repositorio).
+- **Motor Python y API:** 27 pruebas con Pytest (políticas de plazos con paridad, esquema `yrd-ecosistema` y validación de los sobres de ejemplo, endpoints de FastAPI, carga multipart de Nmap, rechazo de XML con entidades, neutralización de fórmulas CSV, los tres perfiles de ponderación, riesgo aceptado y paridad con `shared/golden-demo.json`).
+- **Navegador (e2e):** 148 comprobaciones con Playwright sobre el HTML autocontenido (`tests/e2e_app.py`): CSP, red bloqueada, navegación, ingesta de Nmap real y con entidades, BloodHound, rutas que se cortan al validar, SLA vencidos, exportar y reimportar, diálogos con Escape y foco, fórmula de la ayuda igual a la del motor, franjas de exposición y tres acciones para hoy, zoom y «solo esta ruta» en el grafo, pasos con casillas, informe impreso en PDF, importación de Nessus y KEV con plan previo, aceptación de riesgo con sus reglas y su caducidad, perfiles, mapa ATT&CK con capa de Navigator validada, simulación que no altera el proyecto, ciclos, CSV de Jira y JSON de GitHub validados, vista Ecosistema con los cinco importadores y las cuatro exportaciones, controles y ARGOS en la ficha del hallazgo, tema, inglés completo en 18 pantallas y móvil con tarjetas y sin texto recortado en ninguna vista.
+- **Accesibilidad:** axe-core (WCAG 2.2 A/AA) en 220 estados (55 por combinación, vista previa de cada importación del ecosistema incluida: vistas, diálogos, menús, formularios, resultados de ingesta, ayuda y búsqueda, en claro y oscuro, a 1440 y 390 px), más un barrido de contraste propio para lo que axe deja sin decidir: **0 infracciones** (`tests/a11y_app.py`), incluido el tamaño mínimo de 24 × 24 px de los objetivos táctiles. Ambas suites se ejecutan en la CI.
 - **Lighthouse 12** (servido con gzip, como en GitHub Pages; mediana de tres pasadas en la 0.5.1): rendimiento 93 · accesibilidad 100 · buenas prácticas 100 · SEO 100. En la 0.4.2 el rendimiento era 97; la diferencia son unos 110 KB más de código (importadores, ATT&CK y simulación) en el HTML único.
 - **Compilación e integridad:** TypeScript en modo estricto (`tsc -b`). La CSP del archivo único prohíbe scripts externos y evalúa hashes criptográficos.
 

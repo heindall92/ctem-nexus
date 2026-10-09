@@ -2,6 +2,28 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico. La hoja de ruta está en [ROADMAP.md](ROADMAP.md).
 
+## [0.6.0] - 2026-10-09
+
+Fase 4 de la hoja de ruta: integración con el ecosistema por fichero.
+
+### Añadido
+- **Vista Ecosistema** con las seis herramientas hermanas, lo que cada una envía y recibe, el estado del vínculo y un registro de intercambios (50 últimos, guardado en el proyecto).
+- **Sobre común `yrd-ecosistema`** (versión 1) con esquema JSON en `shared/schemas/` y especificación en `docs/ECOSISTEMA.md`.
+- **KAIROS → criticidad**: las funciones del BIA (RTO, o MTPD si falta) fijan la criticidad 1–5 de los activos que las soportan, también a través de las dependencias entre activos. Emparejado por etiqueta, IP o nombre, revisable fila a fila. **CTEM-Nexus → KAIROS**: riesgo de interrupción de cada activo del BIA.
+- **Compliance Studio → plazos**: la categoría del sistema (art. 40 y Anexo I del RD 311/2022) elige la política de plazos ENS BÁSICA, MEDIA o ALTA. La política es parte del motor, con paridad TS ↔ Python (motor 1.2.0). **CTEM-Nexus → Studio**: evidencia técnica en el formato `ens-studio-hallazgos` que Studio ya importa.
+- **ENS AD Auditor → hallazgos**: cada alerta llega con su guía, su CVSS equivalente al riesgo MAGERIT, sus técnicas ATT&CK y las medidas `op.acc` como evidencia; se funde con lo que ya había (fuente nueva `adauditor`).
+- **Rosetta**: evidencia por control unificado con identificadores de ENS, ISO/IEC 27001 (Anexo A), NIS2, NIST CSF 2.0 y DORA, y lectura del estado de los controles. Las **contradicciones** (control implantado con exposición crítica o alta) se ven en la vista Ecosistema, en la ficha del hallazgo y en el informe. Ida y vuelta probada en los dos repositorios.
+- **Norvik**: responsables por sobre o CSV (activo, responsable, rol) e indicadores del ciclo con histórico.
+- **Ficha del hallazgo**: controles afectados con sus identificadores por norma y su estado en Rosetta, y «Practica esto en ARGOS».
+- **Informe Markdown**: tabla de controles afectados y la política de plazos usada.
+- Ficheros de ejemplo en `shared/samples/ecosistema/` (entrada de cada herramienta y salida de CTEM-Nexus).
+
+### Cambiado
+- «Acerca de»: Rosetta con sus 15 normas y leyes, ENS AD Auditor con su web y Norvik descrito como lo que es.
+
+### Pruebas
+- Vitest 148, Pytest 27 (esquema y sobres de ejemplo incluidos), e2e 148/148 y axe-core 0 infracciones en 220 estados.
+
 ## [0.5.1] - 2026-10-08
 
 ### Corregido

@@ -4,13 +4,13 @@ import { DEMO_ANCHOR, DEMO_ASSETS, DEMO_EDGES, DEMO_FINDINGS, DEMO_RANGES } from
 import { daysBetween, shiftDate } from '../engine/sla';
 import { acceptRisk, expireExceptions, isoDay, revokeRisk, type ExceptionInput } from '../engine/exceptions';
 import { applyIntel, type EpssCatalog, type IntelMeta, type KevCatalog } from '../engine/intel';
-import { MAX_IMPORTS, MAX_SNAPSHOTS, type ImportLog, type Project, type Snapshot } from '../engine/io';
+import { MAX_ECO_LOG, MAX_IMPORTS, MAX_SNAPSHOTS, type EcoLog, type EnsLink, type ImportLog, type Project, type RosettaLinkData, type Snapshot } from '../engine/io';
 import type { ImportPlan } from '../engine/merge';
-import type { Asset, Finding, FindingStatus, ManualEdge, NetworkRange, ProfileId } from '../engine/types';
+import type { Asset, Finding, FindingStatus, ManualEdge, NetworkRange, ProfileId, SlaPolicy } from '../engine/types';
 import { setFormatLang } from '../lib/format';
 import { load, remove, save } from '../lib/storage';
 
-export type View = 'panel' | 'alcance' | 'priorizacion' | 'rutas' | 'mitre' | 'simulacion' | 'movilizacion' | 'ajustes';
+export type View = 'panel' | 'alcance' | 'priorizacion' | 'rutas' | 'mitre' | 'simulacion' | 'movilizacion' | 'ecosistema' | 'ajustes';
 
 export type Accent = 'rosa' | 'solar' | 'glaciar' | 'orquidea' | 'verde' | 'azul' | 'rojo';
 export const ACCENT_IDS: Accent[] = ['rosa', 'solar', 'glaciar', 'orquidea', 'verde', 'azul', 'rojo'];
@@ -77,6 +77,12 @@ interface State extends Persisted {
   /** Guarda una instantánea de cierre de ciclo (sustituye la del mismo día). */
   addSnapshot: (snap: Snapshot) => void;
   deleteSnapshot: (at: string) => void;
+  setSlaPolicy: (p: SlaPolicy) => void;
+  /** Sustituye los activos (criticidad desde KAIROS, responsables desde Norvik) y registra el intercambio. */
+  replaceAssets: (assets: Asset[], log: Omit<EcoLog, 'at'>) => void;
+  linkEns: (ens: Omit<EnsLink, 'at'> | null, policy: SlaPolicy, log: Omit<EcoLog, 'at'> | null) => void;
+  linkRosetta: (r: Omit<RosettaLinkData, 'at'> | null, log: Omit<EcoLog, 'at'> | null) => void;
+  logEco: (log: Omit<EcoLog, 'at'>) => void;
 }
 
 const KEY = 'ctem-nexus:v1';
@@ -269,7 +275,22 @@ export const useStore = create<State>()((set, get) => ({
     project: { ...s.project, snapshots: [...(s.project.snapshots ?? []).filter((x) => x.at !== snap.at), snap].sort((a, b) => a.at.localeCompare(b.at)).slice(-MAX_SNAPSHOTS) },
   })),
   deleteSnapshot: (at) => set((s) => ({ project: { ...s.project, snapshots: (s.project.snapshots ?? []).filter((x) => x.at !== at) } })),
+  setSlaPolicy: (slaPolicy) => set((s) => ({ project: { ...s.project, slaPolicy } })),
+  replaceAssets: (assets, log) => set((s) => ({ project: withLog({ ...s.project, assets }, log) })),
+  linkEns: (ens, slaPolicy, log) => set((s) => {
+    const project: Project = { ...s.project, slaPolicy };
+    if (ens) project.ens = { ...ens, at: today() }; else delete project.ens;
+    return { project: log ? withLog(project, log) : project };
+  }),
+  linkRosetta: (r, log) => set((s) => {
+    const project: Project = { ...s.project };
+    if (r) project.rosetta = { ...r, at: today() }; else delete project.rosetta;
+    return { project: log ? withLog(project, log) : project };
+  }),
+  logEco: (log) => set((s) => ({ project: withLog(s.project, log) })),
 }));
+
+const withLog = (p: Project, log: Omit<EcoLog, 'at'>): Project => ({ ...p, ecoLog: [{ ...log, at: today() }, ...(p.ecoLog ?? [])].slice(0, MAX_ECO_LOG) });
 
 const expiredText = (ids: string[], lang: 'es' | 'en') => (lang === 'en'
   ? `${ids.length} risk acceptance${ids.length === 1 ? '' : 's'} expired and reopened: ${ids.join(', ')}.`

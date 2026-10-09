@@ -40,7 +40,7 @@ export function Simulation() {
   const notify = useStore((s) => s.notify);
   const { result } = useResult();
 
-  const input = useMemo(() => ({ assets: project.assets, findings: project.findings, edges: project.edges, profile: project.profile ?? 'defecto' as const }), [project]);
+  const input = useMemo(() => ({ assets: project.assets, findings: project.findings, edges: project.edges, profile: project.profile ?? 'defecto' as const, slaPolicy: project.slaPolicy ?? 'estandar' as const }), [project]);
   const fixedSet = useMemo(() => new Set(fixed), [fixed]);
   const after = useMemo(() => simulate(input, fixed), [input, fixed]);
   const plan = useMemo(() => fixPlan(result, project.findings, 10), [result, project.findings]);

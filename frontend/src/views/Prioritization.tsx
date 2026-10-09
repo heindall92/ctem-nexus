@@ -1,9 +1,11 @@
-import { ExternalLink, FileSearch, FileSpreadsheet, Flame, Pencil, ShieldOff, Undo2, Plus, Radar, Search, Sparkles, Trash2, Upload, Users, Zap } from 'lucide-react';
+import { AlertTriangle, ExternalLink, FileSearch, FileSpreadsheet, Flame, Pencil, ShieldOff, Undo2, Plus, Radar, Search, Sparkles, Trash2, Upload, Users, Zap } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 import { BloodHoundUploader } from '../components/BloodHoundUploader';
 import { NmapUploader } from '../components/NmapUploader';
 import { ScanUploader } from '../components/ScanUploader';
 import { techniqueById, techniquesOf } from '../engine/attack';
+import { argosFor, argosUrl, CONTROLS, controlsFor } from '../engine/controls';
+import { isActive } from '../engine/engine';
 import { addDays, exceptionState, isoDay, MAX_ACCEPT_DAYS, validateException, type ExceptionError, type ExceptionInput } from '../engine/exceptions';
 import { CSV_TEMPLATE, importFindings } from '../engine/io';
 import { GUIDE_KEYS, guideIn } from '../engine/remediation';
@@ -323,6 +325,7 @@ function FindingDetail({ findingId }: { findingId: string }) {
           ))}
         </ol>
       </div>
+      <FindingControls finding={f} band={s.band} />
       <div>
         <h3 className="label mb-2 font-medium">{L('Referencias', 'References')}</h3>
         <ul className="flex flex-wrap gap-2">
@@ -335,6 +338,55 @@ function FindingDetail({ findingId }: { findingId: string }) {
         <p className="mt-2 text-xs text-ink-3">{L('Se abren en una pestaña nueva. CTEM-Nexus no consulta estas fuentes por su cuenta.', 'They open in a new tab. CTEM-Nexus never queries these sources by itself.')}</p>
       </div>
     </div>
+  );
+}
+
+/** Controles afectados (Rosetta) con sus identificadores por norma, el estado declarado en Rosetta y dónde practicarlo en ARGOS. */
+function FindingControls({ finding: f, band }: { finding: Finding; band: Band }) {
+  const L = useL();
+  const lang = useStore((st) => st.lang);
+  const rosetta = useStore((st) => st.project.rosetta);
+  const ids = controlsFor(f);
+  const ST: Record<string, string> = { implantado: L('implantado', 'implemented'), parcial: L('parcial', 'partial'), pendiente: L('pendiente', 'pending'), 'no-aplica': L('no aplica', 'not applicable') };
+  const serious = isActive(f) && (band === 'critica' || band === 'alta');
+  const argos = argosFor(f);
+  return (
+    <>
+      <div data-testid="controles-hallazgo">
+        <h3 className="label mb-2 font-medium">{L('Controles afectados', 'Affected controls')} <span className="font-normal text-ink-3">· Rosetta Multinorma</span></h3>
+        <ul className="flex flex-col gap-2">
+          {ids.map((id) => {
+            const c = CONTROLS[id];
+            const st = rosetta?.estados[id];
+            const clash = serious && st === 'implantado';
+            return (
+              <li key={id} className="rounded-xl bg-ground px-3 py-2.5 text-[0.8125rem] shadow-[inset_0_0_0_1px_var(--color-hairline)]">
+                <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                  <span className="num font-semibold">{id}</span>
+                  <span>{lang === 'en' ? c.titleEn : c.title}</span>
+                  {st && <span className="chip" style={clash ? { color: 'var(--color-alta)', background: 'color-mix(in oklab, var(--color-alta) 14%, transparent)' } : undefined}>{clash && <AlertTriangle aria-hidden />}{L('Rosetta', 'Rosetta')}: {ST[st]}</span>}
+                </div>
+                <p className="mt-1 text-xs leading-relaxed text-ink-3">
+                  {[c.ens.length ? `ENS ${c.ens.join(', ')}` : '', c.iso27001.length ? `ISO/IEC 27001 ${c.iso27001.join(', ')}` : '', c.nis2.length ? `NIS2 ${c.nis2.join(', ')}` : '', c.nist.length ? `NIST CSF ${c.nist.join(', ')}` : '', c.dora.length ? `DORA art. ${c.dora.join(', ')}` : ''].filter(Boolean).join(' · ')}
+                </p>
+                {clash && <p className="mt-1 text-xs text-alta">{L('Declarado implantado en Rosetta con este hallazgo abierto: revisa la declaración o corrígelo antes de la auditoría.', 'Declared implemented in Rosetta with this finding open: review the statement or fix it before the audit.')}</p>}
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+      <div data-testid="argos-hallazgo">
+        <h3 className="label mb-2 font-medium">{L('Practica esto en ARGOS', 'Practise this in ARGOS')}</h3>
+        <ul className="flex flex-col gap-1.5">
+          {argos.map((m) => (
+            <li key={m.id} className="text-[0.8125rem]">
+              <a className="inline-flex items-center gap-1 font-medium text-accent underline-offset-2 hover:underline" href={argosUrl(m.id)} target="_blank" rel="noopener noreferrer">{lang === 'en' ? m.nameEn : m.name}<ExternalLink className="size-3" aria-hidden /><span className="sr-only">{L('(se abre en otra pestaña)', '(opens in a new tab)')}</span></a>
+              <span className="text-ink-3"> · {lang === 'en' ? m.whyEn : m.why}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </>
   );
 }
 

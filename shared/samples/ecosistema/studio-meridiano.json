@@ -1,0 +1,77 @@
+{
+ "version": 1,
+ "proyecto": {
+  "organizacion": "Industrias Meridiano S.A. (ficticia)",
+  "nombre": "Plataforma de pedidos de la Administración",
+  "descripcion": "Meridiano suministra a organismos públicos y su plataforma de pedidos está en el alcance del ENS. Ejemplo para CTEM-Nexus."
+ },
+ "portada": {},
+ "categorizacion": [
+  {
+   "tipo": "Información",
+   "id": "I-01",
+   "nombre": "Pedidos y contratos con la Administración",
+   "responsable": "Directora Comercial",
+   "D": "",
+   "I": "MEDIO",
+   "C": "MEDIO",
+   "A": "MEDIO",
+   "T": "BAJO",
+   "justificacion": "Datos contractuales: un fallo causaría un perjuicio grave pero reparable."
+  },
+  {
+   "tipo": "Servicio",
+   "id": "S-01",
+   "nombre": "Plataforma de pedidos",
+   "responsable": "Responsable de Sistemas",
+   "D": "MEDIO",
+   "I": "",
+   "C": "",
+   "A": "",
+   "T": "",
+   "justificacion": "Tolera hasta 24 h de parada sin perjuicio muy grave."
+  }
+ ],
+ "soa": {},
+ "refuerzos": {},
+ "compensatorias": {},
+ "apetito": {},
+ "activos": [
+  {
+   "id": "ACT-001",
+   "nombre": "Portal web de clientes",
+   "tipo": "[SW]",
+   "soporta": [
+    "S-01"
+   ],
+   "descripcion": "Portal de pedidos",
+   "valoracion": {
+    "D": 6,
+    "I": 6,
+    "C": 5,
+    "A": 6,
+    "T": 3
+   }
+  },
+  {
+   "id": "CTEM",
+   "nombre": "Infraestructura analizada por CTEM-Nexus",
+   "tipo": "[HW]",
+   "soporta": [
+    "S-01"
+   ],
+   "descripcion": "Destino de la evidencia técnica que exporta CTEM-Nexus",
+   "valoracion": {
+    "D": 6,
+    "I": 6,
+    "C": 6,
+    "A": 6,
+    "T": 3
+   }
+  }
+ ],
+ "amenazas": [],
+ "salvaguardas": [],
+ "hallazgos": [],
+ "tratamiento": {}
+}

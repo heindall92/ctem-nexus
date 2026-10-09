@@ -5,12 +5,12 @@
  * con shared/golden-demo.json en las pruebas de los dos lados. Fórmula documentada en docs/SCORING.md. */
 import {
   BAND_LABEL, BAND_THRESHOLDS, CHOKE_MIN_PATHS, CHOKE_SHARE, DEFAULT_PROFILE, ENGINE_VERSION, EXPLOIT_PUBLIC_FLOOR,
-  INTERNET_ID, MAX_PATHS, MAX_PATH_DEPTH, NOT_EXPLOITABLE_FACTOR, PROFILES, PROXIMITY_HOPS, SLA_DAYS,
+  INTERNET_ID, MAX_PATHS, MAX_PATH_DEPTH, NOT_EXPLOITABLE_FACTOR, PROFILES, PROXIMITY_HOPS, SLA_DAYS, SLA_POLICIES, DEFAULT_SLA_POLICY,
   VALIDATED_BONUS, WEIGHTS, type Weights,
 } from './constants';
 import type {
   Asset, AttackPath, Band, ChokePoint, EngineInput, EngineResult, Factor, Finding, GraphAnalysis,
-  GraphEdge, GraphNode, ProfileId, ScoredFinding, Summary,
+  GraphEdge, GraphNode, ProfileId, ScoredFinding, SlaPolicy, Summary,
 } from './types';
 
 /** Redondeo a una décima, «mitad hacia arriba» (igual que math.floor(x * 10 + 0.5) / 10 en Python). */
@@ -162,9 +162,10 @@ function exploitDetail(f: Finding, epss: number): string {
 }
 
 /** Perfil válido (cualquier otro valor cae en el de por defecto). */
+export const slaPolicyOf = (p: unknown): SlaPolicy => (typeof p === 'string' && Object.prototype.hasOwnProperty.call(SLA_POLICIES, p) ? (p as SlaPolicy) : DEFAULT_SLA_POLICY);
 export const profileOf = (p: unknown): ProfileId => (typeof p === 'string' && Object.prototype.hasOwnProperty.call(PROFILES, p) ? (p as ProfileId) : DEFAULT_PROFILE);
 
-export function scoreFinding(f: Finding, asset: Asset | undefined, hops: number | null, onAttackPath: boolean, W: Weights = WEIGHTS): ScoredFinding {
+export function scoreFinding(f: Finding, asset: Asset | undefined, hops: number | null, onAttackPath: boolean, W: Weights = WEIGHTS, sla: Record<Band, number> = SLA_DAYS): ScoredFinding {
   const cvss = clamp(f.cvss, 0, 10);
   const epss = clamp(f.epss ?? 0, 0, 1);
   const e = Math.max(f.kev ? 1 : 0, f.exploitPublic ? EXPLOIT_PUBLIC_FLOOR : 0, epss);
@@ -217,7 +218,7 @@ export function scoreFinding(f: Finding, asset: Asset | undefined, hops: number 
       : `Prioridad ${BAND_LABEL[band]}`;
   const explanation = `${prefix} (${fmt(score)}/100). ${reasons.length ? reasons.join('; ') : 'Sin factores de riesgo relevantes'}.`;
 
-  return { id: f.id, score, band, factors, explanation, hopsToCrown: hops, onAttackPath, slaDays: SLA_DAYS[band] };
+  return { id: f.id, score, band, factors, explanation, hopsToCrown: hops, onAttackPath, slaDays: sla[band] };
 }
 
 /* ───────────────────────── Resumen ───────────────────────── */
@@ -266,6 +267,8 @@ export function summarize(input: EngineInput, scored: ScoredFinding[], graph: Gr
 export function prioritize(input: EngineInput): EngineResult {
   const profile = profileOf(input.profile);
   const W = PROFILES[profile];
+  const slaPolicy = slaPolicyOf(input.slaPolicy);
+  const sla = SLA_POLICIES[slaPolicy];
   const graph = analyzeGraph(input);
   const hops = hopsToCrown(graph.nodes, graph.edges);
   const onPath = new Set<string>();
@@ -282,7 +285,7 @@ export function prioritize(input: EngineInput): EngineResult {
     return best;
   };
   const scored = input.findings
-    .map((f) => scoreFinding(f, assets.get(f.assetId), findingHops(f), onPath.has(f.assetId), W))
+    .map((f) => scoreFinding(f, assets.get(f.assetId), findingHops(f), onPath.has(f.assetId), W, sla))
     .sort((a, b) => b.score - a.score || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
-  return { engine: 'ts', version: ENGINE_VERSION, profile, scored, graph, summary: summarize(input, scored, graph) };
+  return { engine: 'ts', version: ENGINE_VERSION, profile, slaPolicy, scored, graph, summary: summarize(input, scored, graph) };
 }

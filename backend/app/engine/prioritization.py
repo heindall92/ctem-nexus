@@ -10,7 +10,7 @@ import math
 from datetime import date
 from typing import Any
 
-ENGINE_VERSION = "1.1.0"
+ENGINE_VERSION = "1.2.0"
 
 PROFILES = {
     "defecto": {"severidad": 30, "explotabilidad": 25, "criticidad": 20, "exposicion": 10, "proximidad": 15},
@@ -25,6 +25,13 @@ VALIDATED_BONUS = 5
 NOT_EXPLOITABLE_FACTOR = 0.25
 BAND_THRESHOLDS = [("critica", 80), ("alta", 60), ("media", 40), ("baja", 0)]
 SLA_DAYS = {"critica": 3, "alta": 14, "media": 30, "baja": 90}
+SLA_POLICIES = {
+    "estandar": SLA_DAYS,
+    "ens_basica": {"critica": 7, "alta": 30, "media": 60, "baja": 120},
+    "ens_media": {"critica": 3, "alta": 14, "media": 30, "baja": 90},
+    "ens_alta": {"critica": 2, "alta": 7, "media": 21, "baja": 60},
+}
+DEFAULT_SLA_POLICY = "estandar"
 BAND_LABEL = {"critica": "Crítica", "alta": "Alta", "media": "Media", "baja": "Baja"}
 MAX_PATH_DEPTH = 8
 MAX_PATHS = 2000
@@ -230,8 +237,14 @@ def profile_of(p: Any) -> str:
     return p if isinstance(p, str) and p in PROFILES else DEFAULT_PROFILE
 
 
-def score_finding(f: Json, asset: Json | None, hops: int | None, on_attack_path: bool, w: Json | None = None) -> Json:
+def sla_policy_of(p: Any) -> str:
+    """Política de plazos válida (cualquier otro valor cae en la estándar)."""
+    return p if isinstance(p, str) and p in SLA_POLICIES else DEFAULT_SLA_POLICY
+
+
+def score_finding(f: Json, asset: Json | None, hops: int | None, on_attack_path: bool, w: Json | None = None, sla: Json | None = None) -> Json:
     w = w or WEIGHTS
+    sla = sla or SLA_DAYS
     cvss = _clamp(float(f.get("cvss") or 0), 0, 10)
     epss = _clamp(float(f.get("epss") or 0), 0, 1)
     e = max(1 if f.get("kev") else 0, EXPLOIT_PUBLIC_FLOOR if f.get("exploitPublic") else 0, epss)
@@ -283,7 +296,7 @@ def score_finding(f: Json, asset: Json | None, hops: int | None, on_attack_path:
     explanation = f"{prefix} ({fmt(score)}/100). {'; '.join(reasons) if reasons else 'Sin factores de riesgo relevantes'}."
     return {
         "id": f["id"], "score": score, "band": band, "factors": factors, "explanation": explanation,
-        "hopsToCrown": hops, "onAttackPath": on_attack_path, "slaDays": SLA_DAYS[band],
+        "hopsToCrown": hops, "onAttackPath": on_attack_path, "slaDays": sla[band],
     }
 
 
@@ -329,6 +342,8 @@ def summarize(inp: Json, scored: list[Json], graph: Json) -> Json:
 def prioritize(inp: Json) -> Json:
     profile = profile_of(inp.get("profile"))
     w = PROFILES[profile]
+    sla_policy = sla_policy_of(inp.get("slaPolicy"))
+    sla = SLA_POLICIES[sla_policy]
     graph = analyze_graph(inp)
     hops = hops_to_crown(graph["nodes"], graph["edges"])
     on_path = {n for p in graph["paths"] for n in p["nodes"] if n != INTERNET_ID}
@@ -342,6 +357,6 @@ def prioritize(inp: Json) -> Json:
                     best = hops[t] + 1
         return best
 
-    scored = [score_finding(f, assets.get(f["assetId"]), finding_hops(f), f["assetId"] in on_path, w) for f in inp.get("findings", [])]
+    scored = [score_finding(f, assets.get(f["assetId"]), finding_hops(f), f["assetId"] in on_path, w, sla) for f in inp.get("findings", [])]
     scored.sort(key=lambda s: (-s["score"], s["id"]))
-    return {"engine": "python", "version": ENGINE_VERSION, "profile": profile, "scored": scored, "graph": graph, "summary": summarize(inp, scored, graph)}
+    return {"engine": "python", "version": ENGINE_VERSION, "profile": profile, "slaPolicy": sla_policy, "scored": scored, "graph": graph, "summary": summarize(inp, scored, graph)}

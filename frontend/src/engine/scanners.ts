@@ -8,7 +8,7 @@ import { isPrivateIp } from './nmap';
 import type { AssetType, FindingKind, FindingSource } from './types';
 import { child, childrenOf, descendants, parseXml, textOf, type XNode } from './xml';
 
-export type ScanSource = Extract<FindingSource, 'nessus' | 'openvas' | 'nuclei' | 'trivy' | 'sarif'>;
+export type ScanSource = Extract<FindingSource, 'nessus' | 'openvas' | 'nuclei' | 'trivy' | 'sarif' | 'adauditor'>;
 export type DetectedFormat = ScanSource | 'nmap' | 'bloodhound' | 'kev' | 'epss' | 'proyecto' | 'desconocido';
 
 export interface ScanHost {
@@ -36,6 +36,8 @@ export interface ScanItem {
   evidence: string;
   /** Identificador de la regla en la herramienta (plugin, NVT, plantilla, regla). */
   ref: string;
+  /** Técnicas ATT&CK explícitas (cuando el origen las conoce, como ENS AD Auditor). */
+  attack?: string[];
 }
 
 export interface ScanParse {
@@ -455,7 +457,7 @@ export function parseScan(text: string, filename = '', opts: { includeInfo?: boo
 }
 
 export const SOURCE_LABEL: Record<FindingSource, string> = {
-  manual: 'Manual', csv: 'CSV', nmap: 'Nmap', bloodhound: 'BloodHound', nessus: 'Nessus', openvas: 'OpenVAS', nuclei: 'Nuclei', trivy: 'Trivy', sarif: 'SARIF',
+  manual: 'Manual', csv: 'CSV', nmap: 'Nmap', bloodhound: 'BloodHound', nessus: 'Nessus', openvas: 'OpenVAS', nuclei: 'Nuclei', trivy: 'Trivy', sarif: 'SARIF', adauditor: 'ENS AD Auditor',
 };
 
 export type { XNode };

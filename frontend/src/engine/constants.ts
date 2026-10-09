@@ -1,8 +1,8 @@
 /* Constantes del motor. Deben coincidir EXACTAMENTE con backend/app/engine/prioritization.py
  * (lo comprueban frontend/src/engine/engine.test.ts y backend/tests/test_parity.py). */
-import type { Band, ProfileId } from './types';
+import type { Band, ProfileId, SlaPolicy } from './types';
 
-export const ENGINE_VERSION = '1.1.0';
+export const ENGINE_VERSION = '1.2.0';
 
 export interface Weights { severidad: number; explotabilidad: number; criticidad: number; exposicion: number; proximidad: number }
 
@@ -36,6 +36,18 @@ export const BAND_THRESHOLDS: Array<[Band, number]> = [
 ];
 
 export const SLA_DAYS: Record<Band, number> = { critica: 3, alta: 14, media: 30, baja: 90 };
+
+/** Políticas de plazos (días por banda). «estandar» es la de siempre. Las tres del ENS son una propuesta orientativa
+ * según la categoría del sistema (Compliance Studio): el RD 311/2022 no fija días, pero exige más diligencia cuanto más
+ * alta es la categoría (art. 40 y medidas op.exp.2 y op.exp.4). */
+export const SLA_POLICIES: Record<SlaPolicy, Record<Band, number>> = {
+  estandar: SLA_DAYS,
+  ens_basica: { critica: 7, alta: 30, media: 60, baja: 120 },
+  ens_media: { critica: 3, alta: 14, media: 30, baja: 90 },
+  ens_alta: { critica: 2, alta: 7, media: 21, baja: 60 },
+};
+export const SLA_POLICY_IDS: SlaPolicy[] = ['estandar', 'ens_basica', 'ens_media', 'ens_alta'];
+export const DEFAULT_SLA_POLICY: SlaPolicy = 'estandar';
 
 export const BAND_LABEL: Record<Band, string> = { critica: 'Crítica', alta: 'Alta', media: 'Media', baja: 'Baja' };
 

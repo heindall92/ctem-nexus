@@ -18,7 +18,7 @@ al BIA (KAIROS) y a la formación (ARGOS) sin copiar datos a mano y sin que nada
 | 0.3.0 | 1 · Correcciones | Accesibilidad AA, controles duplicados, tablas, SLA vencidos, i18n completa |
 | 0.4.0 | 2 · Diseño | Lenguaje visual de Rosetta y criterios apple-design (Emil Kowalski) |
 | 0.5.0 | 3 · Funciones | Importadores, excepciones de riesgo, histórico y tendencias, ATT&CK, simulación |
-| 0.6.0 | 4 · Ecosistema | Formato de intercambio común e integración con las 6 herramientas hermanas |
+| 0.6.0 ✓ | 4 · Ecosistema | Formato de intercambio común e integración con las 6 herramientas hermanas |
 | 1.0.0 | 5 · Lanzamiento | Documentación, guía práctica, capturas, publicación |
 
 ---
@@ -150,13 +150,15 @@ Principio: **el usuario mueve ficheros, las herramientas no hablan entre sí por
 
 Tareas:
 
-- [ ] Especificación del sobre en `docs/ECOSISTEMA.md` con JSON Schema en `shared/schemas/`. Se valida al importar con `safeJsonParse` y saneado de campos.
-- [ ] Tabla de correspondencias **hallazgo → controles** en `engine/controls.ts` (identificadores ENS, ISO/IEC 27001:2022 Anexo A, NIS2, NIST CSF 2.0), con prueba de que no contiene texto normativo ISO.
-- [ ] Importadores KAIROS / ENS AD Auditor / Norvik y exportadores Rosetta / Compliance Studio / Norvik, con ficheros de ejemplo y pruebas de ida y vuelta.
-- [ ] Bloque «Suite» en «Acerca de» con las 7 herramientas, su web publicada y su repositorio, igual en todos los repos.
-- [ ] El mismo sobre se documenta y se implementa en las herramientas hermanas, en el repositorio de cada una.
+- [x] Especificación del sobre en `docs/ECOSISTEMA.md` con JSON Schema en `shared/schemas/`. Se valida al importar con `safeJsonParse` y saneado de campos; pytest valida los ejemplos contra el esquema.
+- [x] Tabla de correspondencias **hallazgo → controles** en `engine/controls.ts` (controles unificados de Rosetta con identificadores ENS, ISO/IEC 27001:2022 Anexo A, NIS2, NIST CSF 2.0 y DORA), con prueba de que no contiene texto normativo ISO.
+- [x] Importadores KAIROS / Compliance Studio / ENS AD Auditor / Rosetta / Norvik y exportadores Rosetta / Compliance Studio / KAIROS / Norvik, con ficheros de ejemplo y pruebas de ida y vuelta.
+- [x] Bloque «Suite» en «Acerca de» con las 7 herramientas, su web publicada y su repositorio (en CTEM-Nexus; el resto de repos, en la fase 7).
+- [x] Rosetta 2.11.0 implementa el sobre (importa la evidencia y devuelve los controles). KAIROS, Compliance Studio y ENS AD Auditor se leen en su formato nativo, sin cambios en sus repositorios; Norvik tiene el contrato publicado. Que exporten también el sobre queda en la fase 7.
 
 **Aceptación:** una ida y vuelta de ejemplo CTEM-Nexus → Rosetta → CTEM-Nexus sin pérdida de datos, cubierta por una prueba.
+
+**Estado: cerrada en 0.6.0.** Ida y vuelta probada en los dos repositorios (`ctem-a-rosetta.json` y `rosetta-a-ctem.json`); Vitest 148, Pytest 27, e2e 148/148 y axe 0 infracciones en 220 estados.
 
 ---
 

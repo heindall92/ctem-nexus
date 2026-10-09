@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'motion/react';
-import { ArrowRight, Crosshair, Grid3x3, HelpCircle, Layers, Radar, Route, Search, ShieldAlert, X } from 'lucide-react';
+import { ArrowRight, Crosshair, Grid3x3, HelpCircle, Layers, Radar, Route, Search, ShieldAlert, X, Blocks } from 'lucide-react';
 import { TACTICS, TECHNIQUES, techniquesOf } from '../engine/attack';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -179,6 +179,14 @@ export function SearchModal() {
                     >
                       <Grid3x3 className="size-4 text-accent" />
                       <span>{lang === 'en' ? 'ATT&CK map' : 'Mapa ATT&CK'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => navigateTo('ecosistema')}
+                      className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-left text-ink-2 transition hover:bg-surface-2 hover:text-ink"
+                    >
+                      <Blocks className="size-4 text-accent" />
+                      <span>{lang === 'en' ? 'Ecosystem: Rosetta, KAIROS, Studio…' : 'Ecosistema: Rosetta, KAIROS, Studio…'}</span>
                     </button>
                     <button
                       type="button"

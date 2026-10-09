@@ -1,0 +1,85 @@
+{
+  "format": "yrd-ecosistema",
+  "version": 1,
+  "origen": {
+    "herramienta": "ctem-nexus",
+    "version": "ejemplo",
+    "generado": "2026-09-16T09:00:00Z"
+  },
+  "tipo": "indicadores",
+  "proyecto": "Ejemplo · Industrias Meridiano S.A.",
+  "datos": [
+    {
+      "indicador": "indice_exposicion",
+      "nombre": "Índice de exposición",
+      "valor": 90.9,
+      "unidad": "0-100",
+      "sentido": "menos",
+      "fecha": "2026-09-16"
+    },
+    {
+      "indicador": "abiertos",
+      "nombre": "Hallazgos abiertos",
+      "valor": 16,
+      "unidad": "hallazgos",
+      "sentido": "menos",
+      "fecha": "2026-09-16"
+    },
+    {
+      "indicador": "abiertos_criticos",
+      "nombre": "Abiertos de prioridad crítica",
+      "valor": 5,
+      "unidad": "hallazgos",
+      "sentido": "menos",
+      "fecha": "2026-09-16"
+    },
+    {
+      "indicador": "kev_abiertos",
+      "nombre": "Abiertos explotados activamente (CISA KEV)",
+      "valor": 7,
+      "unidad": "hallazgos",
+      "sentido": "menos",
+      "fecha": "2026-09-16"
+    },
+    {
+      "indicador": "rutas_ataque",
+      "nombre": "Rutas de ataque hacia joyas de la corona",
+      "valor": 7,
+      "unidad": "rutas",
+      "sentido": "menos",
+      "fecha": "2026-09-16"
+    },
+    {
+      "indicador": "sla_cumplimiento",
+      "nombre": "Cumplimiento de plazos (SLA)",
+      "valor": 72.2,
+      "unidad": "%",
+      "sentido": "mas",
+      "fecha": "2026-09-16"
+    },
+    {
+      "indicador": "vencidos",
+      "nombre": "Hallazgos con el plazo vencido",
+      "valor": 5,
+      "unidad": "hallazgos",
+      "sentido": "menos",
+      "fecha": "2026-09-16"
+    },
+    {
+      "indicador": "mttr_dias",
+      "nombre": "Tiempo medio de corrección (MTTR)",
+      "valor": 10,
+      "unidad": "días",
+      "sentido": "menos",
+      "fecha": "2026-09-16"
+    },
+    {
+      "indicador": "riesgo_aceptado",
+      "nombre": "Riesgos aceptados vigentes",
+      "valor": 1,
+      "unidad": "hallazgos",
+      "sentido": "menos",
+      "fecha": "2026-09-16"
+    }
+  ]
+}

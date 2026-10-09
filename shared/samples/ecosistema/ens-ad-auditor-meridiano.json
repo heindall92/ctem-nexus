@@ -1,0 +1,207 @@
+{
+ "generated_at": "2026-09-16T09:00:00Z",
+ "is_sample": true,
+ "scanned": true,
+ "total_alerts": 6,
+ "counts_by_risk": {
+  "Critico": 2,
+  "Alto": 2,
+  "Medio": 2,
+  "Bajo": 0
+ },
+ "alerts": [
+  {
+   "rule_id": "ENS-ACC-KRB-01",
+   "risk": "Alto",
+   "impact": 4,
+   "likelihood": 4,
+   "score": 16,
+   "da_path": true,
+   "ens_controls": [
+    {
+     "id": "op.acc.5",
+     "name": "Mecanismo de autenticación (usuarios de la organización)",
+     "is_primary": true
+    }
+   ],
+   "non_compliance": "Contraseña de servicio crackeable fuera de línea.",
+   "remediation": "gMSA o contraseña de 30+ caracteres y AES.",
+   "references": [],
+   "rationale": null,
+   "finding": {
+    "finding_type": "kerberoasting",
+    "title": "Cuenta de servicio con SPN y cifrado RC4",
+    "target": "svc_sql",
+    "detail": "La cuenta svc_sql tiene SPN MSSQLSvc/app01 y admite RC4.",
+    "evidence": "servicePrincipalName=MSSQLSvc/app01.meridiano.local",
+    "source_module": "ldap",
+    "subtype": null,
+    "is_sample": true
+   }
+  },
+  {
+   "rule_id": "ENS-ACC-PKI-01",
+   "risk": "Critico",
+   "impact": 5,
+   "likelihood": 4,
+   "score": 20,
+   "da_path": true,
+   "ens_controls": [
+    {
+     "id": "op.acc.5",
+     "name": "Mecanismo de autenticación (usuarios de la organización)",
+     "is_primary": true
+    },
+    {
+     "id": "op.acc.4",
+     "name": "Proceso de gestión de derechos de acceso",
+     "is_primary": false
+    }
+   ],
+   "non_compliance": "Cualquier usuario puede pedir un certificado de administrador.",
+   "remediation": "Desactivar ENROLLEE_SUPPLIES_SUBJECT y exigir aprobación.",
+   "references": [],
+   "rationale": null,
+   "finding": {
+    "finding_type": "adcs_esc",
+    "title": "Plantilla ADCS vulnerable (ESC1)",
+    "target": "Plantilla UserAuth",
+    "detail": "El solicitante proporciona el sujeto y la plantilla tiene EKU de autenticación.",
+    "evidence": "certipy: ESC1 en UserAuth",
+    "source_module": "ldap",
+    "subtype": null,
+    "is_sample": true
+   }
+  },
+  {
+   "rule_id": "ENS-ACC-SMB-01",
+   "risk": "Alto",
+   "impact": 4,
+   "likelihood": 3,
+   "score": 12,
+   "da_path": false,
+   "ens_controls": [
+    {
+     "id": "op.acc.5",
+     "name": "Mecanismo de autenticación (usuarios de la organización)",
+     "is_primary": true
+    }
+   ],
+   "non_compliance": "Permite retransmitir autenticaciones NTLM.",
+   "remediation": "Exigir la firma SMB por GPO.",
+   "references": [],
+   "rationale": null,
+   "finding": {
+    "finding_type": "smb_signing_disabled",
+    "title": "Firma SMB no obligatoria en los controladores",
+    "target": "DC01",
+    "detail": "RequireSecuritySignature = 0.",
+    "evidence": null,
+    "source_module": "ldap",
+    "subtype": null,
+    "is_sample": true
+   }
+  },
+  {
+   "rule_id": "ENS-ACC-LAPS-01",
+   "risk": "Medio",
+   "impact": 3,
+   "likelihood": 3,
+   "score": 9,
+   "da_path": false,
+   "ens_controls": [
+    {
+     "id": "op.acc.6",
+     "name": "Mecanismo de autenticación (usuarios externos)",
+     "is_primary": true
+    }
+   ],
+   "non_compliance": "Contraseña de administrador local común.",
+   "remediation": "Desplegar Windows LAPS.",
+   "references": [],
+   "rationale": null,
+   "finding": {
+    "finding_type": "laps_not_deployed",
+    "title": "LAPS no desplegado en los puestos",
+    "target": "OU=Puestos",
+    "detail": "El esquema no tiene ms-LAPS-Password.",
+    "evidence": null,
+    "source_module": "ldap",
+    "subtype": null,
+    "is_sample": true
+   }
+  },
+  {
+   "rule_id": "ENS-ACC-ACL-01",
+   "risk": "Critico",
+   "impact": 5,
+   "likelihood": 4,
+   "score": 20,
+   "da_path": true,
+   "ens_controls": [
+    {
+     "id": "op.acc.4",
+     "name": "Proceso de gestión de derechos de acceso",
+     "is_primary": true
+    }
+   ],
+   "non_compliance": "Cualquier miembro puede extraer los hashes del dominio.",
+   "remediation": "Retirar el permiso y revisar quién lo concedió.",
+   "references": [],
+   "rationale": null,
+   "finding": {
+    "finding_type": "acl_control_path",
+    "title": "Permisos de replicación (DCSync) a un grupo no privilegiado",
+    "target": "Grupo Soporte-N2",
+    "detail": "El grupo tiene DS-Replication-Get-Changes-All sobre el dominio.",
+    "evidence": null,
+    "source_module": "ldap",
+    "subtype": null,
+    "is_sample": true
+   }
+  },
+  {
+   "rule_id": "ENS-ACC-PWD-01",
+   "risk": "Medio",
+   "impact": 3,
+   "likelihood": 3,
+   "score": 9,
+   "da_path": false,
+   "ens_controls": [
+    {
+     "id": "op.acc.5",
+     "name": "Mecanismo de autenticación (usuarios de la organización)",
+     "is_primary": true
+    }
+   ],
+   "non_compliance": "Contraseñas vulnerables a rociado.",
+   "remediation": "Longitud 14+, historial 24 y bloqueo.",
+   "references": [],
+   "rationale": null,
+   "finding": {
+    "finding_type": "weak_password_policy",
+    "title": "Política de contraseñas del dominio débil",
+    "target": "meridiano.local",
+    "detail": "Longitud mínima 8 y sin historial.",
+    "evidence": null,
+    "source_module": "ldap",
+    "subtype": null,
+    "is_sample": true
+   }
+  }
+ ],
+ "domain": "meridiano.local",
+ "dc_host": "dc01.meridiano.local",
+ "errors": [],
+ "matrix": {
+  "empty": false,
+  "cells": []
+ },
+ "summary": {
+  "highest_risk": "Critico",
+  "controls_hit": 3,
+  "da_path": true,
+  "da_path_count": 3,
+  "total_alerts": 6
+ }
+}

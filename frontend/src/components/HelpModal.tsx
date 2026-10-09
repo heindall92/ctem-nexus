@@ -222,6 +222,13 @@ export function HelpModal() {
                       <p className="mt-1 text-xs text-ink-3">{L('Jira: Ajustes del sistema → Importación externa → CSV, con formato de fecha «yyyy-MM-dd». GitHub: el JSON trae un issue por ticket; se envía sin pasar los textos por la shell:', 'Jira: System settings → External system import → CSV, with date format “yyyy-MM-dd”. GitHub: the JSON has one issue per ticket; send it without passing the texts through the shell:')}</p>
                       <pre className="code mt-2">{"jq -c '.[]' github-issues.json | while read -r i; do\n  printf '%s' \"$i\" | gh api --method POST repos/ORG/REPO/issues --input -\ndone"}</pre>
                     </div>
+                    <div className="rounded-2xl border border-hairline bg-surface p-4" data-testid="ayuda-ecosistema">
+                      <div className="flex items-center gap-2 font-medium text-ink">
+                        <Terminal className="size-4 text-accent" />
+                        <span>{L('Ecosistema: KAIROS, Compliance Studio, ENS AD Auditor, Rosetta y Norvik', 'Ecosystem: KAIROS, Compliance Studio, ENS AD Auditor, Rosetta and Norvik')}</span>
+                      </div>
+                      <p className="mt-1 text-xs text-ink-3">{L('En la vista Ecosistema, arrastra el fichero de la otra herramienta: el proyecto o la copia de KAIROS (criticidad desde el BIA), el de Compliance Studio (categoría ENS y plazos), el informe JSON de ENS AD Auditor (hallazgos de directorio activo con su técnica ATT&CK), el proyecto o el sobre de Rosetta (estado de los controles) o un CSV de responsables. Se enseña qué cambiará antes de aplicarlo. Las exportaciones usan el sobre común «yrd-ecosistema» (docs/ECOSISTEMA.md).', 'In the Ecosystem view, drop the other tool’s file: the KAIROS project or backup (criticality from the BIA), the Compliance Studio one (ENS category and deadlines), the ENS AD Auditor JSON report (Active Directory findings with their ATT&CK technique), the Rosetta project or envelope (control states) or an owners CSV. The changes are shown before applying them. Exports use the common “yrd-ecosistema” envelope (docs/ECOSISTEMA.md).')}</p>
+                    </div>
                     <div className="rounded-2xl border border-hairline bg-surface p-4">
                       <div className="flex items-center gap-2 font-medium text-ink">
                         <Terminal className="size-4 text-accent" />

@@ -16,7 +16,7 @@ OUT = ROOT / "tests" / "artifacts"
 OUT.mkdir(parents=True, exist_ok=True)
 TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]
 S = "window.__CTEM__.getState()"
-VIEWS = ["panel", "alcance", "priorizacion", "rutas", "mitre", "simulacion", "movilizacion", "ajustes"]
+VIEWS = ["panel", "alcance", "priorizacion", "rutas", "mitre", "simulacion", "movilizacion", "ecosistema", "ajustes"]
 HELP_TABS = ["Ciclo CTEM", "Cálculo de riesgo", "Ingesta de datos", "Atajos de teclado", "Glosario", "Acerca de"]
 
 
@@ -69,6 +69,17 @@ def states(page, mobile):
     J(f"{S}.setSimFixed([])")
     J(f"{S}.addSnapshot({{at:'2026-09-08',label:'Ciclo 1',profile:'defecto',exposureIndex:93,open:17,byBand:{{critica:6,alta:6,media:3,baja:2}},kev:8,attackPaths:8,accepted:0,overdue:4,mttrDays:11}})")
     J(f"{S}.setView('movilizacion')"); yield "movilizacion/con-ciclos"
+    eco = ROOT / "shared" / "samples" / "ecosistema"
+    J(f"{S}.setView('ecosistema')")
+    entrada = page.get_by_test_id("eco-importar").locator('input[type="file"]')
+    entrada.set_input_files(str(eco / "kairos-meridiano.json")); page.get_by_test_id("eco-kairos").wait_for(); yield "ecosistema/kairos"
+    entrada.set_input_files(str(eco / "ens-ad-auditor-meridiano.json")); page.get_by_test_id("eco-adauditor").wait_for(); yield "ecosistema/adauditor"
+    entrada.set_input_files(str(eco / "studio-meridiano.json")); page.get_by_test_id("eco-studio").wait_for(); yield "ecosistema/studio"
+    entrada.set_input_files(str(eco / "responsables-norvik.csv")); page.get_by_test_id("eco-responsables").wait_for(); yield "ecosistema/responsables"
+    entrada.set_input_files(str(eco / "rosetta-a-ctem.json")); page.get_by_test_id("eco-rosetta").get_by_role("button", name="Vincular con Rosetta").click()
+    page.get_by_test_id("eco-contradicciones").wait_for(); yield "ecosistema/contradicciones"
+    J(f"{S}.setView('priorizacion')"); J(f"{S}.selectFinding('H-001')"); yield "detalle/controles-rosetta"
+    page.keyboard.press("Escape"); J(f"{S}.selectFinding(null)")
     J(f"{S}.setHelpOpen(true)")
     for t in HELP_TABS:
         page.get_by_role("tab", name=t).click(); yield f"ayuda/{t}"

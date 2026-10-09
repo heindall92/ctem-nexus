@@ -5,7 +5,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { expect, it } from 'vitest';
 import { DEMO_ASSETS, DEMO_EDGES, DEMO_FINDINGS } from '../data/demo';
-import { PROFILE_IDS } from './constants';
+import { PROFILE_IDS, SLA_POLICY_IDS } from './constants';
 import { prioritize } from './engine';
 
 const file = resolve(__dirname, '../../../shared/golden-demo.json');
@@ -22,6 +22,11 @@ it('coincide con shared/golden-demo.json', () => {
     profiles: Object.fromEntries(PROFILE_IDS.filter((p) => p !== 'defecto').map((profile) => {
       const rp = prioritize({ ...input, profile });
       return [profile, { scored: rp.scored.map(({ id, score, band, explanation }) => ({ id, score, band, explanation })), summary: rp.summary }];
+    })),
+    // Plazos por política (estándar y las tres categorías del ENS): mismos días por hallazgo en los dos motores.
+    slaPolicies: Object.fromEntries(SLA_POLICY_IDS.map((slaPolicy) => {
+      const rs = prioritize({ ...input, slaPolicy });
+      return [slaPolicy, rs.scored.map(({ id, slaDays }) => ({ id, slaDays }))];
     })),
   };
   if (process.env.GOLDEN === '1' || !existsSync(file)) {

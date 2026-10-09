@@ -44,7 +44,7 @@ export function Settings() {
   const byProfile = useMemo(() => {
     if (!project.findings.length) return null;
     const out = {} as Record<ProfileId, ReturnType<typeof prioritize>>;
-    for (const p of PROFILE_IDS) out[p] = prioritize({ assets: project.assets, findings: project.findings, edges: project.edges, profile: p });
+    for (const p of PROFILE_IDS) out[p] = prioritize({ assets: project.assets, findings: project.findings, edges: project.edges, profile: p, slaPolicy: project.slaPolicy });
     return out;
   }, [project.assets, project.findings, project.edges]);
   const bandShift = (p: ProfileId) => {

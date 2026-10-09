@@ -5,9 +5,11 @@ import { explanationIn, reasonsIn, type Lang } from './explain';
 import { guideIn } from './remediation';
 import { slaInfo } from './sla';
 import { fixPlan } from './simulate';
+import { CONTROLS, controlsFor } from './controls';
 import { PROFILE_IDS } from './constants';
 import type { IntelMeta } from './intel';
-import type { Asset, AssetType, Band, EngineResult, Finding, FindingKind, FindingSource, FindingStatus, ManualEdge, NetworkRange, ProfileId, RiskException } from './types';
+import type { Asset, AssetType, Band, EngineResult, Finding, FindingKind, FindingSource, FindingStatus, ManualEdge, NetworkRange, ProfileId, RiskException, SlaPolicy } from './types';
+import { SLA_POLICY_IDS } from './constants';
 
 export interface Project {
   format: 'ctem-nexus';
@@ -28,7 +30,22 @@ export interface Project {
   imports?: ImportLog[];
   /** Instantáneas de cierre de ciclo, de la más antigua a la más reciente (máximo 104). */
   snapshots?: Snapshot[];
+  /** Política de plazos (por defecto, «estandar»; las del ENS salen de la categoría del sistema). */
+  slaPolicy?: SlaPolicy;
+  /** Categoría ENS leída de Compliance Studio. */
+  ens?: EnsLink;
+  /** Estados de los controles leídos de Rosetta Multinorma. */
+  rosetta?: RosettaLinkData;
+  /** Registro de intercambios con el ecosistema, del más reciente al más antiguo (máximo 50). */
+  ecoLog?: EcoLog[];
 }
+
+export interface EnsLink { category: 'BÁSICA' | 'MEDIA' | 'ALTA'; levels: Record<string, string>; project: string; at: string }
+export interface RosettaLinkData { generado: string; proyecto: string; estados: Record<string, 'implantado' | 'parcial' | 'pendiente' | 'no-aplica'>; at: string }
+export interface EcoLog { at: string; tool: string; dir: 'entrada' | 'salida'; tipo: string; detail: string }
+export const MAX_ECO_LOG = 50;
+const ECO_LOG_TOOLS = ['ctem-nexus', 'rosetta', 'compliance-studio', 'kairos', 'ens-ad-auditor', 'argos', 'norvik'];
+const ROSETTA_ST = ['implantado', 'parcial', 'pendiente', 'no-aplica'];
 
 export interface ImportLog {
   at: string;
@@ -63,7 +80,7 @@ const ASSET_TYPES: AssetType[] = ['servidor', 'estacion', 'aplicacion_web', 'bas
 const KINDS: FindingKind[] = ['cve', 'configuracion', 'identidad'];
 const STATUSES: FindingStatus[] = ['abierto', 'validado', 'no_explotable', 'mitigado', 'aceptado'];
 const CVE_RE = /^CVE-\d{4}-\d{4,7}$/i;
-const SOURCES: FindingSource[] = ['manual', 'csv', 'nmap', 'bloodhound', 'nessus', 'openvas', 'nuclei', 'trivy', 'sarif'];
+const SOURCES: FindingSource[] = ['manual', 'csv', 'nmap', 'bloodhound', 'nessus', 'openvas', 'nuclei', 'trivy', 'sarif', 'adauditor'];
 const ATTACK_RE = /^T\d{4}(\.\d{3})?$/;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -299,6 +316,25 @@ export function parseProject(text: string): Project | null {
   if (imports.length) project.imports = imports;
   const snapshots = arr('snapshots').map(parseSnapshot).filter((x): x is Snapshot => !!x).sort((a, b) => a.at.localeCompare(b.at)).slice(-MAX_SNAPSHOTS);
   if (snapshots.length) project.snapshots = snapshots;
+  if (SLA_POLICY_IDS.includes(data.slaPolicy as SlaPolicy)) project.slaPolicy = data.slaPolicy as SlaPolicy;
+  const ens = data.ens as Record<string, unknown> | undefined;
+  if (ens && typeof ens === 'object' && ['BÁSICA', 'MEDIA', 'ALTA'].includes(str(ens.category, 8))) {
+    const lv = ens.levels && typeof ens.levels === 'object' ? (ens.levels as Record<string, unknown>) : {};
+    project.ens = {
+      category: str(ens.category, 8) as EnsLink['category'],
+      levels: Object.fromEntries(['D', 'I', 'C', 'A', 'T'].filter((d) => ['BAJO', 'MEDIO', 'ALTO'].includes(str(lv[d], 6))).map((d) => [d, str(lv[d], 6)])),
+      project: str(ens.project, 120), at: DATE_RE.test(str(ens.at, 10)) ? str(ens.at, 10) : '',
+    };
+  }
+  const ro = data.rosetta as Record<string, unknown> | undefined;
+  if (ro && typeof ro === 'object' && ro.estados && typeof ro.estados === 'object') {
+    const estados: RosettaLinkData['estados'] = {};
+    for (const [k, v] of Object.entries(ro.estados as Record<string, unknown>).slice(0, 500)) if (/^[A-Z]{2,3}-\d{2}$/.test(k) && ROSETTA_ST.includes(v as string)) estados[k] = v as RosettaLinkData['estados'][string];
+    project.rosetta = { generado: str(ro.generado, 40), proyecto: str(ro.proyecto, 120), estados, at: DATE_RE.test(str(ro.at, 10)) ? str(ro.at, 10) : '' };
+  }
+  const eco = arr('ecoLog').map((r) => ({ at: str(r.at, 10), tool: str(r.tool, 30), dir: r.dir === 'salida' ? 'salida' as const : 'entrada' as const, tipo: str(r.tipo, 30), detail: str(r.detail, 200) }))
+    .filter((r) => DATE_RE.test(r.at) && ECO_LOG_TOOLS.includes(r.tool)).slice(0, MAX_ECO_LOG);
+  if (eco.length) project.ecoLog = eco;
   return project;
 }
 
@@ -457,7 +493,7 @@ export function githubIssues(findings: Finding[], assets: Asset[], result: Engin
   });
 }
 
-export function reportMarkdown(project: Pick<Project, 'name' | 'demo'> & Partial<Pick<Project, 'profile' | 'intel' | 'snapshots'>>, findings: Finding[], assets: Asset[], result: EngineResult, date = new Date(), author = '', lang: Lang = 'es'): string {
+export function reportMarkdown(project: Pick<Project, 'name' | 'demo'> & Partial<Pick<Project, 'profile' | 'intel' | 'snapshots' | 'slaPolicy' | 'ens' | 'rosetta'>>, findings: Finding[], assets: Asset[], result: EngineResult, date = new Date(), author = '', lang: Lang = 'es'): string {
   const L = (es: string, en: string) => (lang === 'en' ? en : es);
   const s = result.summary;
   const fById = new Map(findings.map((f) => [f.id, f]));
@@ -473,6 +509,7 @@ export function reportMarkdown(project: Pick<Project, 'name' | 'demo'> & Partial
     `${L('Perfil de ponderación', 'Weighting profile')}: ${PROF[project.profile ?? 'defecto']}`,
     project.intel?.kev ? `CISA KEV ${mdEsc(project.intel.kev.version)}` : '',
     project.intel?.epss ? `FIRST EPSS ${mdEsc(project.intel.epss.scoreDate || project.intel.epss.model)}` : '',
+    project.slaPolicy && project.slaPolicy !== 'estandar' ? L(`Plazos según la categoría ENS ${project.ens?.category ?? project.slaPolicy.replace('ens_', '').toUpperCase()}`, `Deadlines from ENS category ${project.ens?.category ?? project.slaPolicy.replace('ens_', '').toUpperCase()}`) : '',
   ].filter(Boolean);
   out.push(intelBits.join(' · '), '');
   const prev = project.snapshots?.length ? project.snapshots[project.snapshots.length - 1] : null;
@@ -518,6 +555,30 @@ export function reportMarkdown(project: Pick<Project, 'name' | 'demo'> & Partial
       out.push(`${i + 1}. ${names}: ${effect}.`);
     });
     out.push('');
+  }
+  // Controles afectados (Rosetta): dónde cae la exposición abierta en el mapa multinorma.
+  const byCtl = new Map<string, { n: number; serious: number; worst: number }>();
+  for (const x of result.scored) {
+    const f = fById.get(x.id);
+    if (!f || (f.status !== 'abierto' && f.status !== 'validado')) continue;
+    for (const c of controlsFor(f)) {
+      const e = byCtl.get(c) ?? { n: 0, serious: 0, worst: 0 };
+      e.n++; if (x.band === 'critica' || x.band === 'alta') e.serious++; e.worst = Math.max(e.worst, x.score);
+      byCtl.set(c, e);
+    }
+  }
+  if (byCtl.size) {
+    const ST: Record<string, string> = { implantado: L('implantado', 'implemented'), parcial: L('parcial', 'partial'), pendiente: L('pendiente', 'pending'), 'no-aplica': L('no aplica', 'not applicable') };
+    const rows = [...byCtl.entries()].sort((a, b) => b[1].worst - a[1].worst || a[0].localeCompare(b[0])).slice(0, 8);
+    out.push(`## ${L('Controles afectados', 'Affected controls')}`, '',
+      L('Controles unificados de Rosetta Multinorma con hallazgos abiertos. Solo identificadores de cada norma.', 'Rosetta Multinorma unified controls with open findings. Identifiers only.'), '',
+      `| ${L('Control', 'Control')} | ENS | ISO/IEC 27001 | NIS2 | ${L('Abiertos', 'Open')} | ${L('Críticos o altos', 'Critical or high')}${project.rosetta ? ` | Rosetta` : ''} |`, `|---|---|---|---|---:|---:|${project.rosetta ? '---|' : ''}`,
+      ...rows.map(([id, e]) => {
+        const c = CONTROLS[id];
+        const st = project.rosetta?.estados[id];
+        const clash = st === 'implantado' && e.serious > 0;
+        return `| ${id} · ${mdEsc(lang === 'en' ? c.titleEn : c.title)} | ${c.ens.join(', ') || '—'} | ${c.iso27001.join(', ') || '—'} | ${c.nis2.join(', ') || '—'} | ${e.n} | ${e.serious}${project.rosetta ? ` | ${st ? ST[st] : '—'}${clash ? L(' ⚠ contradicción', ' ⚠ contradiction') : ''}` : ''} |`;
+      }), '');
   }
   const accepted = findings.filter((f) => f.status === 'aceptado' && f.exception);
   if (accepted.length) {

@@ -31,6 +31,7 @@ const requestedIcons = [
   'crosshair',
   'flame',
   'waypoints',
+  'blocks',
   'file-text',
   'settings',
   'crown',

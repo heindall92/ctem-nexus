@@ -28,3 +28,17 @@ def test_perfiles_de_ponderacion(golden):
         got = [{k: s[k] for k in ("id", "score", "band", "explanation")} for s in r["scored"]]
         assert got == exp["scored"], profile
         assert r["summary"] == exp["summary"], profile
+
+
+def test_politicas_de_plazos(golden):
+    """Cada política de plazos (estándar y categorías ENS) da los mismos días por hallazgo en los dos motores."""
+    assert set(golden["expected"]["slaPolicies"]) == {"estandar", "ens_basica", "ens_media", "ens_alta"}
+    for policy, exp in golden["expected"]["slaPolicies"].items():
+        r = prioritize({**golden["input"], "slaPolicy": policy})
+        assert r["slaPolicy"] == policy
+        assert [{"id": s["id"], "slaDays": s["slaDays"]} for s in r["scored"]] == exp, policy
+
+
+def test_politica_desconocida_cae_en_estandar():
+    r = prioritize({"assets": [], "findings": [], "edges": [], "slaPolicy": "inventada"})
+    assert r["slaPolicy"] == "estandar"

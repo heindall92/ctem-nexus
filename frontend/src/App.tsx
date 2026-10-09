@@ -13,8 +13,9 @@ import { Scoping } from './views/Scoping';
 import { MitreMatrix } from './views/MitreMatrix';
 import { Settings } from './views/Settings';
 import { Simulation } from './views/Simulation';
+import { Ecosystem } from './views/Ecosystem';
 
-const VIEWS = { panel: Dashboard, alcance: Scoping, priorizacion: Prioritization, rutas: AttackPaths, movilizacion: Mobilization, mitre: MitreMatrix, simulacion: Simulation, ajustes: Settings };
+const VIEWS = { panel: Dashboard, alcance: Scoping, priorizacion: Prioritization, rutas: AttackPaths, movilizacion: Mobilization, mitre: MitreMatrix, simulacion: Simulation, ecosistema: Ecosystem, ajustes: Settings };
 
 export function App() {
   const analysis = useAnalysis();

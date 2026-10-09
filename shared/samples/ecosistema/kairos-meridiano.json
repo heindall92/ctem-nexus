@@ -1,0 +1,480 @@
+{
+ "version": 1,
+ "caseId": "meridiano",
+ "meta": {
+  "nombre": "Industrias Meridiano · BIA 2026",
+  "organizacion": "Industrias Meridiano S.A. (ficticia)",
+  "sistema": "Sistemas corporativos y comercio electrónico",
+  "categoria": "MEDIA",
+  "responsable": "Responsable de continuidad",
+  "alcance": "Ventas en línea, facturación, correo y acceso remoto desde el CPD de Zaragoza. Ejemplo para la integración con CTEM-Nexus."
+ },
+ "funciones": [
+  {
+   "id": "F-01",
+   "nombre": "Ventas en línea y atención a clientes",
+   "descripcion": "Pedidos y seguimiento de entregas desde el portal web.",
+   "responsable": "Directora Comercial",
+   "rto": 4,
+   "rpo": 1,
+   "mtpd": 24,
+   "costeHora": 9000,
+   "impacto": {
+    "h1": {
+     "op": 1,
+     "le": 1,
+     "re": 1,
+     "pe": 0
+    },
+    "h4": {
+     "op": 3,
+     "le": 2,
+     "re": 3,
+     "pe": 0
+    },
+    "h24": {
+     "op": 4,
+     "le": 3,
+     "re": 4,
+     "pe": 1
+    },
+    "h72": {
+     "op": 4,
+     "le": 4,
+     "re": 4,
+     "pe": 1
+    },
+    "d7": {
+     "op": 4,
+     "le": 4,
+     "re": 4,
+     "pe": 2
+    }
+   },
+   "alternativa": "Pedidos por teléfono y correo con el equipo comercial.",
+   "dependencias": {
+    "activos": [
+     "A-01"
+    ],
+    "funciones": [
+     "F-02"
+    ],
+    "proveedores": []
+   }
+  },
+  {
+   "id": "F-02",
+   "nombre": "Facturación y tesorería",
+   "descripcion": "Emisión de facturas, cobros y pagos a proveedores.",
+   "responsable": "Director Financiero",
+   "rto": 8,
+   "rpo": 0,
+   "mtpd": 48,
+   "costeHora": 4000,
+   "impacto": {
+    "h1": {
+     "op": 1,
+     "le": 0,
+     "re": 0,
+     "pe": 0
+    },
+    "h4": {
+     "op": 2,
+     "le": 1,
+     "re": 1,
+     "pe": 0
+    },
+    "h24": {
+     "op": 3,
+     "le": 3,
+     "re": 2,
+     "pe": 0
+    },
+    "h72": {
+     "op": 4,
+     "le": 4,
+     "re": 3,
+     "pe": 1
+    },
+    "d7": {
+     "op": 4,
+     "le": 4,
+     "re": 4,
+     "pe": 1
+    }
+   },
+   "alternativa": "Facturas en plantilla y pagos manuales por banca electrónica.",
+   "dependencias": {
+    "activos": [
+     "A-05"
+    ],
+    "funciones": [],
+    "proveedores": []
+   }
+  },
+  {
+   "id": "F-03",
+   "nombre": "Correo corporativo",
+   "descripcion": "Correo interno y con clientes y proveedores.",
+   "responsable": "Responsable de Sistemas",
+   "rto": 24,
+   "rpo": 24,
+   "mtpd": 72,
+   "costeHora": 600,
+   "impacto": {
+    "h1": {
+     "op": 0,
+     "le": 0,
+     "re": 0,
+     "pe": 0
+    },
+    "h4": {
+     "op": 1,
+     "le": 0,
+     "re": 1,
+     "pe": 0
+    },
+    "h24": {
+     "op": 2,
+     "le": 1,
+     "re": 2,
+     "pe": 0
+    },
+    "h72": {
+     "op": 3,
+     "le": 2,
+     "re": 2,
+     "pe": 0
+    },
+    "d7": {
+     "op": 3,
+     "le": 2,
+     "re": 3,
+     "pe": 0
+    }
+   },
+   "alternativa": "Telefonía y mensajería del comité de crisis.",
+   "dependencias": {
+    "activos": [
+     "A-02"
+    ],
+    "funciones": [],
+    "proveedores": []
+   }
+  },
+  {
+   "id": "F-04",
+   "nombre": "Acceso remoto de técnicos y proveedores",
+   "descripcion": "Teletrabajo y mantenimiento remoto de planta.",
+   "responsable": "Responsable de Redes",
+   "rto": 24,
+   "rpo": 24,
+   "mtpd": 72,
+   "costeHora": 500,
+   "impacto": {
+    "h1": {
+     "op": 0,
+     "le": 0,
+     "re": 0,
+     "pe": 0
+    },
+    "h4": {
+     "op": 1,
+     "le": 0,
+     "re": 0,
+     "pe": 0
+    },
+    "h24": {
+     "op": 2,
+     "le": 1,
+     "re": 1,
+     "pe": 0
+    },
+    "h72": {
+     "op": 3,
+     "le": 2,
+     "re": 1,
+     "pe": 0
+    },
+    "d7": {
+     "op": 3,
+     "le": 2,
+     "re": 2,
+     "pe": 0
+    }
+   },
+   "alternativa": "Intervención presencial en planta.",
+   "dependencias": {
+    "activos": [
+     "A-03"
+    ],
+    "funciones": [],
+    "proveedores": []
+   }
+  }
+ ],
+ "activos": [
+  {
+   "id": "A-01",
+   "datos": false,
+   "nombre": "Portal web de clientes",
+   "tipo": "Aplicación",
+   "estrategia": "warm",
+   "tiempoRecuperacion": 2,
+   "dependeDe": [
+    "A-04",
+    "A-06"
+   ],
+   "ubicacion": "DMZ, CPD de Zaragoza",
+   "responsable": "Equipo Web",
+   "procedimiento": {
+    "pasos": "1. Levantar la réplica.\n2. Cambiar el DNS público.",
+    "exito": "Un pedido de prueba se completa.",
+    "credenciales": "Bóveda: «DR Meridiano»"
+   },
+   "backup": {
+    "aplica": true,
+    "tipo": "Imagen",
+    "frecuenciaHoras": 24,
+    "retencionDias": 14,
+    "offsite": true,
+    "cifrado": true,
+    "inmutable": false,
+    "ultimaRestauracion": "2026-08-28",
+    "resultado": "OK"
+   }
+  },
+  {
+   "id": "A-02",
+   "datos": false,
+   "nombre": "Exchange OWA (correo)",
+   "tipo": "Servidor",
+   "estrategia": "cold",
+   "tiempoRecuperacion": 12,
+   "dependeDe": [
+    "A-06"
+   ],
+   "ubicacion": "DMZ",
+   "responsable": "Sistemas",
+   "procedimiento": {
+    "pasos": "1. Restaurar la base de datos de buzones.",
+    "exito": "Envío y recepción externos correctos.",
+    "credenciales": "Bóveda: «DR Meridiano»"
+   },
+   "backup": {
+    "aplica": true,
+    "tipo": "Base de datos",
+    "frecuenciaHoras": 24,
+    "retencionDias": 30,
+    "offsite": true,
+    "cifrado": true,
+    "inmutable": false,
+    "ultimaRestauracion": "2026-08-28",
+    "resultado": "OK"
+   }
+  },
+  {
+   "id": "A-03",
+   "datos": false,
+   "nombre": "Citrix NetScaler Gateway",
+   "tipo": "Red",
+   "estrategia": "warm",
+   "tiempoRecuperacion": 4,
+   "dependeDe": [
+    "A-06"
+   ],
+   "ubicacion": "Perímetro",
+   "responsable": "Redes",
+   "procedimiento": {
+    "pasos": "1. Activar el appliance secundario.",
+    "exito": "Un técnico entra por la VPN.",
+    "credenciales": "Bóveda: «DR Meridiano»"
+   },
+   "backup": {
+    "aplica": true,
+    "tipo": "Configuración",
+    "frecuenciaHoras": 24,
+    "retencionDias": 90,
+    "offsite": true,
+    "cifrado": true,
+    "inmutable": false,
+    "ultimaRestauracion": "2026-08-28",
+    "resultado": "OK"
+   }
+  },
+  {
+   "id": "A-04",
+   "datos": false,
+   "nombre": "Servidor de aplicaciones APP01",
+   "tipo": "Servidor",
+   "estrategia": "warm",
+   "tiempoRecuperacion": 3,
+   "dependeDe": [
+    "A-05"
+   ],
+   "ubicacion": "CPD, VLAN 20",
+   "responsable": "Sistemas",
+   "procedimiento": {
+    "pasos": "1. Restaurar la VM.",
+    "exito": "La API responde.",
+    "credenciales": "Bóveda: «DR Meridiano»"
+   },
+   "backup": {
+    "aplica": true,
+    "tipo": "Imagen",
+    "frecuenciaHoras": 24,
+    "retencionDias": 14,
+    "offsite": true,
+    "cifrado": true,
+    "inmutable": false,
+    "ultimaRestauracion": "2026-08-28",
+    "resultado": "OK"
+   }
+  },
+  {
+   "id": "A-05",
+   "datos": true,
+   "nombre": "ERP y base de datos financiera",
+   "tipo": "Base de datos",
+   "estrategia": "warm",
+   "tiempoRecuperacion": 6,
+   "dependeDe": [
+    "A-06"
+   ],
+   "ubicacion": "CPD, VLAN 30",
+   "responsable": "Finanzas TI",
+   "procedimiento": {
+    "pasos": "1. Restaurar la última copia completa.\n2. Aplicar los registros de transacciones.",
+    "exito": "Cuadre de saldos con el día anterior.",
+    "credenciales": "Bóveda: «DR Meridiano»"
+   },
+   "backup": {
+    "aplica": true,
+    "tipo": "Base de datos",
+    "frecuenciaHoras": 1,
+    "retencionDias": 35,
+    "offsite": true,
+    "cifrado": true,
+    "inmutable": false,
+    "ultimaRestauracion": "2026-08-28",
+    "resultado": "OK"
+   }
+  },
+  {
+   "id": "A-06",
+   "datos": false,
+   "nombre": "Controlador de dominio DC01 (Active Directory)",
+   "tipo": "Identidad",
+   "estrategia": "hot",
+   "tiempoRecuperacion": 1,
+   "dependeDe": [],
+   "ubicacion": "CPD, Tier 0",
+   "responsable": "Identidad",
+   "procedimiento": {
+    "pasos": "1. Comprobar la réplica DC02.\n2. Transferir roles FSMO si hace falta.",
+    "exito": "Inicio de sesión correcto en tres segmentos.",
+    "credenciales": "Bóveda: «DR Meridiano»"
+   },
+   "backup": {
+    "aplica": true,
+    "tipo": "Estado del sistema",
+    "frecuenciaHoras": 24,
+    "retencionDias": 30,
+    "offsite": true,
+    "cifrado": true,
+    "inmutable": false,
+    "ultimaRestauracion": "2026-08-28",
+    "resultado": "OK"
+   }
+  },
+  {
+   "id": "A-07",
+   "datos": false,
+   "nombre": "Laboratorio de pruebas",
+   "tipo": "Servidor",
+   "estrategia": "ninguna",
+   "tiempoRecuperacion": 72,
+   "dependeDe": [],
+   "ubicacion": "Laboratorio",
+   "responsable": "I+D",
+   "procedimiento": {
+    "pasos": "",
+    "exito": "",
+    "credenciales": "Bóveda: «DR Meridiano»"
+   },
+   "backup": {
+    "aplica": false
+   }
+  }
+ ],
+ "proveedores": [],
+ "bcp": {
+  "equipo": [
+   {
+    "rol": "Responsable de crisis",
+    "titular": "Director de Operaciones",
+    "suplente": "Responsable de Seguridad",
+    "telefono": "600 000 101",
+    "responsabilidades": "Activa el plan, decide y responde ante las consejerías."
+   },
+   {
+    "rol": "Responsable de recuperación técnica",
+    "titular": "Responsable de Sistemas",
+    "suplente": "",
+    "telefono": "600 000 102",
+    "responsabilidades": "Coordina el DRP y el sitio alternativo."
+   },
+   {
+    "rol": "Responsable de comunicación",
+    "titular": "Responsable de Comunicación",
+    "suplente": "Jefa de Atención al Cliente",
+    "telefono": "600 000 103",
+    "responsabilidades": "Comunicados a las consejerías, a la ciudadanía y a los medios."
+   }
+  ],
+  "activacion": {
+   "umbralHoras": 2,
+   "autorizado": "Responsable de crisis o su suplente",
+   "escenarios": "1. Caída de la sede electrónica más de 2 h sin solución a la vista.\n2. Desastre físico en el CPD (incendio, inundación, corte eléctrico de más de 4 h).\n3. Fallo de un proveedor crítico sin plazo de resolución.\n4. Incidente de seguridad con impacto en la disponibilidad."
+  },
+  "comunicacion": {
+   "primario": "Microsoft Teams (canal del comité)",
+   "secundario": "Telefonía móvil y lista de contactos impresa",
+   "externo": "Web corporativa y correo a las consejerías",
+   "plantilla": "ASUNTO: [INCIDENTE] Servicios de TechServ — [FECHA] [HORA]\n\nSe ha detectado un incidente que afecta a [SERVICIOS].\nEstado: [EN INVESTIGACIÓN / EN RECUPERACIÓN / RESTABLECIDO PARCIALMENTE]\nVuelta estimada del servicio: [HORA]\nAlternativa disponible: [SÍ / NO — cuál]\nPróxima actualización: [HORA]\nUrgencias: [TELÉFONO]"
+  },
+  "sitio": {
+   "tipo": "warm",
+   "ubicacion": "CPD secundario en Zaragoza (ficticio)",
+   "distanciaKm": 300,
+   "rtoActivacion": 4,
+   "capacidad": "DR-01 VMware 32 núcleos / 256 GB; DR-02 SQL Server 16 núcleos / 128 GB; NAS 20 TB; cortafuegos en alta disponibilidad; fibra 1 Gbps y respaldo 4G."
+  }
+ },
+ "pruebas": [],
+ "revision": {
+  "version": "1.2",
+  "fecha": "2026-09-01",
+  "proxima": "2027-03-01",
+  "aprobadoPor": "Comité de Dirección (acta 2026/02)",
+  "disparadores": "Cambio de CPD, alta de un servicio crítico, incidente que active el plan, cambio normativo.",
+  "historial": [
+   {
+    "version": "1.0",
+    "fecha": "2025-01-15",
+    "motivo": "Versión inicial",
+    "responsable": "Responsable de continuidad",
+    "aprobado": "Comité de Dirección"
+   },
+   {
+    "version": "1.2",
+    "fecha": "2026-02-01",
+    "motivo": "Nuevo sitio alternativo",
+    "responsable": "Responsable de continuidad",
+    "aprobado": "Comité de Dirección"
+   }
+  ]
+ },
+ "acciones": {},
+ "historial": []
+}

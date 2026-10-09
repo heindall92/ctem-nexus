@@ -1,0 +1,310 @@
+{
+  "formato": "ens-studio-hallazgos",
+  "is_sample": false,
+  "origen": "CTEM-Nexus",
+  "proyecto": "Ejemplo · Industrias Meridiano S.A.",
+  "activo_sugerido": {
+    "id": "CTEM",
+    "name": "Industrias Meridiano"
+  },
+  "nota": "Importa este JSON en ENS Compliance Studio → Evidencia técnica. El activo CTEM debe existir en el proyecto de Studio.",
+  "hallazgos": [
+    {
+      "id": "CN-H-001",
+      "titulo": "Log4Shell en Apache Log4j 2 · Portal web de clientes",
+      "categoria": "OUTDATED",
+      "cvss": 10,
+      "activoId": "CTEM",
+      "estado": "abierto",
+      "fuente": "CTEM-Nexus · prioridad crítica (92.5/100)",
+      "ens": [
+        "op.exp.4",
+        "op.mon.3",
+        "mp.s.2"
+      ],
+      "objetivo": "203.0.113.10"
+    },
+    {
+      "id": "CN-H-002",
+      "titulo": "ProxyShell en Microsoft Exchange · Exchange OWA",
+      "categoria": "OUTDATED",
+      "cvss": 9.8,
+      "activoId": "CTEM",
+      "estado": "abierto",
+      "fuente": "CTEM-Nexus · prioridad crítica (90.7/100)",
+      "ens": [
+        "op.exp.4",
+        "op.mon.3",
+        "mp.s.2",
+        "op.acc.2",
+        "op.acc.4"
+      ],
+      "objetivo": "203.0.113.20"
+    },
+    {
+      "id": "CN-H-003",
+      "titulo": "Citrix Bleed: fuga de memoria y robo de sesiones · Citrix NetScaler Gateway",
+      "categoria": "OUTDATED",
+      "cvss": 9.4,
+      "activoId": "CTEM",
+      "estado": "abierto",
+      "fuente": "CTEM-Nexus · prioridad crítica (85.7/100)",
+      "ens": [
+        "op.exp.4",
+        "op.mon.3",
+        "mp.s.2",
+        "mp.com.1",
+        "mp.com.4",
+        "op.pl.2",
+        "op.mon.1"
+      ],
+      "objetivo": "203.0.113.30"
+    },
+    {
+      "id": "CN-H-004",
+      "titulo": "RCE sin autenticar en NetScaler Gateway · Citrix NetScaler Gateway",
+      "categoria": "OUTDATED",
+      "cvss": 9.8,
+      "activoId": "CTEM",
+      "estado": "abierto",
+      "fuente": "CTEM-Nexus · prioridad crítica (86.9/100)",
+      "ens": [
+        "op.exp.4",
+        "op.mon.3",
+        "mp.s.2",
+        "mp.com.1",
+        "mp.com.4",
+        "op.pl.2",
+        "op.mon.1"
+      ],
+      "objetivo": "203.0.113.30"
+    },
+    {
+      "id": "CN-H-005",
+      "titulo": "Cuenta de servicio svc_sql con SPN «kerberoastable» · Controlador de dominio DC01",
+      "categoria": "AUTH_MFA",
+      "cvss": 8.1,
+      "activoId": "CTEM",
+      "estado": "abierto",
+      "fuente": "CTEM-Nexus · prioridad alta (74.3/100)",
+      "ens": [
+        "op.acc.5",
+        "op.acc.6",
+        "op.acc.1",
+        "op.acc.2",
+        "op.acc.3",
+        "op.acc.4"
+      ],
+      "objetivo": "10.10.10.5"
+    },
+    {
+      "id": "CN-H-006",
+      "titulo": "Delegación sin restricciones en APP01 · Servidor de aplicaciones APP01",
+      "categoria": "IDOR",
+      "cvss": 8.8,
+      "activoId": "CTEM",
+      "estado": "abierto",
+      "fuente": "CTEM-Nexus · prioridad alta (62.7/100)",
+      "ens": [
+        "op.acc.2",
+        "op.acc.4",
+        "op.acc.3"
+      ],
+      "objetivo": "10.10.20.15"
+    },
+    {
+      "id": "CN-H-007",
+      "titulo": "ADCS ESC1: plantilla «UserAuth» permite SAN arbitrario · Entidad de certificación PKI-CA01",
+      "categoria": "AUTH_MFA",
+      "cvss": 9,
+      "activoId": "CTEM",
+      "estado": "abierto",
+      "fuente": "CTEM-Nexus · prioridad alta (68.3/100)",
+      "ens": [
+        "op.acc.5",
+        "op.acc.6",
+        "op.acc.1",
+        "op.exp.2",
+        "op.exp.10",
+        "mp.si.2",
+        "mp.eq.3"
+      ],
+      "objetivo": "10.10.10.8"
+    },
+    {
+      "id": "CN-H-008",
+      "titulo": "Firma SMB no obligatoria en servidores · Servidor de aplicaciones APP01",
+      "categoria": "TLS",
+      "cvss": 7.5,
+      "activoId": "CTEM",
+      "estado": "abierto",
+      "fuente": "CTEM-Nexus · prioridad media (58.8/100)",
+      "ens": [
+        "mp.com.2",
+        "mp.com.3",
+        "op.exp.2"
+      ],
+      "objetivo": "10.10.20.15"
+    },
+    {
+      "id": "CN-H-009",
+      "titulo": "Contraseña de administrador local reutilizada (sin LAPS) · Estaciones de trabajo (VLAN 50)",
+      "categoria": "DEFCREDS",
+      "cvss": 7.8,
+      "activoId": "CTEM",
+      "estado": "abierto",
+      "fuente": "CTEM-Nexus · prioridad media (54.7/100)",
+      "ens": [
+        "op.acc.2",
+        "op.acc.3",
+        "op.acc.4",
+        "op.acc.5",
+        "op.acc.6",
+        "op.acc.1"
+      ],
+      "objetivo": "10.10.50.0/24"
+    },
+    {
+      "id": "CN-H-010",
+      "titulo": "SQL Server con cuenta «sa» y contraseña débil · ERP y base de datos financiera",
+      "categoria": "BRUTE",
+      "cvss": 8.8,
+      "activoId": "CTEM",
+      "estado": "abierto",
+      "fuente": "CTEM-Nexus · prioridad alta (76.4/100)",
+      "ens": [
+        "op.acc.5",
+        "op.acc.6",
+        "op.acc.1"
+      ],
+      "objetivo": "10.10.30.12"
+    },
+    {
+      "id": "CN-H-011",
+      "titulo": "LLMNR y NBT-NS habilitados · Estaciones de trabajo (VLAN 50)",
+      "categoria": "NETSEG",
+      "cvss": 6.5,
+      "activoId": "CTEM",
+      "estado": "abierto",
+      "fuente": "CTEM-Nexus · prioridad media (50.8/100)",
+      "ens": [
+        "op.exp.2",
+        "mp.com.4",
+        "op.ext.4",
+        "mp.com.1",
+        "op.pl.2"
+      ],
+      "objetivo": "10.10.50.0/24"
+    },
+    {
+      "id": "CN-H-012",
+      "titulo": "Servicio de cola de impresión activo en el DC · Controlador de dominio DC01",
+      "categoria": "NETSEG",
+      "cvss": 6.8,
+      "activoId": "CTEM",
+      "estado": "abierto",
+      "fuente": "CTEM-Nexus · prioridad alta (70.4/100)",
+      "ens": [
+        "op.exp.2",
+        "op.exp.3"
+      ],
+      "objetivo": "10.10.10.5"
+    },
+    {
+      "id": "CN-H-013",
+      "titulo": "NTLM relay en Exchange (sin EPA) · Exchange OWA",
+      "categoria": "OUTDATED",
+      "cvss": 9.8,
+      "activoId": "CTEM",
+      "estado": "abierto",
+      "fuente": "CTEM-Nexus · prioridad crítica (90.7/100)",
+      "ens": [
+        "op.exp.4",
+        "op.mon.3",
+        "mp.s.2"
+      ],
+      "objetivo": "203.0.113.20"
+    },
+    {
+      "id": "CN-H-014",
+      "titulo": "Apache ActiveMQ: deserialización OpenWire · Servidor de aplicaciones APP01",
+      "categoria": "OUTDATED",
+      "cvss": 9.8,
+      "activoId": "CTEM",
+      "estado": "abierto",
+      "fuente": "CTEM-Nexus · prioridad alta (75.7/100)",
+      "ens": [
+        "op.exp.4",
+        "op.mon.3",
+        "mp.s.2"
+      ],
+      "objetivo": "10.10.20.15"
+    },
+    {
+      "id": "CN-H-016",
+      "titulo": "Microsoft Office: RCE mediante documentos · Estaciones de trabajo (VLAN 50)",
+      "categoria": "OUTDATED",
+      "cvss": 8.8,
+      "activoId": "CTEM",
+      "estado": "abierto",
+      "fuente": "CTEM-Nexus · prioridad alta (67.7/100)",
+      "ens": [
+        "op.exp.4",
+        "op.mon.3",
+        "mp.s.2"
+      ],
+      "objetivo": "10.10.50.0/24"
+    },
+    {
+      "id": "CN-H-017",
+      "titulo": "TLS 1.0/1.1 y cifrados débiles habilitados · Portal web de clientes",
+      "categoria": "TLS",
+      "cvss": 5.3,
+      "activoId": "CTEM",
+      "estado": "cerrado",
+      "fuente": "CTEM-Nexus · prioridad media (48.4/100)",
+      "ens": [
+        "mp.com.2",
+        "mp.com.3",
+        "op.exp.10",
+        "mp.si.2",
+        "mp.eq.3"
+      ],
+      "objetivo": "203.0.113.10"
+    },
+    {
+      "id": "CN-H-018",
+      "titulo": "Usuarios sin preautenticación Kerberos (AS-REP roasting) · Controlador de dominio DC01",
+      "categoria": "AUTH_MFA",
+      "cvss": 7.5,
+      "activoId": "CTEM",
+      "estado": "abierto",
+      "fuente": "CTEM-Nexus · prioridad alta (72.5/100)",
+      "ens": [
+        "op.acc.5",
+        "op.acc.6",
+        "op.acc.1"
+      ],
+      "objetivo": "10.10.10.5"
+    },
+    {
+      "id": "CN-H-020",
+      "titulo": "Inscripción web de ADCS por HTTP sin EPA (ESC8) · Entidad de certificación PKI-CA01",
+      "categoria": "AUTH_MFA",
+      "cvss": 8.1,
+      "activoId": "CTEM",
+      "estado": "cerrado",
+      "fuente": "CTEM-Nexus · prioridad media (54.3/100)",
+      "ens": [
+        "op.acc.5",
+        "op.acc.6",
+        "op.acc.1",
+        "op.exp.2",
+        "op.exp.10",
+        "mp.si.2",
+        "mp.eq.3"
+      ],
+      "objetivo": "10.10.10.8"
+    }
+  ]
+}

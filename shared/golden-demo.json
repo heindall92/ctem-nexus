@@ -1,5 +1,5 @@
 {
-  "engineVersion": "1.1.0",
+  "engineVersion": "1.2.0",
   "input": {
     "assets": [
       {
@@ -943,6 +943,336 @@
           "accepted": 1
         }
       }
+    },
+    "slaPolicies": {
+      "estandar": [
+        {
+          "id": "H-001",
+          "slaDays": 3
+        },
+        {
+          "id": "H-002",
+          "slaDays": 3
+        },
+        {
+          "id": "H-013",
+          "slaDays": 3
+        },
+        {
+          "id": "H-004",
+          "slaDays": 3
+        },
+        {
+          "id": "H-003",
+          "slaDays": 3
+        },
+        {
+          "id": "H-010",
+          "slaDays": 14
+        },
+        {
+          "id": "H-014",
+          "slaDays": 14
+        },
+        {
+          "id": "H-005",
+          "slaDays": 14
+        },
+        {
+          "id": "H-018",
+          "slaDays": 14
+        },
+        {
+          "id": "H-012",
+          "slaDays": 14
+        },
+        {
+          "id": "H-007",
+          "slaDays": 14
+        },
+        {
+          "id": "H-016",
+          "slaDays": 14
+        },
+        {
+          "id": "H-006",
+          "slaDays": 14
+        },
+        {
+          "id": "H-008",
+          "slaDays": 30
+        },
+        {
+          "id": "H-009",
+          "slaDays": 30
+        },
+        {
+          "id": "H-020",
+          "slaDays": 30
+        },
+        {
+          "id": "H-019",
+          "slaDays": 30
+        },
+        {
+          "id": "H-011",
+          "slaDays": 30
+        },
+        {
+          "id": "H-017",
+          "slaDays": 30
+        },
+        {
+          "id": "H-015",
+          "slaDays": 90
+        }
+      ],
+      "ens_basica": [
+        {
+          "id": "H-001",
+          "slaDays": 7
+        },
+        {
+          "id": "H-002",
+          "slaDays": 7
+        },
+        {
+          "id": "H-013",
+          "slaDays": 7
+        },
+        {
+          "id": "H-004",
+          "slaDays": 7
+        },
+        {
+          "id": "H-003",
+          "slaDays": 7
+        },
+        {
+          "id": "H-010",
+          "slaDays": 30
+        },
+        {
+          "id": "H-014",
+          "slaDays": 30
+        },
+        {
+          "id": "H-005",
+          "slaDays": 30
+        },
+        {
+          "id": "H-018",
+          "slaDays": 30
+        },
+        {
+          "id": "H-012",
+          "slaDays": 30
+        },
+        {
+          "id": "H-007",
+          "slaDays": 30
+        },
+        {
+          "id": "H-016",
+          "slaDays": 30
+        },
+        {
+          "id": "H-006",
+          "slaDays": 30
+        },
+        {
+          "id": "H-008",
+          "slaDays": 60
+        },
+        {
+          "id": "H-009",
+          "slaDays": 60
+        },
+        {
+          "id": "H-020",
+          "slaDays": 60
+        },
+        {
+          "id": "H-019",
+          "slaDays": 60
+        },
+        {
+          "id": "H-011",
+          "slaDays": 60
+        },
+        {
+          "id": "H-017",
+          "slaDays": 60
+        },
+        {
+          "id": "H-015",
+          "slaDays": 120
+        }
+      ],
+      "ens_media": [
+        {
+          "id": "H-001",
+          "slaDays": 3
+        },
+        {
+          "id": "H-002",
+          "slaDays": 3
+        },
+        {
+          "id": "H-013",
+          "slaDays": 3
+        },
+        {
+          "id": "H-004",
+          "slaDays": 3
+        },
+        {
+          "id": "H-003",
+          "slaDays": 3
+        },
+        {
+          "id": "H-010",
+          "slaDays": 14
+        },
+        {
+          "id": "H-014",
+          "slaDays": 14
+        },
+        {
+          "id": "H-005",
+          "slaDays": 14
+        },
+        {
+          "id": "H-018",
+          "slaDays": 14
+        },
+        {
+          "id": "H-012",
+          "slaDays": 14
+        },
+        {
+          "id": "H-007",
+          "slaDays": 14
+        },
+        {
+          "id": "H-016",
+          "slaDays": 14
+        },
+        {
+          "id": "H-006",
+          "slaDays": 14
+        },
+        {
+          "id": "H-008",
+          "slaDays": 30
+        },
+        {
+          "id": "H-009",
+          "slaDays": 30
+        },
+        {
+          "id": "H-020",
+          "slaDays": 30
+        },
+        {
+          "id": "H-019",
+          "slaDays": 30
+        },
+        {
+          "id": "H-011",
+          "slaDays": 30
+        },
+        {
+          "id": "H-017",
+          "slaDays": 30
+        },
+        {
+          "id": "H-015",
+          "slaDays": 90
+        }
+      ],
+      "ens_alta": [
+        {
+          "id": "H-001",
+          "slaDays": 2
+        },
+        {
+          "id": "H-002",
+          "slaDays": 2
+        },
+        {
+          "id": "H-013",
+          "slaDays": 2
+        },
+        {
+          "id": "H-004",
+          "slaDays": 2
+        },
+        {
+          "id": "H-003",
+          "slaDays": 2
+        },
+        {
+          "id": "H-010",
+          "slaDays": 7
+        },
+        {
+          "id": "H-014",
+          "slaDays": 7
+        },
+        {
+          "id": "H-005",
+          "slaDays": 7
+        },
+        {
+          "id": "H-018",
+          "slaDays": 7
+        },
+        {
+          "id": "H-012",
+          "slaDays": 7
+        },
+        {
+          "id": "H-007",
+          "slaDays": 7
+        },
+        {
+          "id": "H-016",
+          "slaDays": 7
+        },
+        {
+          "id": "H-006",
+          "slaDays": 7
+        },
+        {
+          "id": "H-008",
+          "slaDays": 21
+        },
+        {
+          "id": "H-009",
+          "slaDays": 21
+        },
+        {
+          "id": "H-020",
+          "slaDays": 21
+        },
+        {
+          "id": "H-019",
+          "slaDays": 21
+        },
+        {
+          "id": "H-011",
+          "slaDays": 21
+        },
+        {
+          "id": "H-017",
+          "slaDays": 21
+        },
+        {
+          "id": "H-015",
+          "slaDays": 60
+        }
+      ]
     }
   }
 }

@@ -11,7 +11,7 @@ import type { ScanItem, ScanParse } from './scanners';
 import type { Asset, Finding, FindingSource } from './types';
 
 export const EVIDENCE_MAX = 4000;
-const PREFIX: Record<string, string> = { nessus: 'NES', openvas: 'OVS', nuclei: 'NUC', trivy: 'TRV', sarif: 'SRF' };
+const PREFIX: Record<string, string> = { nessus: 'NES', openvas: 'OVS', nuclei: 'NUC', trivy: 'TRV', sarif: 'SRF', adauditor: 'ADA' };
 
 export const normTitle = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
 
@@ -167,6 +167,7 @@ export function planImport(parse: ScanParse, project: { assets: Asset[]; finding
     leadsTo: [],
     sources: [parse.source],
     evidence: it.evidence || undefined,
+    ...(it.attack?.length ? { attack: it.attack } : {}),
   });
   const keyOf = (f: Finding) => `${f.assetId}|${f.cve ?? `t:${normTitle(f.title)}`}`;
   const incoming = new Map<string, Finding>();
