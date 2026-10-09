@@ -50,6 +50,7 @@ const shots = [
   ['06-alcance.png', 'Alcance y activos'],
   ['07-mapa-attack.png', 'Mapa ATT&CK'],
   ['08-simulacion.png', 'simulacion'],
+  ['09-ecosistema.png', 'Ecosistema'],
 ];
 
 const browser = await chromium.launch({ executablePath: findChrome() });

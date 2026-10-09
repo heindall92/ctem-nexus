@@ -1,6 +1,6 @@
 {
   "name": "ctem-nexus",
-  "version": "0.6.0",
+  "version": "1.0.0",
   "private": true,
   "description": "CTEM-Nexus: gestión continua de la exposición a amenazas (CTEM) en el navegador.",
   "type": "module",
@@ -16,7 +16,8 @@
     "test": "vitest run",
     "golden": "GOLDEN=1 vitest run src/engine/golden.test.ts",
     "typecheck": "tsc -b",
-    "capturas": "node scripts/capturas.mjs"
+    "capturas": "node scripts/capturas.mjs",
+    "guia": "node scripts/guia.mjs"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.3.0",

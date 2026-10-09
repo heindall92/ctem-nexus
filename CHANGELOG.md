@@ -2,6 +2,24 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico. La hoja de ruta está en [ROADMAP.md](ROADMAP.md).
 
+## [1.0.0] - 2026-10-09
+
+Fase 5 de la hoja de ruta: documentación, rendimiento y lanzamiento. Primera versión estable.
+
+### Añadido
+- **Guía práctica** [`docs/GUIA.md`](docs/GUIA.md): «De un Nmap a un plan de remediación con SLA en 10 minutos», con diez capturas generadas desde la interfaz real (`npm run guia`).
+- **Ficheros de ejemplo descargables** desde la ayuda (Ingesta de datos): Nmap, BloodHound, Nessus, OpenVAS, Nuclei, Trivy, SARIF, KEV, EPSS, KAIROS, Compliance Studio, ENS AD Auditor y Norvik. Son los mismos que usan las pruebas.
+- **Release automática**: al subir una etiqueta `vX.Y.Z`, la CI pasa las pruebas, compila y publica la release con `ctem-nexus.html` adjunto, su SHA-256 y las notas de este fichero.
+- Captura de la vista Ecosistema en claro, oscuro y móvil.
+
+### Cambiado
+- **Rendimiento**: las vistas, la ayuda y la búsqueda se cargan bajo demanda y se precargan con el navegador libre. Lighthouse de rendimiento en Pages (con gzip, mediana de tres pasadas): 93 → **96**. El atajo Ctrl + K vive ahora en la raíz de la app, porque la búsqueda se carga al abrirla.
+- **README reescrito**: qué resuelve, demo, cinco pasos, fórmula, privacidad, ecosistema, desarrollo y licencia, con aviso de independencia.
+- `docs/SCORING.md` (perfiles, políticas de plazos, criticidad desde el BIA, motor 1.2.0) y `docs/ARCHITECTURE.md` (ecosistema, carga bajo demanda, todas las vistas, acento por defecto) al día.
+
+### Pruebas
+- e2e 149/149 (ficheros de ejemplo descargables), Vitest 148, Pytest 27 y axe-core 0 infracciones en 220 estados.
+
 ## [0.6.0] - 2026-10-09
 
 Fase 4 de la hoja de ruta: integración con el ecosistema por fichero.

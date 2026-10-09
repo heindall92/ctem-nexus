@@ -1,4 +1,4 @@
-# Método de cálculo · CTEM-Nexus v1.0.0
+# Método de cálculo · motor de CTEM-Nexus 1.2.0
 
 La puntuación de cada hallazgo va de **0 a 100** y la calculan dos implementaciones idénticas:
 
@@ -30,6 +30,19 @@ proximidad      = max(0, 1 − saltos / 4)          × 15   (0 si no hay ruta ha
 | Exposición | 10 | Activo expuesto a Internet. |
 | Proximidad | 15 | Saltos en el grafo hasta la joya de la corona (criticidad 5) más cercana. |
 
+**Perfiles de ponderación.** Los pesos de la tabla son los del perfil *General*. Cada perfil suma 100 y se guarda en el
+proyecto (Ajustes); los tres tienen paridad TS ↔ Python en el fichero dorado.
+
+| Perfil | Severidad | Explotabilidad | Criticidad | Exposición | Proximidad | Para qué |
+|---|---:|---:|---:|---:|---:|---|
+| General | 30 | 25 | 20 | 10 | 15 | Equilibrio entre severidad, explotación real y negocio |
+| OT / industrial | 20 | 20 | 30 | 10 | 20 | En planta, parar la línea importa más que la nota del fallo |
+| Banca y finanzas | 25 | 30 | 20 | 15 | 10 | Amenaza dirigida (DORA, pruebas TLPT): explotación real y exposición |
+
+**Criticidad desde el BIA.** Si se vincula KAIROS (vista Ecosistema), la criticidad de los activos sale de las funciones
+que soportan: RTO ≤ 4 h → 5; ≤ 24 h → 4; ≤ 72 h → 3; más → 2 (sin RTO, el MTPD), heredada por dependencias. Ver
+[ECOSISTEMA.md](ECOSISTEMA.md).
+
 **Saltos de un hallazgo.** Se toma el mínimo entre los saltos del activo afectado y, si el hallazgo habilita
 un movimiento (`leadsTo`), `1 + saltos del destino`. Así, un ESC1 en la PKI que da acceso al controlador de
 dominio queda a 1 salto aunque la PKI no tenga otras salidas.
@@ -48,6 +61,17 @@ pero no cuenta en los indicadores ni genera aristas.
 | Alta | ≥ 60 | 14 días |
 | Media | ≥ 40 | 30 días |
 | Baja | < 40 | 90 días |
+
+**Políticas de plazos.** Los días de la tabla son la política *estándar*. Si se vincula Compliance Studio, la categoría
+del sistema ENS elige otra (orientativa: el RD 311/2022 no fija días, pero exige más diligencia cuanto más alta es la
+categoría). La política forma parte del motor (`slaPolicy` en la entrada y en el resultado) y la comprueba la paridad.
+
+| Política | Crítica | Alta | Media | Baja |
+|---|---:|---:|---:|---:|
+| Estándar | 3 | 14 | 30 | 90 |
+| ENS BÁSICA | 7 | 30 | 60 | 120 |
+| ENS MEDIA | 3 | 14 | 30 | 90 |
+| ENS ALTA | 2 | 7 | 21 | 60 |
 
 ## Ejemplo resuelto
 

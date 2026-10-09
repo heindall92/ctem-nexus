@@ -6,6 +6,7 @@ import { BAND_THRESHOLDS, EXPLOIT_PUBLIC_FLOOR, NOT_EXPLOITABLE_FACTOR, PROXIMIT
 import { ECOSYSTEM, screen, useL } from '../i18n';
 import { n1 } from '../lib/format';
 import { useStore } from '../store/store';
+import { SampleFiles } from './SampleFiles';
 import { SPRING } from './ui';
 
 type Tab = 'ciclo' | 'calculo' | 'ingesta' | 'atajos' | 'glosario' | 'acerca';
@@ -222,6 +223,7 @@ export function HelpModal() {
                       <p className="mt-1 text-xs text-ink-3">{L('Jira: Ajustes del sistema → Importación externa → CSV, con formato de fecha «yyyy-MM-dd». GitHub: el JSON trae un issue por ticket; se envía sin pasar los textos por la shell:', 'Jira: System settings → External system import → CSV, with date format “yyyy-MM-dd”. GitHub: the JSON has one issue per ticket; send it without passing the texts through the shell:')}</p>
                       <pre className="code mt-2">{"jq -c '.[]' github-issues.json | while read -r i; do\n  printf '%s' \"$i\" | gh api --method POST repos/ORG/REPO/issues --input -\ndone"}</pre>
                     </div>
+                    <SampleFiles />
                     <div className="rounded-2xl border border-hairline bg-surface p-4" data-testid="ayuda-ecosistema">
                       <div className="flex items-center gap-2 font-medium text-ink">
                         <Terminal className="size-4 text-accent" />

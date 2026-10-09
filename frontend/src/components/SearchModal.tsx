@@ -23,15 +23,10 @@ export function SearchModal() {
   const [query, setQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Escuchar atajo global Ctrl+K / Cmd+K y Escape
+  // Escape cierra (el atajo Ctrl+K / Cmd+K vive en App, porque este diálogo se carga al abrirlo por primera vez)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        setOpen(!useStore.getState().searchOpen);
-      } else if (e.key === 'Escape' && useStore.getState().searchOpen) {
-        setOpen(false);
-      }
+      if (e.key === 'Escape' && useStore.getState().searchOpen) setOpen(false);
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);

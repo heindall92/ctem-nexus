@@ -19,7 +19,12 @@ al BIA (KAIROS) y a la formación (ARGOS) sin copiar datos a mano y sin que nada
 | 0.4.0 | 2 · Diseño | Lenguaje visual de Rosetta y criterios apple-design (Emil Kowalski) |
 | 0.5.0 | 3 · Funciones | Importadores, excepciones de riesgo, histórico y tendencias, ATT&CK, simulación |
 | 0.6.0 ✓ | 4 · Ecosistema | Formato de intercambio común e integración con las 6 herramientas hermanas |
-| 1.0.0 | 5 · Lanzamiento | Documentación, guía práctica, capturas, publicación |
+| 1.0.0 ✓ | 5 · Lanzamiento | Documentación, guía práctica, capturas, publicación |
+| 1.1.0 | 6 · Validación ofensiva | ZAP, Burp, PingCastle y Certipy; evidencias de explotación y ciclo de *retest* |
+| 1.2.0 | 7 · Ecosistema 2 | Las herramientas hermanas exportan e importan el sobre; bloque «Suite» común |
+| 1.3.0 | 8 · Superficie externa y amenaza | Exposición externa (Shodan, Censys, crt.sh, subfinder), ransomware y STIX 2.1 |
+| 1.4.0 | 9 · Gobierno de la remediación | Registro de riesgos, burndown, calendario de plazos (.ics) y cuadro para el comité |
+| 1.5.0 | 10 · Riesgo en euros | Pérdida esperada por hallazgo con los costes del BIA de KAIROS |
 
 ---
 
@@ -164,13 +169,78 @@ Tareas:
 
 ## Fase 5 · Documentación y lanzamiento (1.0.0)
 
-- [ ] **README reescrito** con este orden: qué problema resuelve (en 3 líneas), demo en vivo, captura, cómo se usa en 5 pasos, fórmula, privacidad, ecosistema, desarrollo y licencia. Cifras verificadas por prueba, sin servicios externos en la cabecera y con un aviso de independencia (no afiliado a Gartner, MITRE, CISA, FIRST, ISO, CCN ni ninguna entidad de certificación).
-- [ ] `docs/GUIA.md`: «De un Nmap a un plan de remediación con SLA en 10 minutos», con capturas. Sirve de base para el artículo de LinkedIn.
-- [ ] `docs/SCORING.md` y `docs/ARCHITECTURE.md` actualizados con los factores nuevos y el formato de intercambio.
-- [ ] Ficheros de ejemplo descargables (Nmap, BloodHound, Nessus, Nuclei, KAIROS) desde la ayuda de la app.
-- [ ] **Recuperar ≥ 95 de rendimiento en Lighthouse** (93 en la 0.5.1, 97 en la 0.4.2): cargar bajo demanda los importadores, el mapa ATT&CK y la simulación (`React.lazy`, evaluados solo al abrirlos) y medir con gzip, como en Pages.
-- [ ] Publicación en Pages y una *release* en GitHub con el HTML autocontenido adjunto y sus notas.
-- [ ] Lanzamiento escalonado (3–4 días entre publicaciones): primero la herramienta, después la guía práctica y por último la integración con el ecosistema.
+- [x] **README reescrito** con este orden: qué problema resuelve (en 3 líneas), demo en vivo, captura, cómo se usa en 5 pasos, fórmula, privacidad, ecosistema, desarrollo y licencia. Cifras verificadas por prueba, sin servicios externos en la cabecera y con un aviso de independencia (no afiliado a Gartner, MITRE, CISA, FIRST, ISO, CCN ni ninguna entidad de certificación).
+- [x] `docs/GUIA.md`: «De un Nmap a un plan de remediación con SLA en 10 minutos», con capturas generadas desde la interfaz real (`npm run guia`). Sirve de base para el artículo de LinkedIn.
+- [x] `docs/SCORING.md` y `docs/ARCHITECTURE.md` actualizados con los factores nuevos y el formato de intercambio.
+- [x] Ficheros de ejemplo descargables (Nmap, BloodHound, Nessus, OpenVAS, Nuclei, Trivy, SARIF, KEV, EPSS, KAIROS, Studio, ENS AD Auditor y Norvik) desde la ayuda de la app, con prueba e2e de que son idénticos a `shared/samples`.
+- [x] **Recuperar ≥ 95 de rendimiento en Lighthouse**: vistas, ayuda y búsqueda con `React.lazy` y precarga en reposo. Mediana con gzip: **96** en Pages (93 en la 0.5.1). El HTML autocontenido, que no se puede dividir, da 94.
+- [x] Publicación en Pages y *release* en GitHub con el HTML autocontenido adjunto, su SHA-256 y sus notas (`.github/workflows/release.yml`, al subir la etiqueta).
+- [ ] Lanzamiento escalonado (3–4 días entre publicaciones): primero la herramienta, después la guía práctica y por último la integración con el ecosistema. *Lo decide el autor; los textos están preparados.*
+
+**Estado: cerrada en 1.0.0** (salvo el calendario de publicaciones, que depende del autor).
+
+---
+
+## Fase 6 · Validación ofensiva (1.1.0)
+
+El ciclo CTEM se queda cojo si la fase de **validación** se limita a un botón. Esta fase trae los resultados de las
+herramientas con las que se valida de verdad y cierra el bucle con el *retest*.
+
+- [ ] **Importadores ofensivos**, con el mismo plan previo y la misma deduplicación que los escáneres:
+  - **OWASP ZAP** (informe JSON tradicional): alertas por URL con riesgo, confianza, CWE y referencias.
+  - **Burp Suite** (exportación XML de *issues*): gravedad, certeza, ruta y evidencia en base64 recortada y sin cuerpo.
+  - **PingCastle** (informe XML *healthcheck*): reglas de riesgo del directorio activo con su categoría y puntos.
+  - **Certipy** (`find -json`): plantillas y CA vulnerables con su ESC (1 a 16) y quién puede inscribirse.
+- [ ] **Evidencia de validación** por hallazgo: quién, cuándo, técnica ATT&CK usada, resultado (explotado, no explotable, mitigado por un control) y prueba en texto (comando, captura descrita). Sale en el informe y en el anexo técnico.
+- [ ] **Retest**: un hallazgo mitigado pasa a «pendiente de verificar» hasta que un escaneo posterior no lo ve (verificado automáticamente) o el analista confirma la prueba. Indicador de **tasa de reapertura** en Movilización.
+- [ ] Ficheros de ejemplo, pruebas unitarias con entradas hostiles y pasos e2e de cada importador.
+
+**Aceptación:** cada importador tiene su ejemplo y sus pruebas; un ciclo mitigar → reimportar → verificado queda cubierto por una prueba de motor y otra e2e; axe 0.
+
+## Fase 7 · Ecosistema 2 (1.2.0)
+
+El sobre `yrd-ecosistema` se implementa en las herramientas hermanas, no solo en CTEM-Nexus y Rosetta.
+
+- [ ] **KAIROS**: exporta su BIA como sobre `bia` e importa el riesgo de interrupción de CTEM-Nexus en la ficha de cada activo.
+- [ ] **ENS Compliance Studio**: exporta su categoría y su SoA como sobre `soa` e importa la evidencia técnica de CTEM-Nexus (ya lo hace en su formato) y el sobre `hallazgos`.
+- [ ] **ENS AD Auditor**: exporta sus alertas también como sobre `hallazgos`.
+- [ ] Bloque **«Suite»** igual en «Acerca de» de las siete herramientas (web publicada y repositorio).
+- [ ] CTEM-Nexus acepta los sobres nuevos además de los formatos nativos, con pruebas de ida y vuelta en cada par.
+
+**Aceptación:** cada par CTEM-Nexus ↔ herramienta tiene un fichero de ida, otro de vuelta y su prueba en los dos repositorios.
+
+## Fase 8 · Superficie externa y amenaza (1.3.0)
+
+Lo que ve un atacante desde fuera, sin escanear nada desde la herramienta: el usuario trae las exportaciones.
+
+- [ ] **Superficie externa** por fichero: Shodan (JSON de `shodan download`), Censys (JSON de búsqueda), crt.sh (JSON de certificados) y listas de subdominios (subfinder, amass). Activos expuestos nuevos, servicios y CVE anunciados, certificados caducados o a punto y subdominios fuera del inventario («shadow IT»).
+- [ ] **Ransomware**: el campo `knownRansomwareCampaignUse` del catálogo KEV se guarda y se señala en la ficha, en el panel y en el informe.
+- [ ] **Inteligencia STIX 2.1**: un *bundle* (MISP, OpenCTI…) relaciona vulnerabilidades con actores y campañas; la ficha enseña quién explota cada CVE.
+- [ ] Vista de exposición externa con su propia visualización (no anillos): mapa de servicios por puerto y antigüedad.
+
+**Aceptación:** importadores con ejemplo y pruebas hostiles; el informe distingue la exposición externa; axe 0.
+
+## Fase 9 · Gobierno de la remediación (1.4.0)
+
+Para el comité de seguridad y para las auditorías de ENS, NIS2 y DORA.
+
+- [ ] **Registro de riesgos** exportable a Excel (XLSX sin fórmulas) y CSV: riesgo, activo, responsable, tratamiento, aceptaciones con caducidad y controles afectados.
+- [ ] **Burndown** de hallazgos abiertos por banda entre ciclos y **MTTR por responsable y por banda**, con su tendencia.
+- [ ] **Calendario de plazos** (.ics) con la fecha límite de cada ticket, para importarlo en Outlook o Google Calendar.
+- [ ] **Paquete para el comité**: una página con indicadores de NIS2 (art. 21) y DORA (art. 9 y 10), decisiones pendientes y riesgos aceptados que caducan.
+
+**Aceptación:** el XLSX abre sin avisos en Excel y LibreOffice; el .ics se valida contra RFC 5545 en las pruebas.
+
+## Fase 10 · Riesgo en euros (1.5.0)
+
+El puente definitivo entre lo técnico y la dirección: de un CVE a euros, con los datos que ya tiene el BIA.
+
+- [ ] Desde **KAIROS**, el coste por hora de cada función y su RTO llegan a los activos que la soportan.
+- [ ] **Pérdida esperada** por hallazgo, explicable y conservadora: probabilidad (EPSS, KEV y validación) × impacto (coste por hora × horas hasta el RTO o el MTPD), con rango bajo y alto y sin falsa precisión.
+- [ ] Orden alternativo del plan por **euros evitados por hora de trabajo** y su efecto en «¿Y si…?».
+- [ ] El informe para la dirección incluye la exposición económica y su método.
+
+**Aceptación:** la fórmula está en `docs/SCORING.md`, con paridad TS ↔ Python y un ejemplo resuelto a mano en las pruebas.
 
 ---
 

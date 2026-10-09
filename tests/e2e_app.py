@@ -391,6 +391,7 @@ def escritorio(b, tmp):
     ayuda = page.get_by_role("button", name="Ayuda").first
     ayuda.click()
     dlg = page.get_by_role("dialog", name=re.compile("Guía y ayuda"))
+    dlg.wait_for()
     check("la ayuda es un diálogo modal con nombre", dlg.count() == 1)
     expect(dlg).to_be_focused()  # al abrirse, el diálogo toma el foco en el siguiente frame
     page.get_by_role("tab", name="Ciclo CTEM").focus()
@@ -400,6 +401,10 @@ def escritorio(b, tmp):
     page.get_by_role("tab", name="Cálculo de riesgo").click()
     formula = page.get_by_test_id("formula").inner_text()
     check("la ayuda muestra la fórmula real del motor (30 · 25 · 20 · 10 · 15)", all(f"× {w}" in formula for w in (30, 25, 20, 10, 15)) and "0.35" not in formula, formula)
+    page.get_by_role("tab", name="Ingesta de datos").click()
+    with page.expect_download() as d:
+        page.get_by_role("button", name=re.compile("Descargar el ejemplo de KAIROS")).click()
+    check("la ayuda descarga los ficheros de ejemplo, idénticos a shared/samples", pathlib.Path(d.value.path()).read_bytes() == (ROOT / "shared" / "samples" / "ecosistema" / "kairos-meridiano.json").read_bytes() and page.get_by_test_id("ficheros-ejemplo").get_by_role("button").count() == 13)
     page.get_by_role("tab", name="Acerca de").click()
     check("«Acerca de» enlaza las webs del ecosistema", page.get_by_role("link", name="Abrir ARGOS").count() == 1 and page.get_by_role("link", name="Abrir Rosetta").count() == 1)
     page.keyboard.press("Escape")
@@ -536,6 +541,7 @@ def movil(b):
     barra = page.get_by_role("navigation", name="Secciones")
     check("barra inferior con cinco destinos", barra.get_by_role("button").count() == 5)
     barra.get_by_role("button", name="Priorización").click()
+    page.get_by_test_id("tarjetas-hallazgos").wait_for()
     check("la barra inferior navega", page.evaluate(f"{S}.view") == "priorizacion")
     check("en móvil, Priorización muestra tarjetas y no la tabla", page.get_by_test_id("tarjetas-hallazgos").is_visible() and not page.locator("table").first.is_visible())
     page.evaluate("document.getElementById('contenido').scrollTop = 600")

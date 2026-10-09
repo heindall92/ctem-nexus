@@ -7,9 +7,12 @@ flowchart LR
     Store["Estado (zustand)<br/>localStorage → memoria"]
     Engine["Motor TS sin DOM<br/>src/engine/"]
     IO["Importación / exportación<br/>JSON · CSV · Markdown"]
+    Eco["Ecosistema<br/>sobre yrd-ecosistema"]
     UI --> Store --> Engine
     UI --> IO
+    UI --> Eco
   end
+  Eco <-. "ficheros" .-> Sister["Rosetta · Compliance Studio · KAIROS<br/>ENS AD Auditor · Norvik · ARGOS"]
   subgraph API["Backend opcional (FastAPI)"]
     Routers["Routers por fase CTEM<br/>scoping · discovery · prioritize · validation · mobilization"]
     PyEngine["app/engine/prioritization.py<br/>misma fórmula"]
@@ -29,6 +32,8 @@ flowchart LR
 | Backend FastAPI opcional | Para integrarlo en flujos (CI, SOAR, otros escáneres). Si no responde, la interfaz vuelve al motor local y lo indica. |
 | Fichero dorado compartido | `npm run golden` lo genera desde el motor TS; `pytest` exige que Python dé exactamente lo mismo (puntuaciones, textos, rutas, resumen). |
 | Grafo en SVG propio | Sin dependencias pesadas (Cytoscape/React Flow). Disposición por columnas según la distancia BFS desde Internet. |
+| Vistas cargadas bajo demanda (`React.lazy`) | En Pages solo el panel va en el arranque; el resto de vistas, la ayuda y la búsqueda se precargan con el navegador libre. Lighthouse de rendimiento: 93 → 96 (mediana, con gzip). En el HTML autocontenido todo sigue en un único fichero. |
+| Integración por fichero, nunca por red | Las herramientas del ecosistema intercambian un sobre JSON común (`shared/schemas/yrd-ecosistema.schema.json`). Cada importación enseña qué cambiará antes de aplicarlo. Ver [ECOSISTEMA.md](ECOSISTEMA.md). |
 
 ## Módulos de la interfaz
 
@@ -38,7 +43,10 @@ flowchart LR
 | Alcance y activos | Alcance | `frontend/src/views/Scoping.tsx` |
 | Descubrimiento y priorización | Descubrimiento + Priorización | `frontend/src/views/Prioritization.tsx` |
 | Rutas de ataque | Validación | `frontend/src/views/AttackPaths.tsx` + `components/AttackGraph.tsx` |
+| Mapa ATT&CK | Validación | `frontend/src/views/MitreMatrix.tsx` + `engine/attack.ts` |
+| ¿Y si…? | Priorización + Movilización | `frontend/src/views/Simulation.tsx` + `engine/simulate.ts` |
 | Movilización | Movilización | `frontend/src/views/Mobilization.tsx` |
+| Ecosistema | Todas | `frontend/src/views/Ecosystem.tsx` + `engine/ecosystem.ts` y `engine/controls.ts` |
 | Ajustes y datos | — | `frontend/src/views/Settings.tsx` |
 
 ## API
@@ -56,7 +64,9 @@ Documentación interactiva en `http://127.0.0.1:8000/docs` con el backend arranc
 
 ## Diseño y movimiento
 
-- Oscuro casi negro frío, un solo acento (verde azulado `#3ddcc4`); los colores de banda solo transmiten prioridad.
+- Oscuro casi negro frío o claro gris perla, un solo acento (azul eléctrico por defecto, siete a elegir, los de Rosetta);
+  los colores de banda solo transmiten prioridad. Sin anillos ni gráficos circulares (son el sello de Rosetta): el panel
+  usa franjas de exposición por activo.
 - Superficies unificadas con divisiones finas en lugar de tarjetas fragmentadas; material translúcido solo donde hay
   capas superpuestas (barra superior fija, panel lateral, avisos), más grueso cuanto mayor es la superficie.
 - Monoespaciada (Geist Mono) para IDs, CVE, IP y puntuaciones de tabla; cifras grandes en Geist con numerales tabulares
