@@ -100,8 +100,8 @@ export function Ecosystem() {
     try {
       const text = await readFile(file, MAX_BYTES);
       const d = detectEcosystem(text, file.name);
-      if (d.kind === 'desconocido') throw new Error(L('No es un fichero del ecosistema. Admite: sobre «yrd-ecosistema», proyecto o copia de KAIROS, proyecto o copia de Compliance Studio, informe JSON de ENS AD Auditor, proyecto de Rosetta y CSV de responsables (activo, responsable, rol).', 'Not an ecosystem file. Supported: “yrd-ecosistema” envelope, KAIROS project or backup, Compliance Studio project or backup, ENS AD Auditor JSON report, Rosetta project and an owners CSV (asset, owner, role).'));
-      if (d.kind === 'sobre' && !['controles', 'responsables'].includes(d.envelope.tipo)) throw new Error(L(`Sobre de ${d.envelope.origen.herramienta} con datos de tipo «${d.envelope.tipo}»: CTEM-Nexus importa «controles» (Rosetta) y «responsables» (Norvik).`, `Envelope from ${d.envelope.origen.herramienta} with “${d.envelope.tipo}” data: CTEM-Nexus imports “controles” (Rosetta) and “responsables” (Norvik).`));
+      if (d.kind === 'desconocido') throw new Error(L('No es un fichero del ecosistema. Admite: sobre «yrd-ecosistema» (bia, soa, hallazgos de ENS AD Auditor, controles y responsables), proyecto o copia de KAIROS, proyecto o copia de Compliance Studio, informe JSON de ENS AD Auditor, proyecto de Rosetta y CSV de responsables (activo, responsable, rol).', 'Not an ecosystem file. Supported: “yrd-ecosistema” envelope (bia, soa, ENS AD Auditor hallazgos, controles and responsables), KAIROS project or backup, Compliance Studio project or backup, ENS AD Auditor JSON report, Rosetta project and an owners CSV (asset, owner, role).'));
+      if (d.kind === 'sobre' && !['controles', 'responsables'].includes(d.envelope.tipo)) throw new Error(L(`Sobre de ${d.envelope.origen.herramienta} con datos de tipo «${d.envelope.tipo}»: CTEM-Nexus importa «bia» (KAIROS), «soa» (Compliance Studio), «hallazgos» (ENS AD Auditor), «controles» (Rosetta) y «responsables» (Norvik).`, `Envelope from ${d.envelope.origen.herramienta} with “${d.envelope.tipo}” data: CTEM-Nexus imports “bia” (KAIROS), “soa” (Compliance Studio), “hallazgos” (ENS AD Auditor), “controles” (Rosetta) and “responsables” (Norvik).`));
       if (d.kind === 'kairos') {
         const plan = kairosPlan(d.project, assets, d.name);
         setPairs(Object.fromEntries(plan.items.map((i) => [i.kid, i.match ?? ''])));
@@ -370,19 +370,19 @@ export function Ecosystem() {
                 <button type="button" className="btn btn-sm" disabled={!project.findings.length} onClick={exportStudio}><Download />{L('Evidencia técnica', 'Technical evidence')}</button>
               </div>
             }>
-            <Dir dir="in">{L('Categoría del sistema (BÁSICA, MEDIA o ALTA): ajusta los plazos de corrección.', 'System category (BASIC, MEDIUM or HIGH): adjusts remediation deadlines.')}</Dir>
+            <Dir dir="in">{L('Sobre «soa» o proyecto: categoría del sistema (BÁSICA, MEDIA o ALTA), que ajusta los plazos de corrección.', '“soa” envelope or project: system category (BASIC, MEDIUM or HIGH), which adjusts remediation deadlines.')}</Dir>
             <Dir dir="out">{L('Hallazgos con su categoría y CVSS para la evidencia técnica de op.exp.2, op.exp.4 y el análisis MAGERIT.', 'Findings with category and CVSS for the op.exp.2 and op.exp.4 technical evidence and the MAGERIT analysis.')}</Dir>
           </ToolCard>
 
           <ToolCard testid="eco-tool-kairos" icon={<Hourglass />} name="KAIROS" role={L('Continuidad de negocio: BIA, BCP y DRP', 'Business continuity: BIA, BCP and DRP')}
-            status={kairosLinked.length ? L(`${plural(kairosLinked.length, 'activo vinculado', 'activos vinculados')} al BIA.`, `${plural(kairosLinked.length, 'asset linked', 'assets linked')} to the BIA.`) : L('Sin vincular. Importa el proyecto de KAIROS para traer la criticidad.', 'Not linked. Import the KAIROS project to bring criticality.')}
+            status={kairosLinked.length ? L(`${plural(kairosLinked.length, 'activo vinculado', 'activos vinculados')} al BIA.`, `${plural(kairosLinked.length, 'asset linked', 'assets linked')} to the BIA.`) : L('Sin vincular. Importa el sobre «bia» o el proyecto de KAIROS para traer la criticidad.', 'Not linked. Import the KAIROS “bia” envelope or project to bring criticality.')}
             actions={<button type="button" className="btn btn-sm" disabled={!kairosLinked.length} onClick={exportKairos}><Download />{L('Riesgo de interrupción', 'Disruption risk')}</button>}>
             <Dir dir="in">{L('Funciones con RTO y MTPD → criticidad 1–5 de los activos que las soportan, también por dependencias.', 'Functions with RTO and MTPD → 1–5 criticality of the assets supporting them, also through dependencies.')}</Dir>
             <Dir dir="out">{L('Activos del BIA con rutas de ataque abiertas, hallazgos críticos y KEV: el riesgo de interrupción.', 'BIA assets with open attack paths, critical findings and KEV: the disruption risk.')}</Dir>
           </ToolCard>
 
           <ToolCard testid="eco-tool-adauditor" icon={<KeyRound />} name="ENS AD Auditor" role={L('Directorio activo frente a op.acc del ENS', 'Active Directory against ENS op.acc')}
-            status={adFindings.length ? L(`${plural(adFindings.length, 'hallazgo importado', 'hallazgos importados')} del directorio activo.`, `${plural(adFindings.length, 'finding imported', 'findings imported')} from Active Directory.`) : L('Importa su informe JSON: cada alerta llega con su técnica ATT&CK.', 'Import its JSON report: each alert arrives with its ATT&CK technique.')}>
+            status={adFindings.length ? L(`${plural(adFindings.length, 'hallazgo importado', 'hallazgos importados')} del directorio activo.`, `${plural(adFindings.length, 'finding imported', 'findings imported')} from Active Directory.`) : L('Importa su sobre «hallazgos» o su informe JSON: cada alerta llega con su técnica ATT&CK.', 'Import its “hallazgos” envelope or JSON report: each alert arrives with its ATT&CK technique.')}>
             <Dir dir="in">{L('Kerberoasting, AS-REP, delegaciones, AD CS (ESC), firma SMB, LAPS y ACL → hallazgos de identidad en el grafo.', 'Kerberoasting, AS-REP, delegation, AD CS (ESC), SMB signing, LAPS and ACL → identity findings in the graph.')}</Dir>
           </ToolCard>
 

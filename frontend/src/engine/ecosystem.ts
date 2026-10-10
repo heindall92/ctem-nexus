@@ -96,7 +96,14 @@ export function detectEcosystem(text: string, name = ''): EcoDetected {
   const o = safeJsonParse<unknown>(t);
   if (!isObj(o)) return { kind: 'desconocido' };
   const env = parseEnvelope(o);
-  if (env) return { kind: 'sobre', envelope: env };
+  if (env) {
+    // Sobres de las herramientas hermanas que equivalen a sus ficheros nativos: misma vista previa y mismo saneado
+    const h = env.origen.herramienta, nm = env.proyecto ?? name;
+    if (h === 'kairos' && env.tipo === 'bia') return { kind: 'kairos', project: kairosFromBia(env), name: nm, others: 0 };
+    if (h === 'compliance-studio' && env.tipo === 'soa') return { kind: 'studio', project: studioFromSoa(env), name: nm, others: 0 };
+    if (h === 'ens-ad-auditor' && env.tipo === 'hallazgos') return { kind: 'adauditor', report: adReportFromEnvelope(env) };
+    return { kind: 'sobre', envelope: env };
+  }
   if (kairosProject(o)) return { kind: 'kairos', project: o, name: str((o.meta as Record<string, unknown>).organizacion ?? (o.meta as Record<string, unknown>).nombre, 120) || name, others: 0 };
   if (o.app === 'kairos' && Array.isArray(o.proyectos)) {
     const ps = arr(o.proyectos, 300).filter(isObj).map((p) => p.state).filter((s): s is Record<string, unknown> => isObj(s) && kairosProject(s));
@@ -110,6 +117,40 @@ export function detectEcosystem(text: string, name = ''): EcoDetected {
   if (Array.isArray(o.alerts) && ('counts_by_risk' in o || 'generated_at' in o || 'total_alerts' in o)) return { kind: 'adauditor', report: o };
   if (rosettaProject(o)) return { kind: 'rosetta', project: o, name: str(isObj(o.proyecto) ? o.proyecto.nombre ?? o.proyecto.organizacion : '', 120) || name };
   return { kind: 'desconocido' };
+}
+
+/** Sobre «bia» de KAIROS → proyecto con la forma de KAIROS (activos y funciones con sus dependencias). */
+export function kairosFromBia(env: Envelope<Record<string, unknown>>): Record<string, unknown> {
+  const fns = new Map<string, { id: string; nombre: string; rto: unknown; mtpd: unknown; dependencias: { activos: string[] } }>();
+  const activos = env.datos.slice(0, 2000).map((d) => {
+    const id = str(d.activo, 40);
+    for (const f of arr(d.funciones, 200).filter(isObj)) {
+      const fid = str(f.id, 40); if (!fid || !id) continue;
+      const cur = fns.get(fid) ?? { id: fid, nombre: str(f.nombre, 160), rto: f.rto, mtpd: f.mtpd, dependencias: { activos: [] } };
+      cur.dependencias.activos.push(id); fns.set(fid, cur);
+    }
+    return { id, nombre: str(d.nombre, 160), responsable: str(d.responsable, 120), dependeDe: strList(d.dependeDe, 50, 40) };
+  });
+  return { meta: { organizacion: env.proyecto ?? '' }, activos, funciones: [...fns.values()] };
+}
+
+/** Sobre «soa» de Compliance Studio → proyecto con la forma de Studio (niveles del sistema y activos). */
+export function studioFromSoa(env: Envelope<Record<string, unknown>>): Record<string, unknown> {
+  const r = isObj(env.resumen) ? env.resumen : {};
+  const niveles = isObj(r.niveles) ? r.niveles : {};
+  const abiertos = env.datos.reduce((n, d) => n + Math.max(0, Math.min(1000, Math.round(num(d.hallazgosAbiertos) ?? 0))), 0);
+  return {
+    proyecto: { organizacion: env.proyecto ?? '' },
+    categorizacion: [Object.fromEntries(['D', 'I', 'C', 'A', 'T'].map((k) => [k, str(niveles[k], 12)]))],
+    activos: arr(r.activos, 2000).filter(isObj).map((a) => ({ id: str(a.id, 40), nombre: str(a.nombre, 160) })),
+    soa: {}, hallazgosAbiertos: abiertos,
+  };
+}
+
+/** Sobre «hallazgos» de ENS AD Auditor: los datos son sus alertas y el proyecto, el dominio. */
+export function adReportFromEnvelope(env: Envelope<Record<string, unknown>>): Record<string, unknown> {
+  const r = isObj(env.resumen) ? env.resumen : {};
+  return { domain: str(r.domain, 120) || env.proyecto || '', alerts: env.datos, is_sample: r.is_sample === true, generated_at: env.origen.generado };
 }
 
 /* ───────────── Emparejamiento de activos por nombre ───────────── */
@@ -311,7 +352,7 @@ export interface StudioInfo { name: string; category: EnsCategory | null; levels
 export function studioInfo(project: Record<string, unknown>, name = ''): StudioInfo {
   const { category, levels } = ensCategoryOf(project.categorizacion);
   const assets = arr(project.activos, 2000).filter(isObj).map((a) => ({ id: str(a.id, 40), name: str(a.nombre, 160) })).filter((a) => a.id);
-  return { name, category, levels, assets, findings: arr(project.hallazgos).length };
+  return { name, category, levels, assets, findings: arr(project.hallazgos).length || Math.max(0, Math.round(num(project.hallazgosAbiertos) ?? 0)) };
 }
 
 /** Categoría de hallazgo de Compliance Studio (catálogo hallazgo_categorias) para cada hallazgo de CTEM-Nexus. */

@@ -1,0 +1,176 @@
+{
+ "format": "yrd-ecosistema",
+ "version": 1,
+ "origen": {
+  "herramienta": "kairos",
+  "version": "1.1.0",
+  "generado": "2026-10-10T09:00:00Z"
+ },
+ "tipo": "bia",
+ "proyecto": "Industrias Meridiano S.A. (ficticia)",
+ "datos": [
+  {
+   "activo": "A-01",
+   "nombre": "Portal web de clientes",
+   "tipo": "Aplicación",
+   "responsable": "Equipo Web",
+   "dependeDe": [
+    "A-04",
+    "A-06"
+   ],
+   "funciones": [
+    {
+     "id": "F-01",
+     "nombre": "Ventas en línea y atención a clientes",
+     "rto": 4,
+     "rpo": 1,
+     "mtpd": 24,
+     "costeHora": 9000,
+     "criticidad": "ALTA"
+    }
+   ]
+  },
+  {
+   "activo": "A-02",
+   "nombre": "Exchange OWA (correo)",
+   "tipo": "Servidor",
+   "responsable": "Sistemas",
+   "dependeDe": [
+    "A-06"
+   ],
+   "funciones": [
+    {
+     "id": "F-03",
+     "nombre": "Correo corporativo",
+     "rto": 24,
+     "rpo": 24,
+     "mtpd": 72,
+     "costeHora": 600,
+     "criticidad": "MEDIA"
+    }
+   ]
+  },
+  {
+   "activo": "A-03",
+   "nombre": "Citrix NetScaler Gateway",
+   "tipo": "Red",
+   "responsable": "Redes",
+   "dependeDe": [
+    "A-06"
+   ],
+   "funciones": [
+    {
+     "id": "F-04",
+     "nombre": "Acceso remoto de técnicos y proveedores",
+     "rto": 24,
+     "rpo": 24,
+     "mtpd": 72,
+     "costeHora": 500,
+     "criticidad": "MEDIA"
+    }
+   ]
+  },
+  {
+   "activo": "A-04",
+   "nombre": "Servidor de aplicaciones APP01",
+   "tipo": "Servidor",
+   "responsable": "Sistemas",
+   "dependeDe": [
+    "A-05"
+   ],
+   "funciones": [
+    {
+     "id": "F-01",
+     "nombre": "Ventas en línea y atención a clientes",
+     "rto": 4,
+     "rpo": 1,
+     "mtpd": 24,
+     "costeHora": 9000,
+     "criticidad": "ALTA"
+    }
+   ]
+  },
+  {
+   "activo": "A-05",
+   "nombre": "ERP y base de datos financiera",
+   "tipo": "Base de datos",
+   "responsable": "Finanzas TI",
+   "dependeDe": [
+    "A-06"
+   ],
+   "funciones": [
+    {
+     "id": "F-01",
+     "nombre": "Ventas en línea y atención a clientes",
+     "rto": 4,
+     "rpo": 1,
+     "mtpd": 24,
+     "costeHora": 9000,
+     "criticidad": "ALTA"
+    },
+    {
+     "id": "F-02",
+     "nombre": "Facturación y tesorería",
+     "rto": 8,
+     "rpo": 0,
+     "mtpd": 48,
+     "costeHora": 4000,
+     "criticidad": "MEDIA"
+    }
+   ]
+  },
+  {
+   "activo": "A-06",
+   "nombre": "Controlador de dominio DC01 (Active Directory)",
+   "tipo": "Identidad",
+   "responsable": "Identidad",
+   "dependeDe": [],
+   "funciones": [
+    {
+     "id": "F-01",
+     "nombre": "Ventas en línea y atención a clientes",
+     "rto": 4,
+     "rpo": 1,
+     "mtpd": 24,
+     "costeHora": 9000,
+     "criticidad": "ALTA"
+    },
+    {
+     "id": "F-02",
+     "nombre": "Facturación y tesorería",
+     "rto": 8,
+     "rpo": 0,
+     "mtpd": 48,
+     "costeHora": 4000,
+     "criticidad": "MEDIA"
+    },
+    {
+     "id": "F-03",
+     "nombre": "Correo corporativo",
+     "rto": 24,
+     "rpo": 24,
+     "mtpd": 72,
+     "costeHora": 600,
+     "criticidad": "MEDIA"
+    },
+    {
+     "id": "F-04",
+     "nombre": "Acceso remoto de técnicos y proveedores",
+     "rto": 24,
+     "rpo": 24,
+     "mtpd": 72,
+     "costeHora": 500,
+     "criticidad": "MEDIA"
+    }
+   ]
+  },
+  {
+   "activo": "A-07",
+   "nombre": "Laboratorio de pruebas",
+   "tipo": "Servidor",
+   "responsable": "I+D",
+   "dependeDe": [],
+   "funciones": []
+  }
+ ]
+}

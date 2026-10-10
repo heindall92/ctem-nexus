@@ -43,11 +43,29 @@ El esquema JSON (2020-12) está en [`shared/schemas/yrd-ecosistema.schema.json`]
 | Herramienta | CTEM-Nexus recibe | CTEM-Nexus envía |
 |---|---|---|
 | **Rosetta** | Sobre `controles` (o el proyecto de Rosetta): estado de cada control. Si un control figura como implantado y tiene hallazgos críticos o altos abiertos, la ficha del hallazgo y la vista Ecosistema lo marcan como contradicción. | Sobre `hallazgos`: hallazgos abiertos agrupados por control unificado, con sus identificadores de ENS, ISO/IEC 27001 (Anexo A), NIS2, NIST CSF 2.0 y DORA. Rosetta lo enseña en la ficha del control y lanza la regla **CO-23**. |
-| **Compliance Studio** | Proyecto o copia de Studio: categoría del sistema (art. 40 y Anexo I del RD 311/2022) → política de plazos. | `ens-studio-hallazgos` (el formato que Studio ya importa en *Evidencia técnica*): categoría, CVSS, activo de destino, estado y medidas del ENS. |
-| **KAIROS** | Proyecto o copia de KAIROS: funciones con RTO y MTPD → criticidad 1–5 de los activos que las soportan, también a través de las dependencias entre activos. | Sobre `activos`: por cada activo del BIA, hallazgos abiertos, críticos, KEV, rutas de ataque y riesgo de interrupción. |
-| **ENS AD Auditor** | Informe JSON (`/api/scan` o la descarga del panel): cada alerta pasa a hallazgo de identidad con su guía, su técnica ATT&CK y sus medidas `op.acc` como evidencia. | — |
+| **Compliance Studio** | Sobre `soa` (Exportar → *Ecosistema*) o proyecto o copia de Studio: categoría del sistema (art. 40 y Anexo I del RD 311/2022) → política de plazos, y los activos de Studio como destino de la evidencia. | `ens-studio-hallazgos` (el formato que Studio ya importa en *Evidencia técnica*): categoría, CVSS, activo de destino, estado y medidas del ENS. |
+| **KAIROS** | Sobre `bia` (Exportar → *Ecosistema*) o proyecto o copia de KAIROS: funciones con RTO y MTPD → criticidad 1–5 de los activos que las soportan, también a través de las dependencias entre activos. | Sobre `activos`: por cada activo del BIA, hallazgos abiertos, críticos, KEV, rutas de ataque y riesgo de interrupción. KAIROS lo enseña en la ficha de recuperación del activo y lanza la regla **CTM-01**. |
+| **ENS AD Auditor** | Sobre `hallazgos` (*Exportar para CTEM-Nexus* o `/api/export/ecosistema`) o informe JSON (`/api/scan` o la descarga del panel): cada alerta pasa a hallazgo de identidad con su guía, su técnica ATT&CK y sus medidas `op.acc` como evidencia. | — |
 | **Norvik** | Sobre `responsables` o CSV `activo,responsable,rol` → responsable de cada activo. | Sobre `indicadores`: índice de exposición, abiertos, críticos, KEV, rutas, cumplimiento de plazos, vencidos, MTTR, riesgos aceptados e histórico de ciclos. |
 | **ARGOS** | — | Enlace «Practica esto en ARGOS» en cada hallazgo, a la máquina que entrena esa corrección (`#maquina/<id>`). |
+
+### Contratos de los sobres de las herramientas hermanas
+
+| Sobre | `datos` | `resumen` | Ejemplo |
+|---|---|---|---|
+| `bia` (KAIROS) | Un objeto por activo: `activo`, `nombre`, `tipo`, `responsable`, `dependeDe` y `funciones` (`id`, `nombre`, `rto`, `rpo`, `mtpd` en horas, `costeHora` en euros y `criticidad`). | — | [`kairos-bia-meridiano.json`](../shared/samples/ecosistema/kairos-bia-meridiano.json) |
+| `soa` (Compliance Studio) | Un objeto por medida del Anexo II: `medida` (`op.exp.2`…), `nombre`, `familia`, `nivel`, `aplica`, `estado`, `implantacion` (0–1), `responsable`, `riesgos` y `hallazgosAbiertos`. | `categoria`, `niveles` (D, I, C, A, T), `grado`, recuentos y `activos`. Obligatorio. | [`studio-soa-meridiano.json`](../shared/samples/ecosistema/studio-soa-meridiano.json) |
+| `hallazgos` (ENS AD Auditor) | Las alertas tal como las emite su informe JSON: `rule_id`, `finding`, `risk`, `ens_controls`, `da_path`… | `domain`, `is_sample`, `counts_by_risk` y `da_path`. | [`ens-ad-auditor-hallazgos-meridiano.json`](../shared/samples/ecosistema/ens-ad-auditor-hallazgos-meridiano.json) (marcado como muestra: el auditor nunca exporta hallazgos de muestra) |
+
+CTEM-Nexus convierte cada sobre en la forma de su fichero nativo y usa la misma vista previa y el mismo saneado. Las pruebas comprueban que el sobre y el fichero nativo dan exactamente el mismo resultado, y cada herramienta comprueba en su repositorio que genera o lee estos ficheros:
+
+| Par | Ida | Vuelta | Pruebas |
+|---|---|---|---|
+| Rosetta ↔ CTEM-Nexus | `ctem-a-rosetta.json` | `rosetta-a-ctem.json` | Vitest y pytest aquí; `node --test` y e2e en Rosetta |
+| KAIROS ↔ CTEM-Nexus | `ctem-a-kairos.json` | `kairos-bia-meridiano.json` | Vitest y pytest aquí; `node --test` y e2e en KAIROS (CTM-01) |
+| Compliance Studio ↔ CTEM-Nexus | `ctem-a-studio.json` | `studio-soa-meridiano.json` | Vitest y pytest aquí; `node --test` (con su ejemplo publicado) y e2e en Studio |
+| ENS AD Auditor → CTEM-Nexus | — | `ens-ad-auditor-hallazgos-meridiano.json` | Vitest y pytest aquí; `pytest` en ENS AD Auditor |
+| CTEM-Nexus → Norvik | `ctem-a-norvik.json` | `responsables-norvik.json` | Vitest y pytest aquí. Norvik es una aplicación de escritorio de código propio: el contrato queda publicado en este documento para que lo implemente. |
 
 ### Criticidad desde el BIA (KAIROS)
 

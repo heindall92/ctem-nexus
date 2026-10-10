@@ -21,7 +21,7 @@ al BIA (KAIROS) y a la formación (ARGOS) sin copiar datos a mano y sin que nada
 | 0.6.0 ✓ | 4 · Ecosistema | Formato de intercambio común e integración con las 6 herramientas hermanas |
 | 1.0.0 ✓ | 5 · Lanzamiento | Documentación, guía práctica, capturas, publicación |
 | 1.1.0 ✓ | 6 · Validación ofensiva | ZAP, Burp, PingCastle y Certipy; evidencias de explotación y ciclo de *retest* |
-| 1.2.0 | 7 · Ecosistema 2 | Las herramientas hermanas exportan e importan el sobre; bloque «Suite» común |
+| 1.2.0 ✓ | 7 · Ecosistema 2 | Las herramientas hermanas exportan e importan el sobre; bloque «Suite» común |
 | 1.3.0 | 8 · Superficie externa y amenaza | Exposición externa (Shodan, Censys, crt.sh, subfinder), ransomware y STIX 2.1 |
 | 1.4.0 | 9 · Gobierno de la remediación | Registro de riesgos, burndown, calendario de plazos (.ics) y cuadro para el comité |
 | 1.5.0 | 10 · Riesgo en euros | Pérdida esperada por hallazgo con los costes del BIA de KAIROS |
@@ -203,13 +203,15 @@ herramientas con las que se valida de verdad y cierra el bucle con el *retest*.
 
 El sobre `yrd-ecosistema` se implementa en las herramientas hermanas, no solo en CTEM-Nexus y Rosetta.
 
-- [ ] **KAIROS**: exporta su BIA como sobre `bia` e importa el riesgo de interrupción de CTEM-Nexus en la ficha de cada activo.
-- [ ] **ENS Compliance Studio**: exporta su categoría y su SoA como sobre `soa` e importa la evidencia técnica de CTEM-Nexus (ya lo hace en su formato) y el sobre `hallazgos`.
-- [ ] **ENS AD Auditor**: exporta sus alertas también como sobre `hallazgos`.
-- [ ] Bloque **«Suite»** igual en «Acerca de» de las siete herramientas (web publicada y repositorio).
-- [ ] CTEM-Nexus acepta los sobres nuevos además de los formatos nativos, con pruebas de ida y vuelta en cada par.
+- [x] **KAIROS 1.1.0**: exporta su BIA como sobre `bia` e importa el riesgo de interrupción de CTEM-Nexus en la ficha de cada activo, con la regla de preauditoría **CTM-01**.
+- [x] **ENS Compliance Studio 2.2.0**: exporta su categoría y su SoA como sobre `soa` (con su ejemplo comprobado en la prueba del motor) e importa la evidencia técnica de CTEM-Nexus (ya lo hacía en su formato).
+- [x] **ENS AD Auditor 0.4.0**: exporta sus alertas también como sobre `hallazgos`, en el panel y en `GET|POST /api/export/ecosistema`.
+- [x] Bloque **«Herramientas GRC del autor»** con las siete herramientas en KAIROS, Studio, ENS AD Auditor, Rosetta, ARGOS y CTEM-Nexus. Norvik es una aplicación de escritorio de código propio: el contrato queda publicado en `docs/ECOSISTEMA.md`.
+- [x] CTEM-Nexus acepta los sobres `bia`, `soa` y `hallazgos` además de los formatos nativos, con pruebas de ida y vuelta en cada par y el esquema común ampliado.
 
-**Aceptación:** cada par CTEM-Nexus ↔ herramienta tiene un fichero de ida, otro de vuelta y su prueba en los dos repositorios.
+**Aceptación:** cada par CTEM-Nexus ↔ herramienta tiene un fichero de ida, otro de vuelta y su prueba en los dos repositorios (tabla en `docs/ECOSISTEMA.md`).
+
+**Estado: cerrada en 1.2.0.** KAIROS 1.1.0, Compliance Studio 2.2.0, ENS AD Auditor 0.4.0, Rosetta 2.11.1 y ARGOS 1.3.2 publicados. CTEM-Nexus: Vitest 171, Pytest 28, e2e 161/161 y axe 0 infracciones en 232 estados.
 
 ## Fase 8 · Superficie externa y amenaza (1.3.0)
 

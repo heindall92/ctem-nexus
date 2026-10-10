@@ -2,6 +2,28 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico. La hoja de ruta está en [ROADMAP.md](ROADMAP.md).
 
+## [1.2.0] - 2026-10-10
+
+Fase 7 del ROADMAP: **Ecosistema 2**. El sobre `yrd-ecosistema` ya no es solo cosa de CTEM-Nexus y Rosetta: las herramientas hermanas lo exportan e importan.
+
+### Añadido
+- **Sobres de las herramientas hermanas.** CTEM-Nexus reconoce en la vista Ecosistema el sobre `bia` de KAIROS 1.1.0, el `soa` de ENS Compliance Studio 2.2.0 y el `hallazgos` de ENS AD Auditor 0.4.0. Cada uno se convierte en la forma de su fichero nativo y pasa por la misma vista previa y el mismo saneado: el resultado es idéntico, y las pruebas lo comprueban.
+- **Esquema común ampliado** (`shared/schemas/yrd-ecosistema.schema.json`) con los contratos de `bia`, `soa` (con `resumen` obligatorio: categoría y niveles) y los `hallazgos` de ENS AD Auditor. Rechaza un RTO negativo, una categoría inexistente, una medida que no es del Anexo II del ENS o un riesgo fuera de catálogo.
+- **Tres ficheros de ejemplo** generados por las propias herramientas con el caso Meridiano (`kairos-bia-meridiano.json`, `studio-soa-meridiano.json` y `ens-ad-auditor-hallazgos-meridiano.json`), descargables desde la ayuda (20 en total).
+- `docs/ECOSISTEMA.md`: contrato de cada sobre y tabla de pares con su fichero de ida, el de vuelta y las pruebas de cada repositorio.
+
+### En las herramientas hermanas
+- **KAIROS 1.1.0:** exporta el BIA, importa el riesgo de interrupción de cada activo, lo enseña en Recuperación y añade la regla de preauditoría CTM-01.
+- **ENS Compliance Studio 2.2.0:** exporta la SoA con la categoría, los niveles y el estado de las 73 medidas.
+- **ENS AD Auditor 0.4.0:** exporta sus alertas como sobre (panel y `GET|POST /api/export/ecosistema`) y pasa a 0 infracciones de axe en todas las vistas.
+- **Rosetta 2.11.1 y ARGOS 1.3.2:** el bloque «Herramientas GRC del autor» de Acerca de enlaza ya las siete herramientas, como en KAIROS, Studio y ENS AD Auditor.
+
+### Cambiado
+- Las tarjetas de KAIROS, Studio y ENS AD Auditor de la vista Ecosistema y de Acerca de dicen qué sobre envía cada herramienta.
+
+### Pruebas
+- Vitest 171 (+4: equivalencia de cada sobre con su fichero nativo y un sobre `bia` hostil), Pytest 28 (+1: contratos nuevos), e2e 161/161 (+3: los tres sobres en la vista Ecosistema, sin duplicar hallazgos) y axe 0 infracciones en 232 estados.
+
 ## [1.1.1] - 2026-10-09
 
 ### Cambiado

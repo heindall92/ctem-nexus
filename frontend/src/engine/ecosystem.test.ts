@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { DEMO_ANCHOR, DEMO_ASSETS, DEMO_EDGES, DEMO_FINDINGS } from '../data/demo';
 import { SLA_POLICIES } from './constants';
 import {
-  AD_RULES, applyKairos, bestAsset, contradictions, controlEvidence, detectEcosystem, ECO_FORMAT, ensCategoryOf, kairosPlan, levelFromRecovery,
+  adReportFromEnvelope, AD_RULES, applyKairos, kairosFromBia, studioFromSoa, bestAsset, contradictions, controlEvidence, detectEcosystem, ECO_FORMAT, ensCategoryOf, kairosPlan, levelFromRecovery,
   makeEnvelope, nameSimilarity, ownerRows, parseAdAuditor, parseEnvelope, planOwners, rosettaStates, SLA_FOR_CATEGORY, studioCategory,
   studioInfo, toKairos, toNorvik, toStudio,
 } from './ecosystem';
@@ -50,6 +50,7 @@ describe('detección de ficheros', () => {
     for (const [file, kind] of [
       ['kairos-meridiano.json', 'kairos'], ['studio-meridiano.json', 'studio'], ['ens-ad-auditor-meridiano.json', 'adauditor'],
       ['responsables-norvik.csv', 'responsables-csv'], ['responsables-norvik.json', 'sobre'],
+      ['kairos-bia-meridiano.json', 'kairos'], ['studio-soa-meridiano.json', 'studio'], ['ens-ad-auditor-hallazgos-meridiano.json', 'adauditor'],
     ]) expect(detectEcosystem(sample(file), file).kind, file).toBe(kind);
   });
   it('reconoce las copias de KAIROS y de Compliance Studio y avisa de los demás proyectos', () => {
@@ -266,6 +267,52 @@ describe('ficheros de ejemplo de salida (los valida el esquema en pytest)', () =
     write('ctem-a-kairos.json', makeEnvelope('activos', toKairos(assets, DEMO_FINDINGS, r), 'ejemplo', { proyecto: 'Ejemplo · Industrias Meridiano S.A.' }, NOW));
     write('ctem-a-norvik.json', makeEnvelope('indicadores', toNorvik(DEMO_FINDINGS, DEMO_ASSETS, result, [], TODAY), 'ejemplo', { proyecto: 'Ejemplo · Industrias Meridiano S.A.' }, NOW));
     write('ctem-a-studio.json', toStudio(DEMO_FINDINGS, DEMO_ASSETS, result, { id: 'CTEM', name: 'Industrias Meridiano' }, 'Ejemplo · Industrias Meridiano S.A.'));
+  });
+});
+
+describe('sobres de las herramientas hermanas (ida y vuelta)', () => {
+  it('el sobre «bia» de KAIROS da el mismo plan que su proyecto', () => {
+    const d = detectEcosystem(sample('kairos-bia-meridiano.json'));
+    expect(d.kind).toBe('kairos');
+    if (d.kind !== 'kairos') return;
+    const viaSobre = kairosPlan(d.project, DEMO_ASSETS, d.name);
+    const viaProyecto = kairosPlan(JSON.parse(sample('kairos-meridiano.json')), DEMO_ASSETS);
+    const pick = (p: typeof viaSobre) => p.items.map((i) => [i.kid, i.criticality, i.match, i.functions.map((f) => f.id).sort().join()]).sort();
+    expect(pick(viaSobre)).toEqual(pick(viaProyecto));
+    expect(viaSobre.items.length).toBeGreaterThan(0);
+    expect(viaSobre.project).toBe('Industrias Meridiano S.A. (ficticia)');
+  });
+  it('el sobre «soa» de Compliance Studio fija la categoría ENS y trae los activos', () => {
+    const env = JSON.parse(sample('studio-soa-meridiano.json'));
+    const d = detectEcosystem(JSON.stringify(env));
+    expect(d.kind).toBe('studio');
+    if (d.kind !== 'studio') return;
+    const info = studioInfo(d.project, d.name);
+    expect(info.category).toBe(env.resumen.categoria);
+    expect(info.levels).toEqual(env.resumen.niveles);
+    expect(info.category).toBe(studioInfo(JSON.parse(sample('studio-meridiano.json'))).category);
+    expect(info.assets.map((a) => a.id)).toEqual(env.resumen.activos.map((a: { id: string }) => a.id));
+    expect(SLA_FOR_CATEGORY[info.category!]).toBe('ens_media');
+    expect(studioFromSoa({ ...env, resumen: { niveles: { D: 'ENORME' }, activos: 'x' } }).activos).toEqual([]);
+  });
+  it('el sobre «hallazgos» de ENS AD Auditor equivale a su informe JSON', () => {
+    const d = detectEcosystem(sample('ens-ad-auditor-hallazgos-meridiano.json'));
+    expect(d.kind).toBe('adauditor');
+    if (d.kind !== 'adauditor') return;
+    const viaSobre = parseAdAuditor(d.report);
+    const viaInforme = parseAdAuditor(JSON.parse(sample('ens-ad-auditor-meridiano.json')));
+    expect(viaSobre.items).toEqual(viaInforme.items);
+    expect(viaSobre.domain).toBe('meridiano.local');
+    expect(viaSobre.sample).toBe(true);
+    expect(adReportFromEnvelope({ ...JSON.parse(sample('ens-ad-auditor-hallazgos-meridiano.json')), resumen: undefined }).domain).toBe('meridiano.local');
+  });
+  it('un sobre «bia» hostil no rompe nada: textos recortados y funciones sin activo descartadas', () => {
+    const env = parseEnvelope({ format: ECO_FORMAT, version: 1, origen: { herramienta: 'kairos', version: '1', generado: '2026-10-10T09:00:00Z' }, tipo: 'bia',
+      datos: [{ activo: 'A-01', nombre: 'x'.repeat(900), funciones: [{ id: 'F-01', nombre: '<b>x</b>', rto: 'nan' }, 7] }, { nombre: 'sin id', funciones: [{ id: 'F-02' }] }] })!;
+    const p = kairosFromBia(env) as { activos: Array<{ nombre: string }>; funciones: Array<{ id: string; dependencias: { activos: string[] } }> };
+    expect(p.activos[0].nombre).toHaveLength(160);
+    expect(p.funciones.map((f) => f.id)).toEqual(['F-01']);
+    expect(kairosPlan(p, DEMO_ASSETS).items[0].criticality).toBe(2);
   });
 });
 

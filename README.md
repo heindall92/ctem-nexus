@@ -22,7 +22,7 @@
   <img alt="Tailwind CSS 4" src="https://img.shields.io/badge/Tailwind%20CSS-4-06B6D4?style=flat&logo=tailwindcss&logoColor=white"/>
   <img alt="FastAPI opcional" src="https://img.shields.io/badge/API-FastAPI%20(opcional)-009688?style=flat&logo=fastapi&logoColor=white"/>
   <img alt="Un solo HTML" src="https://img.shields.io/badge/un%20solo-HTML%20sin%20servidor-2E8B57?style=flat"/>
-  <img alt="Pruebas 100% OK" src="https://img.shields.io/badge/pruebas-Vitest%20167%20%C2%B7%20Pytest%2027%20%C2%B7%20e2e%20158-2E8B57?style=flat"/>
+  <img alt="Pruebas 100% OK" src="https://img.shields.io/badge/pruebas-Vitest%20171%20%C2%B7%20Pytest%2028%20%C2%B7%20e2e%20161-2E8B57?style=flat"/>
   <img alt="Ecosistema GRC" src="https://img.shields.io/badge/ecosistema-Rosetta%20%C2%B7%20KAIROS%20%C2%B7%20Studio%20%C2%B7%20AD%20Auditor-6D5DFC?style=flat"/>
   <img alt="Iconos Lucide" src="https://img.shields.io/badge/iconos-Lucide-F56565?style=flat&logo=lucide&logoColor=white"/>
 </p>
@@ -84,7 +84,7 @@ Los escáneres devuelven cientos de CVE sin decir cuál importa hoy. CTEM-Nexus 
       <td valign="top"><code>├─</code> <img src="docs/assets/icons/check-check.svg" width="16" height="16" alt="" valign="middle"/> <code>pruebas_calidad:</code><br><br>
         <img src="docs/assets/stack/vitest.svg" height="48" alt="Vitest">
         <img src="docs/assets/stack/pytest.svg" height="48" alt="Pytest"><br>
-        <sub><code>Vitest 167 pruebas · Pytest 27 pruebas · e2e 158 · axe-core 0 infracciones en 232 estados · Paridad exacta TS ↔ Python (golden-demo, 3 perfiles y 4 políticas de plazos)</code></sub>
+        <sub><code>Vitest 171 pruebas · Pytest 28 pruebas · e2e 161 · axe-core 0 infracciones en 232 estados · Paridad exacta TS ↔ Python (golden-demo, 3 perfiles y 4 políticas de plazos)</code></sub>
       </td>
       <td valign="top"><code>╰─</code> <img src="docs/assets/icons/shield-check.svg" width="16" height="16" alt="" valign="middle"/> <code>seguridad_privacidad:</code><br><br>
         <img src="docs/assets/stack/csp.svg" height="48" alt="CSP estricta"><br>
@@ -94,7 +94,7 @@ Los escáneres devuelven cientos de CVE sin decir cuál importa hoy. CTEM-Nexus 
   </tbody>
   <tfoot>
     <tr>
-      <td colspan="2"><code>version: 1.1.1&nbsp;&nbsp;·&nbsp;&nbsp;motor: TS + FastAPI&nbsp;&nbsp;·&nbsp;&nbsp;Gartner CTEM · MITRE ATT&amp;CK · ecosistema GRC&nbsp;&nbsp;·&nbsp;&nbsp;pruebas: Vitest 167 · Pytest 27 · e2e 158&nbsp;&nbsp;·&nbsp;&nbsp;licencia: GPLv2</code></td>
+      <td colspan="2"><code>version: 1.2.0&nbsp;&nbsp;·&nbsp;&nbsp;motor: TS + FastAPI&nbsp;&nbsp;·&nbsp;&nbsp;Gartner CTEM · MITRE ATT&amp;CK · ecosistema GRC&nbsp;&nbsp;·&nbsp;&nbsp;pruebas: Vitest 171 · Pytest 28 · e2e 161&nbsp;&nbsp;·&nbsp;&nbsp;licencia: GPLv2</code></td>
     </tr>
   </tfoot>
 </table>
@@ -341,9 +341,9 @@ ctem-nexus/
 
 ## <img src="docs/assets/icons/check-check.svg" width="20" height="20" valign="middle"/> Calidad y pruebas
 
-- **Motor TypeScript:** 167 pruebas con Vitest: fórmula y grafo, importadores con casos hostiles (ZAP, Burp con su DTD inerte, PingCastle y Certipy incluidos), validación ofensiva y *retest*, deduplicación, KEV/EPSS, perfiles y políticas de plazos, riesgo aceptado, ATT&CK y capa de Navigator, simulación, SLA, exportaciones, ecosistema (sobre común, KAIROS con dependencias, ENS AD Auditor, Studio, Rosetta de ida y vuelta, Norvik), correspondencias sin texto ISO, diccionarios ES/EN y coherencia del repositorio.
-- **Motor Python y API:** 27 pruebas con Pytest: endpoints, Nmap multipart, XML con entidades, fórmulas CSV, paridad con el fichero dorado en los tres perfiles y las cuatro políticas de plazos, y validación de los sobres de ejemplo contra el esquema JSON.
-- **Navegador (e2e):** 158 comprobaciones con Playwright sobre el HTML autocontenido: CSP, red bloqueada, todas las vistas e importadores (también ZAP, Burp, PingCastle y Certipy), validación registrada y *retest*, grafo, simulación, informe en PDF, Jira y GitHub validados, vista Ecosistema con los cinco importadores y las cuatro exportaciones, ficheros de ejemplo descargables, inglés completo en 18 pantallas y móvil sin recortes.
+- **Motor TypeScript:** 171 pruebas con Vitest: fórmula y grafo, importadores con casos hostiles (ZAP, Burp con su DTD inerte, PingCastle y Certipy incluidos), validación ofensiva y *retest*, deduplicación, KEV/EPSS, perfiles y políticas de plazos, riesgo aceptado, ATT&CK y capa de Navigator, simulación, SLA, exportaciones, ecosistema (sobre común, KAIROS con dependencias, ENS AD Auditor, Studio, Rosetta de ida y vuelta, Norvik y los sobres `bia`, `soa` y `hallazgos` de las herramientas hermanas, que dan exactamente el mismo resultado que sus ficheros nativos), correspondencias sin texto ISO, diccionarios ES/EN y coherencia del repositorio.
+- **Motor Python y API:** 28 pruebas con Pytest: endpoints, Nmap multipart, XML con entidades, fórmulas CSV, paridad con el fichero dorado en los tres perfiles y las cuatro políticas de plazos, y validación de los sobres de ejemplo (también `bia`, `soa` y `hallazgos` de ENS AD Auditor) contra el esquema JSON, que rechaza datos imposibles.
+- **Navegador (e2e):** 161 comprobaciones con Playwright sobre el HTML autocontenido: CSP, red bloqueada, todas las vistas e importadores (también ZAP, Burp, PingCastle y Certipy), validación registrada y *retest*, grafo, simulación, informe en PDF, Jira y GitHub validados, vista Ecosistema con los cinco importadores, los sobres de KAIROS, Studio y ENS AD Auditor y las cuatro exportaciones, ficheros de ejemplo descargables, inglés completo en 18 pantallas y móvil sin recortes.
 - **Accesibilidad:** axe-core (WCAG 2.2 A/AA) en 232 estados (vistas, diálogos, formularios de validación y aceptación, vistas previas de importación, ayuda y búsqueda; claro y oscuro; 1440 y 390 px) y barrido de contraste propio: **0 infracciones**.
 - **Lighthouse 12** (con gzip, como en Pages; mediana de tres pasadas en la 1.0.0): rendimiento **96** · accesibilidad 100 · buenas prácticas 100 · SEO 100. Las vistas se cargan bajo demanda; el HTML autocontenido, que lo lleva todo en un fichero, da 94.
 
@@ -361,7 +361,7 @@ ctem-nexus/
 
 ## <img src="docs/assets/icons/route.svg" width="20" height="20" valign="middle"/> Hoja de ruta
 
-Las fases 0 a 6 están cerradas: de la higiene del repositorio a la 1.1.0 con validación ofensiva y *retest*. Lo que viene (ecosistema 2, superficie externa, gobierno y riesgo en euros) está en [ROADMAP.md](ROADMAP.md); los cambios de cada versión, en [CHANGELOG.md](CHANGELOG.md), y cómo colaborar, en [CONTRIBUTING.md](CONTRIBUTING.md).
+Las fases 0 a 7 están cerradas: de la higiene del repositorio a la 1.2.0, en la que las herramientas hermanas ya exportan e importan el sobre común. Lo que viene (superficie externa, gobierno y riesgo en euros) está en [ROADMAP.md](ROADMAP.md); los cambios de cada versión, en [CHANGELOG.md](CHANGELOG.md), y cómo colaborar, en [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Licencia e independencia
 

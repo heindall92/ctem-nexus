@@ -18,6 +18,9 @@ import kairos from '../../../shared/samples/ecosistema/kairos-meridiano.json?raw
 import studio from '../../../shared/samples/ecosistema/studio-meridiano.json?raw';
 import adauditor from '../../../shared/samples/ecosistema/ens-ad-auditor-meridiano.json?raw';
 import responsables from '../../../shared/samples/ecosistema/responsables-norvik.csv?raw';
+import kairosBia from '../../../shared/samples/ecosistema/kairos-bia-meridiano.json?raw';
+import studioSoa from '../../../shared/samples/ecosistema/studio-soa-meridiano.json?raw';
+import adSobre from '../../../shared/samples/ecosistema/ens-ad-auditor-hallazgos-meridiano.json?raw';
 import { useL } from '../i18n';
 import { download } from '../lib/download';
 
@@ -39,6 +42,9 @@ export const SAMPLES: Array<{ file: string; tool: string; where: [string, string
   { file: 'studio-meridiano.json', tool: 'Compliance Studio', where: ['Ecosistema', 'Ecosystem'], text: studio, mime: 'application/json' },
   { file: 'ens-ad-auditor-meridiano.json', tool: 'ENS AD Auditor', where: ['Ecosistema', 'Ecosystem'], text: adauditor, mime: 'application/json' },
   { file: 'responsables-norvik.csv', tool: 'Norvik', where: ['Ecosistema', 'Ecosystem'], text: responsables, mime: 'text/csv' },
+  { file: 'kairos-bia-meridiano.json', tool: 'KAIROS · sobre «bia»', where: ['Ecosistema', 'Ecosystem'], text: kairosBia, mime: 'application/json' },
+  { file: 'studio-soa-meridiano.json', tool: 'Compliance Studio · sobre «soa»', where: ['Ecosistema', 'Ecosystem'], text: studioSoa, mime: 'application/json' },
+  { file: 'ens-ad-auditor-hallazgos-meridiano.json', tool: 'ENS AD Auditor · sobre «hallazgos»', where: ['Ecosistema', 'Ecosystem'], text: adSobre, mime: 'application/json' },
 ];
 
 export function SampleFiles() {

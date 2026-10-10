@@ -405,8 +405,8 @@ def escritorio(b, tmp):
     check("la ayuda muestra la fórmula real del motor (30 · 25 · 20 · 10 · 15)", all(f"× {w}" in formula for w in (30, 25, 20, 10, 15)) and "0.35" not in formula, formula)
     page.get_by_role("tab", name="Ingesta de datos").click()
     with page.expect_download() as d:
-        page.get_by_role("button", name=re.compile("Descargar el ejemplo de KAIROS")).click()
-    check("la ayuda descarga los ficheros de ejemplo, idénticos a shared/samples", pathlib.Path(d.value.path()).read_bytes() == (ROOT / "shared" / "samples" / "ecosistema" / "kairos-meridiano.json").read_bytes() and page.get_by_test_id("ficheros-ejemplo").get_by_role("button").count() == 17)
+        page.get_by_role("button", name="Descargar el ejemplo de KAIROS (kairos-meridiano.json)").click()
+    check("la ayuda descarga los ficheros de ejemplo, idénticos a shared/samples", pathlib.Path(d.value.path()).read_bytes() == (ROOT / "shared" / "samples" / "ecosistema" / "kairos-meridiano.json").read_bytes() and page.get_by_test_id("ficheros-ejemplo").get_by_role("button").count() == 20)
     page.get_by_role("tab", name="Acerca de").click()
     check("«Acerca de» enlaza las webs del ecosistema", page.get_by_role("link", name="Abrir ARGOS").count() == 1 and page.get_by_role("link", name="Abrir Rosetta").count() == 1)
     page.keyboard.press("Escape")
@@ -544,6 +544,18 @@ def ecosistema(page, J):
     nuevos = J(f"{S}.project.findings.filter(f => f.id.startsWith('ADA-')).length")
     check("AD Auditor: 6 alertas, sin duplicar las que ya estaban (se funden en el hallazgo existente)", nuevos >= 1 and J(f"{S}.project.findings.length") == antes + nuevos and J(f"{S}.project.findings.filter(f => (f.sources || []).includes('adauditor')).length") == 6, (nuevos, J(f"{S}.project.findings.length") - antes))
     check("AD Auditor: queda en el registro de importaciones y de intercambios", J(f"{S}.project.imports[0].source") == "adauditor" and J(f"{S}.project.ecoLog.some(l => l.tool === 'ens-ad-auditor')"))
+    # Sobres «yrd-ecosistema» de las herramientas hermanas: misma vista previa que sus ficheros nativos
+    entrada.set_input_files(str(ECO / "kairos-bia-meridiano.json"))
+    prev = page.get_by_test_id("eco-kairos"); prev.locator("tbody tr").first.wait_for()
+    check("sobre «bia» de KAIROS: la misma vista previa de 6 activos que su proyecto", prev.locator("tbody tr").count() == 6)
+    entrada.set_input_files(str(ECO / "studio-soa-meridiano.json"))
+    page.get_by_test_id("eco-studio").wait_for()
+    check("sobre «soa» de Compliance Studio: categoría MEDIA en la vista previa", "MEDIA" in page.get_by_test_id("eco-studio").inner_text())
+    antes = J(f"{S}.project.findings.length")
+    entrada.set_input_files(str(ECO / "ens-ad-auditor-hallazgos-meridiano.json"))
+    ad = page.get_by_test_id("eco-adauditor"); ad.wait_for()
+    ad.get_by_role("button", name="Importar hallazgos").click()
+    check("sobre «hallazgos» de ENS AD Auditor: se reconoce y no duplica lo ya importado del informe", J(f"{S}.project.findings.length") == antes, (antes, J(f"{S}.project.findings.length")))
     # Rosetta: evidencia por control y vuelta con los estados
     with page.expect_download() as d:
         page.get_by_test_id("eco-tool-rosetta").get_by_role("button", name=re.compile("Evidencia por control")).click()
