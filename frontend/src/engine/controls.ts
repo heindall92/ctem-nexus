@@ -65,6 +65,11 @@ export const REMEDIATION_CONTROLS: Record<string, string[]> = {
   web_xss: ['DES-07', 'OPE-05'],
   web_hardening: ['DES-07', 'OPE-01'],
   ad_hygiene: ['OPE-01', 'ACC-02'],
+  mcp_supply_chain: ['DES-09', 'OPE-05', 'OPE-02'],
+  mcp_secrets: ['ACC-06', 'OPE-14'],
+  mcp_filesystem: ['ACC-02', 'OPE-01'],
+  mcp_tool_poisoning: ['OPE-01', 'OPE-10'],
+  mcp_transport: ['RED-03', 'OPE-14'],
 };
 
 /** Controles de un hallazgo: por su guía o, si no la tiene, por su tipo. */

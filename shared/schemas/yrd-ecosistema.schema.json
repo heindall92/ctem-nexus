@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/heindall92/ctem-nexus/blob/main/shared/schemas/yrd-ecosistema.schema.json",
   "title": "Sobre de intercambio del ecosistema (yrd-ecosistema, versión 1)",
-  "description": "Formato común de las herramientas de Yoandy Ramírez Delgado: CTEM-Nexus, Rosetta Multinorma, ENS Compliance Studio, KAIROS, ENS AD Auditor, ARGOS y Norvik. El usuario mueve el fichero; las herramientas no se hablan por red.",
+  "description": "Formato común de las herramientas de Yoandy Ramírez Delgado: CTEM-Nexus, Rosetta Multinorma, ENS Compliance Studio, KAIROS, ENS AD Auditor, ARGOS, Norvik y MCP-Shield. El usuario mueve el fichero; las herramientas no se hablan por red.",
   "type": "object",
   "required": [
     "format",
@@ -34,7 +34,8 @@
             "kairos",
             "ens-ad-auditor",
             "argos",
-            "norvik"
+            "norvik",
+            "mcp-shield"
           ]
         },
         "version": {
@@ -598,6 +599,105 @@
           }
         }
       }
+    },
+    {
+      "if": {
+        "properties": {
+          "tipo": {
+            "const": "hallazgos"
+          },
+          "origen": {
+            "properties": {
+              "herramienta": {
+                "const": "mcp-shield"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "resumen"
+        ],
+        "properties": {
+          "datos": {
+            "items": {
+              "$ref": "#/$defs/hallazgoMcp"
+            }
+          },
+          "resumen": {
+            "type": "object",
+            "required": [
+              "riesgo",
+              "nota",
+              "completo",
+              "servidores",
+              "recuento"
+            ],
+            "properties": {
+              "archivo": {
+                "type": "string",
+                "maxLength": 120
+              },
+              "idioma": {
+                "enum": [
+                  "es",
+                  "en"
+                ]
+              },
+              "riesgo": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 100
+              },
+              "nota": {
+                "enum": [
+                  "A",
+                  "B",
+                  "C",
+                  "D",
+                  "F",
+                  "N/A"
+                ]
+              },
+              "completo": {
+                "type": "boolean"
+              },
+              "servidores": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "recuento": {
+                "type": "object",
+                "required": [
+                  "critical",
+                  "high",
+                  "medium",
+                  "low"
+                ],
+                "properties": {
+                  "critical": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "high": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "medium": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "low": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   ],
   "$defs": {
@@ -739,6 +839,71 @@
               }
             }
           }
+        }
+      }
+    },
+    "hallazgoMcp": {
+      "type": "object",
+      "description": "Hallazgo de MCP-Shield sobre un mcp.json. Los textos llegan ocultos (sin secretos) y la ubicación es una ruta JSON.",
+      "required": [
+        "ruleId",
+        "category",
+        "severity",
+        "server",
+        "title"
+      ],
+      "properties": {
+        "ruleId": {
+          "type": "string",
+          "pattern": "^MCPS-[A-Z]{2,4}-\\d{3}$"
+        },
+        "category": {
+          "enum": [
+            "supply-chain",
+            "filesystem",
+            "secrets",
+            "tool-poisoning"
+          ]
+        },
+        "severity": {
+          "enum": [
+            "critical",
+            "high",
+            "medium",
+            "low"
+          ]
+        },
+        "server": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "detail": {
+          "type": "string",
+          "maxLength": 600
+        },
+        "remediation": {
+          "type": "string",
+          "maxLength": 600
+        },
+        "evidence": {
+          "type": "string",
+          "maxLength": 400
+        },
+        "location": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "line": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "cwe": {
+          "type": "string",
+          "pattern": "^CWE-\\d{1,5}$"
         }
       }
     }

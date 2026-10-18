@@ -22,7 +22,7 @@
   <img alt="Tailwind CSS 4" src="https://img.shields.io/badge/Tailwind%20CSS-4-06B6D4?style=flat&logo=tailwindcss&logoColor=white"/>
   <img alt="FastAPI opcional" src="https://img.shields.io/badge/API-FastAPI%20(opcional)-009688?style=flat&logo=fastapi&logoColor=white"/>
   <img alt="Un solo HTML" src="https://img.shields.io/badge/un%20solo-HTML%20sin%20servidor-2E8B57?style=flat"/>
-  <img alt="Pruebas 100% OK" src="https://img.shields.io/badge/pruebas-Vitest%20171%20%C2%B7%20Pytest%2028%20%C2%B7%20e2e%20161-2E8B57?style=flat"/>
+  <img alt="Pruebas 100% OK" src="https://img.shields.io/badge/pruebas-Vitest%20187%20%C2%B7%20Pytest%2029%20%C2%B7%20e2e%20164-2E8B57?style=flat"/>
   <img alt="Ecosistema GRC" src="https://img.shields.io/badge/ecosistema-Rosetta%20%C2%B7%20KAIROS%20%C2%B7%20Studio%20%C2%B7%20AD%20Auditor-6D5DFC?style=flat"/>
   <img alt="Iconos Lucide" src="https://img.shields.io/badge/iconos-Lucide-F56565?style=flat&logo=lucide&logoColor=white"/>
 </p>
@@ -84,7 +84,7 @@ Los escáneres devuelven cientos de CVE sin decir cuál importa hoy. CTEM-Nexus 
       <td valign="top"><code>├─</code> <img src="docs/assets/icons/check-check.svg" width="16" height="16" alt="" valign="middle"/> <code>pruebas_calidad:</code><br><br>
         <img src="docs/assets/stack/vitest.svg" height="48" alt="Vitest">
         <img src="docs/assets/stack/pytest.svg" height="48" alt="Pytest"><br>
-        <sub><code>Vitest 171 pruebas · Pytest 28 pruebas · e2e 161 · axe-core 0 infracciones en 232 estados · Paridad exacta TS ↔ Python (golden-demo, 3 perfiles y 4 políticas de plazos)</code></sub>
+        <sub><code>Vitest 187 pruebas · Pytest 29 pruebas · e2e 164 · axe-core 0 infracciones en 236 estados · Paridad exacta TS ↔ Python (golden-demo, 3 perfiles y 4 políticas de plazos)</code></sub>
       </td>
       <td valign="top"><code>╰─</code> <img src="docs/assets/icons/shield-check.svg" width="16" height="16" alt="" valign="middle"/> <code>seguridad_privacidad:</code><br><br>
         <img src="docs/assets/stack/csp.svg" height="48" alt="CSP estricta"><br>
@@ -94,7 +94,7 @@ Los escáneres devuelven cientos de CVE sin decir cuál importa hoy. CTEM-Nexus 
   </tbody>
   <tfoot>
     <tr>
-      <td colspan="2"><code>version: 1.2.0&nbsp;&nbsp;·&nbsp;&nbsp;motor: TS + FastAPI&nbsp;&nbsp;·&nbsp;&nbsp;Gartner CTEM · MITRE ATT&amp;CK · ecosistema GRC&nbsp;&nbsp;·&nbsp;&nbsp;pruebas: Vitest 171 · Pytest 28 · e2e 161&nbsp;&nbsp;·&nbsp;&nbsp;licencia: GPLv2</code></td>
+      <td colspan="2"><code>version: 1.2.1&nbsp;&nbsp;·&nbsp;&nbsp;motor: TS + FastAPI&nbsp;&nbsp;·&nbsp;&nbsp;Gartner CTEM · MITRE ATT&amp;CK · ecosistema GRC&nbsp;&nbsp;·&nbsp;&nbsp;pruebas: Vitest 187 · Pytest 29 · e2e 164&nbsp;&nbsp;·&nbsp;&nbsp;licencia: GPLv2</code></td>
     </tr>
   </tfoot>
 </table>
@@ -125,7 +125,7 @@ Las cinco fases del ciclo CTEM de Gartner. La [guía práctica](docs/GUIA.md) la
 | Paso | Vista | Qué haces |
 |---|---|---|
 | **1. Alcance** | Alcance y activos | Activos con su criticidad 1–5 (los **activos críticos** son la 5) y rangos en alcance. Importa un **Nmap XML** o trae la criticidad del **BIA de KAIROS**. |
-| **2. Descubrimiento** | Priorización | Importa **Nessus, OpenVAS, Nuclei, Trivy, SARIF, BloodHound** o **ENS AD Auditor** con vista previa y sin duplicar entre fuentes, y aplica **CISA KEV** y **FIRST EPSS**. |
+| **2. Descubrimiento** | Priorización | Importa **Nessus, OpenVAS, Nuclei, Trivy, SARIF, BloodHound** o **ENS AD Auditor** (y el sobre de **MCP-Shield** en Ecosistema) con vista previa y sin duplicar entre fuentes, y aplica **CISA KEV** y **FIRST EPSS**. |
 | **3. Priorización** | Priorización | Puntuación 0–100 explicada factor a factor, con perfiles **General, OT/industrial y Banca**. Ficha con guía paso a paso, técnicas ATT&CK, controles afectados y **riesgo aceptado** con caducidad. |
 | **4. Validación** | Rutas de ataque · Mapa ATT&CK · Priorización | Grafo de rutas hacia los activos críticos y **puntos de estrangulamiento**; resultados de **OWASP ZAP, Burp Suite, PingCastle y Certipy**; **evidencia de validación** (quién, cuándo, técnica y prueba) y ***retest***: un mitigado queda pendiente hasta que un escaneo posterior deja de verlo. Matriz ATT&CK con capa para Navigator. |
 | **5. Movilización** | ¿Y si…? · Movilización · Ecosistema | Plan que más rutas rompe, **cumplimiento de SLA** (también por categoría ENS), ciclos con tendencia, informe para la dirección y tickets para **Jira** y **GitHub**. La evidencia sale hacia **Rosetta** y **Compliance Studio**. |
@@ -165,6 +165,7 @@ CTEM-Nexus es el puente entre lo ofensivo y el GRC de un conjunto de herramienta
 | [ENS Compliance Studio](https://github.com/heindall92/grc_ens_compliance_studio) | Categoría del sistema → plazos ENS | Evidencia técnica en el formato que Studio ya importa |
 | [KAIROS](https://github.com/heindall92/kairos) | Funciones con RTO y MTPD → criticidad de los activos, también por dependencias | Riesgo de interrupción de cada activo del BIA |
 | [ENS AD Auditor](https://github.com/heindall92/ens_ad-auditor) | Alertas de directorio activo con técnica ATT&CK y medidas `op.acc` | — |
+| [MCP-Shield](https://github.com/heindall92/mcp-shield) | Hallazgos de las configuraciones MCP de los asistentes de IA, con guía, ATT&CK y controles por categoría | — |
 | [Norvik](https://github.com/heindall92/Norvik_Gobernanza) | Responsables y roles | Indicadores del ciclo (índice, SLA, MTTR, KEV, rutas e histórico) |
 | [ARGOS](https://github.com/heindall92/argos-grc) | — | «Practica esto en ARGOS» en cada hallazgo |
 
@@ -264,7 +265,7 @@ Un hallazgo existente se reconoce por activo y CVE (también los relacionados) o
   - Detecta protocolos en texto plano (Telnet en puerto 23) y exposición de SMB (puerto 445).
   - Sugiere automáticamente los rangos de subred descubiertos para la fase de Alcance.
 
-## <img src="docs/assets/icons/blocks.svg" width="20" height="20" valign="middle"/> Ecosistema: Rosetta, Compliance Studio, KAIROS, ENS AD Auditor, Norvik y ARGOS
+## <img src="docs/assets/icons/blocks.svg" width="20" height="20" valign="middle"/> Ecosistema: Rosetta, Compliance Studio, KAIROS, ENS AD Auditor, MCP-Shield, Norvik y ARGOS
 
 CTEM-Nexus es el puente entre lo ofensivo y el GRC. Las herramientas no se llaman por red: el usuario mueve ficheros con un sobre común (`yrd-ecosistema`, versión 1), con [esquema JSON](shared/schemas/yrd-ecosistema.schema.json) y [especificación](docs/ECOSISTEMA.md). Cada importación enseña qué cambiará antes de aplicarlo.
 
@@ -274,6 +275,7 @@ CTEM-Nexus es el puente entre lo ofensivo y el GRC. Las herramientas no se llama
 | [ENS Compliance Studio](https://github.com/heindall92/grc_ens_compliance_studio) | Categoría del sistema → plazos de corrección (ENS BÁSICA, MEDIA o ALTA) | Evidencia técnica en el formato que Studio ya importa |
 | [KAIROS](https://github.com/heindall92/kairos) | Funciones con RTO y MTPD → criticidad 1–5 de los activos que las soportan, también por dependencias | Riesgo de interrupción de cada activo del BIA |
 | [ENS AD Auditor](https://github.com/heindall92/ens_ad-auditor) | Alertas de directorio activo → hallazgos de identidad con técnica ATT&CK y medidas `op.acc` | — |
+| [MCP-Shield](https://github.com/heindall92/mcp-shield) | Sobre «hallazgos» de un `mcp.json` (Claude Desktop, Cursor, VS Code) → hallazgos del equipo que ejecuta el cliente MCP: cadena de suministro → DES-09/OPE-05, secretos → ACC-06/OPE-14, sistema de ficheros → ACC-02/OPE-01, *tool poisoning* → OPE-01/OPE-10 y transporte sin TLS → RED-03/OPE-14. Se reconocen por el título, que incluye el servidor, para no fundir hallazgos distintos de la misma categoría | — |
 | [Norvik](https://github.com/heindall92/Norvik_Gobernanza) | Responsables y roles (sobre o CSV) | Indicadores del ciclo (índice, SLA, MTTR, KEV, rutas e histórico) |
 | [ARGOS](https://github.com/heindall92/argos-grc) | — | «Practica esto en ARGOS» en cada hallazgo |
 
@@ -341,10 +343,10 @@ ctem-nexus/
 
 ## <img src="docs/assets/icons/check-check.svg" width="20" height="20" valign="middle"/> Calidad y pruebas
 
-- **Motor TypeScript:** 171 pruebas con Vitest: fórmula y grafo, importadores con casos hostiles (ZAP, Burp con su DTD inerte, PingCastle y Certipy incluidos), validación ofensiva y *retest*, deduplicación, KEV/EPSS, perfiles y políticas de plazos, riesgo aceptado, ATT&CK y capa de Navigator, simulación, SLA, exportaciones, ecosistema (sobre común, KAIROS con dependencias, ENS AD Auditor, Studio, Rosetta de ida y vuelta, Norvik y los sobres `bia`, `soa` y `hallazgos` de las herramientas hermanas, que dan exactamente el mismo resultado que sus ficheros nativos), correspondencias sin texto ISO, diccionarios ES/EN y coherencia del repositorio.
-- **Motor Python y API:** 28 pruebas con Pytest: endpoints, Nmap multipart, XML con entidades, fórmulas CSV, paridad con el fichero dorado en los tres perfiles y las cuatro políticas de plazos, y validación de los sobres de ejemplo (también `bia`, `soa` y `hallazgos` de ENS AD Auditor) contra el esquema JSON, que rechaza datos imposibles.
-- **Navegador (e2e):** 161 comprobaciones con Playwright sobre el HTML autocontenido: CSP, red bloqueada, todas las vistas e importadores (también ZAP, Burp, PingCastle y Certipy), validación registrada y *retest*, grafo, simulación, informe en PDF, Jira y GitHub validados, vista Ecosistema con los cinco importadores, los sobres de KAIROS, Studio y ENS AD Auditor y las cuatro exportaciones, ficheros de ejemplo descargables, inglés completo en 18 pantallas y móvil sin recortes.
-- **Accesibilidad:** axe-core (WCAG 2.2 A/AA) en 232 estados (vistas, diálogos, formularios de validación y aceptación, vistas previas de importación, ayuda y búsqueda; claro y oscuro; 1440 y 390 px) y barrido de contraste propio: **0 infracciones**.
+- **Motor TypeScript:** 187 pruebas con Vitest: fórmula y grafo, importadores con casos hostiles (ZAP, Burp con su DTD inerte, PingCastle y Certipy incluidos), validación ofensiva y *retest*, deduplicación, KEV/EPSS, perfiles y políticas de plazos, riesgo aceptado, ATT&CK y capa de Navigator, simulación, SLA, exportaciones, ecosistema (sobre común, KAIROS con dependencias, ENS AD Auditor, Studio, Rosetta de ida y vuelta, Norvik, MCP-Shield con su sobre hostil y los sobres `bia`, `soa` y `hallazgos` de las herramientas hermanas, que dan exactamente el mismo resultado que sus ficheros nativos), correspondencias sin texto ISO, diccionarios ES/EN y coherencia del repositorio.
+- **Motor Python y API:** 29 pruebas con Pytest: endpoints, Nmap multipart, XML con entidades, fórmulas CSV, paridad con el fichero dorado en los tres perfiles y las cuatro políticas de plazos, y validación de los sobres de ejemplo (también `bia`, `soa` y los `hallazgos` de ENS AD Auditor y MCP-Shield) contra el esquema JSON, que rechaza datos imposibles.
+- **Navegador (e2e):** 164 comprobaciones con Playwright sobre el HTML autocontenido: CSP, red bloqueada, todas las vistas e importadores (también ZAP, Burp, PingCastle y Certipy), validación registrada y *retest*, grafo, simulación, informe en PDF, Jira y GitHub validados, vista Ecosistema con los seis importadores, los sobres de KAIROS, Studio, ENS AD Auditor y MCP-Shield y las cuatro exportaciones, ficheros de ejemplo descargables, inglés completo en 18 pantallas y móvil sin recortes.
+- **Accesibilidad:** axe-core (WCAG 2.2 A/AA) en 236 estados (vistas, diálogos, formularios de validación y aceptación, vistas previas de importación, ayuda y búsqueda; claro y oscuro; 1440 y 390 px) y barrido de contraste propio: **0 infracciones**.
 - **Lighthouse 12** (con gzip, como en Pages; mediana de tres pasadas en la 1.0.0): rendimiento **96** · accesibilidad 100 · buenas prácticas 100 · SEO 100. Las vistas se cargan bajo demanda; el HTML autocontenido, que lo lleva todo en un fichero, da 94.
 
 ## <img src="docs/assets/icons/list-checks.svg" width="20" height="20" valign="middle"/> Limitaciones conocidas

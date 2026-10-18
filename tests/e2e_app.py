@@ -406,7 +406,7 @@ def escritorio(b, tmp):
     page.get_by_role("tab", name="Ingesta de datos").click()
     with page.expect_download() as d:
         page.get_by_role("button", name="Descargar el ejemplo de KAIROS (kairos-meridiano.json)").click()
-    check("la ayuda descarga los ficheros de ejemplo, idénticos a shared/samples", pathlib.Path(d.value.path()).read_bytes() == (ROOT / "shared" / "samples" / "ecosistema" / "kairos-meridiano.json").read_bytes() and page.get_by_test_id("ficheros-ejemplo").get_by_role("button").count() == 20)
+    check("la ayuda descarga los ficheros de ejemplo, idénticos a shared/samples", pathlib.Path(d.value.path()).read_bytes() == (ROOT / "shared" / "samples" / "ecosistema" / "kairos-meridiano.json").read_bytes() and page.get_by_test_id("ficheros-ejemplo").get_by_role("button").count() == 21)
     page.get_by_role("tab", name="Acerca de").click()
     check("«Acerca de» enlaza las webs del ecosistema", page.get_by_role("link", name="Abrir ARGOS").count() == 1 and page.get_by_role("link", name="Abrir Rosetta").count() == 1)
     page.keyboard.press("Escape")
@@ -501,12 +501,12 @@ ECO = ROOT / "shared" / "samples" / "ecosistema"
 
 
 def ecosistema(page, J):
-    """Fase 4: KAIROS, Compliance Studio, ENS AD Auditor, Rosetta y Norvik por fichero, con vista previa antes de aplicar."""
+    """Fase 4: KAIROS, Compliance Studio, ENS AD Auditor, MCP-Shield, Rosetta y Norvik por fichero, con vista previa antes de aplicar."""
     J(f"{S}.loadDemo()")
     nav(page, "Ecosistema")
     zona = page.get_by_test_id("eco-importar")
     entrada = zona.locator('input[type="file"]')
-    check("Ecosistema: seis herramientas con lo que reciben y envían", all(page.get_by_test_id(f"eco-tool-{t}").count() == 1 for t in ("rosetta", "studio", "kairos", "adauditor", "norvik", "argos")))
+    check("Ecosistema: siete herramientas con lo que reciben y envían", all(page.get_by_test_id(f"eco-tool-{t}").count() == 1 for t in ("rosetta", "studio", "kairos", "adauditor", "mcpshield", "norvik", "argos")))
     # Fichero que no es del ecosistema
     entrada.set_input_files({"name": "otro.json", "mimeType": "application/json", "buffer": b'{"hola": 1}'})
     zona.get_by_role("alert").wait_for()
@@ -556,6 +556,19 @@ def ecosistema(page, J):
     ad = page.get_by_test_id("eco-adauditor"); ad.wait_for()
     ad.get_by_role("button", name="Importar hallazgos").click()
     check("sobre «hallazgos» de ENS AD Auditor: se reconoce y no duplica lo ya importado del informe", J(f"{S}.project.findings.length") == antes, (antes, J(f"{S}.project.findings.length")))
+    # MCP-Shield: sobre «hallazgos» de una configuración MCP, sobre el equipo que ejecuta el cliente
+    antes = J(f"{S}.project.findings.length")
+    entrada.set_input_files(str(ECO / "mcp-shield-hallazgos-ejemplo.json"))
+    mcp = page.get_by_test_id("eco-mcpshield"); mcp.wait_for()
+    total = len(json.loads((ECO / "mcp-shield-hallazgos-ejemplo.json").read_text(encoding="utf-8"))["datos"])
+    check("MCP-Shield: vista previa con riesgo, nota y un activo nuevo sin tocar el proyecto", "riesgo 98/100" in mcp.inner_text() and "nota F" in mcp.inner_text() and mcp.get_by_role("combobox").input_value() == "" and J(f"{S}.project.findings.length") == antes)
+    mcp.get_by_role("button", name="Importar hallazgos").click()
+    check("MCP-Shield: cada hallazgo entra con su guía y en el registro de intercambios", J(f"{S}.project.findings.filter(f => (f.sources || []).includes('mcpshield') && f.remediation.length).length") == total and J(f"{S}.project.ecoLog.some(l => l.tool === 'mcp-shield')"), (total, J(f"{S}.project.findings.length") - antes))
+    entrada.set_input_files(str(ECO / "mcp-shield-hallazgos-ejemplo.json"))
+    mcp = page.get_by_test_id("eco-mcpshield"); mcp.wait_for()
+    antes = J(f"{S}.project.findings.length")
+    mcp.get_by_role("button", name="Importar hallazgos").click()
+    check("MCP-Shield: reimportar el mismo sobre no duplica hallazgos", J(f"{S}.project.findings.length") == antes, (antes, J(f"{S}.project.findings.length")))
     # Rosetta: evidencia por control y vuelta con los estados
     with page.expect_download() as d:
         page.get_by_test_id("eco-tool-rosetta").get_by_role("button", name=re.compile("Evidencia por control")).click()

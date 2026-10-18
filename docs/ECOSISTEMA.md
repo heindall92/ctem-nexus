@@ -10,6 +10,7 @@ CTEM-Nexus es el puente entre lo ofensivo y el GRC dentro de un conjunto de herr
 | **CTEM-Nexus** | Exposición técnica priorizada y rutas de ataque | [abrir](https://heindall92.github.io/ctem-nexus/) | [heindall92/ctem-nexus](https://github.com/heindall92/ctem-nexus) |
 | **ENS AD Auditor** | Directorio activo frente a las medidas `op.acc` del ENS | [abrir](https://heindall92.github.io/ens_ad-auditor/) | [heindall92/ens_ad-auditor](https://github.com/heindall92/ens_ad-auditor) |
 | **ARGOS** | Laboratorio GRC con máquinas, rutas y simulacros | [abrir](https://heindall92.github.io/argos-grc/) | [heindall92/argos-grc](https://github.com/heindall92/argos-grc) |
+| **MCP-Shield** | Auditoría de las configuraciones MCP de los asistentes de IA | [abrir](https://heindall92.github.io/mcp-shield/) | [heindall92/mcp-shield](https://github.com/heindall92/mcp-shield) |
 | **Norvik** | Gobernanza y cuadro de mando de madurez (escritorio) | — | [heindall92/Norvik_Gobernanza](https://github.com/heindall92/Norvik_Gobernanza) |
 
 **Principio:** el usuario mueve los ficheros. Ninguna herramienta llama a otra por red, ninguna necesita servidor y nada sale del equipo. Cada importación enseña qué va a cambiar antes de aplicarlo.
@@ -30,7 +31,7 @@ CTEM-Nexus es el puente entre lo ofensivo y el GRC dentro de un conjunto de herr
 
 | Campo | Valores |
 |---|---|
-| `origen.herramienta` | `ctem-nexus`, `rosetta`, `compliance-studio`, `kairos`, `ens-ad-auditor`, `argos`, `norvik` |
+| `origen.herramienta` | `ctem-nexus`, `rosetta`, `compliance-studio`, `kairos`, `ens-ad-auditor`, `argos`, `norvik`, `mcp-shield` |
 | `tipo` | `hallazgos`, `activos`, `controles`, `bia`, `soa`, `indicadores`, `responsables` |
 | `datos` | Lista de objetos (máximo 20 000), con la forma que fija el tipo |
 
@@ -46,6 +47,7 @@ El esquema JSON (2020-12) está en [`shared/schemas/yrd-ecosistema.schema.json`]
 | **Compliance Studio** | Sobre `soa` (Exportar → *Ecosistema*) o proyecto o copia de Studio: categoría del sistema (art. 40 y Anexo I del RD 311/2022) → política de plazos, y los activos de Studio como destino de la evidencia. | `ens-studio-hallazgos` (el formato que Studio ya importa en *Evidencia técnica*): categoría, CVSS, activo de destino, estado y medidas del ENS. |
 | **KAIROS** | Sobre `bia` (Exportar → *Ecosistema*) o proyecto o copia de KAIROS: funciones con RTO y MTPD → criticidad 1–5 de los activos que las soportan, también a través de las dependencias entre activos. | Sobre `activos`: por cada activo del BIA, hallazgos abiertos, críticos, KEV, rutas de ataque y riesgo de interrupción. KAIROS lo enseña en la ficha de recuperación del activo y lanza la regla **CTM-01**. |
 | **ENS AD Auditor** | Sobre `hallazgos` (*Exportar para CTEM-Nexus* o `/api/export/ecosistema`) o informe JSON (`/api/scan` o la descarga del panel): cada alerta pasa a hallazgo de identidad con su guía, su técnica ATT&CK y sus medidas `op.acc` como evidencia. | — |
+| **MCP-Shield** | Sobre `hallazgos` (Auditor → *Ecosistema*): cada hallazgo de un `mcp.json` pasa a hallazgo del equipo que ejecuta el cliente MCP, con guía, técnicas ATT&CK y controles por categoría. | — |
 | **Norvik** | Sobre `responsables` o CSV `activo,responsable,rol` → responsable de cada activo. | Sobre `indicadores`: índice de exposición, abiertos, críticos, KEV, rutas, cumplimiento de plazos, vencidos, MTTR, riesgos aceptados e histórico de ciclos. |
 | **ARGOS** | — | Enlace «Practica esto en ARGOS» en cada hallazgo, a la máquina que entrena esa corrección (`#maquina/<id>`). |
 
@@ -56,6 +58,7 @@ El esquema JSON (2020-12) está en [`shared/schemas/yrd-ecosistema.schema.json`]
 | `bia` (KAIROS) | Un objeto por activo: `activo`, `nombre`, `tipo`, `responsable`, `dependeDe` y `funciones` (`id`, `nombre`, `rto`, `rpo`, `mtpd` en horas, `costeHora` en euros y `criticidad`). | — | [`kairos-bia-meridiano.json`](../shared/samples/ecosistema/kairos-bia-meridiano.json) |
 | `soa` (Compliance Studio) | Un objeto por medida del Anexo II: `medida` (`op.exp.2`…), `nombre`, `familia`, `nivel`, `aplica`, `estado`, `implantacion` (0–1), `responsable`, `riesgos` y `hallazgosAbiertos`. | `categoria`, `niveles` (D, I, C, A, T), `grado`, recuentos y `activos`. Obligatorio. | [`studio-soa-meridiano.json`](../shared/samples/ecosistema/studio-soa-meridiano.json) |
 | `hallazgos` (ENS AD Auditor) | Las alertas tal como las emite su informe JSON: `rule_id`, `finding`, `risk`, `ens_controls`, `da_path`… | `domain`, `is_sample`, `counts_by_risk` y `da_path`. | [`ens-ad-auditor-hallazgos-meridiano.json`](../shared/samples/ecosistema/ens-ad-auditor-hallazgos-meridiano.json) (marcado como muestra: el auditor nunca exporta hallazgos de muestra) |
+| `hallazgos` (MCP-Shield) | Un objeto por hallazgo: `ruleId` (`MCPS-XXX-000`), `category` (`supply-chain`, `filesystem`, `secrets`, `tool-poisoning`), `severity`, `server`, `title`, `detail`, `remediation`, `evidence` (ya oculta), `location` (ruta JSON), `line` y `cwe`. | `riesgo` (0–100), `nota` (A–F o N/A), `completo`, `servidores` y `recuento` por severidad. Obligatorio. | [`mcp-shield-hallazgos-ejemplo.json`](../shared/samples/ecosistema/mcp-shield-hallazgos-ejemplo.json) |
 
 CTEM-Nexus convierte cada sobre en la forma de su fichero nativo y usa la misma vista previa y el mismo saneado. Las pruebas comprueban que el sobre y el fichero nativo dan exactamente el mismo resultado, y cada herramienta comprueba en su repositorio que genera o lee estos ficheros:
 
@@ -65,6 +68,7 @@ CTEM-Nexus convierte cada sobre en la forma de su fichero nativo y usa la misma 
 | KAIROS ↔ CTEM-Nexus | `ctem-a-kairos.json` | `kairos-bia-meridiano.json` | Vitest y pytest aquí; `node --test` y e2e en KAIROS (CTM-01) |
 | Compliance Studio ↔ CTEM-Nexus | `ctem-a-studio.json` | `studio-soa-meridiano.json` | Vitest y pytest aquí; `node --test` (con su ejemplo publicado) y e2e en Studio |
 | ENS AD Auditor → CTEM-Nexus | — | `ens-ad-auditor-hallazgos-meridiano.json` | Vitest y pytest aquí; `pytest` en ENS AD Auditor |
+| MCP-Shield → CTEM-Nexus | — | `mcp-shield-hallazgos-ejemplo.json` | Vitest y pytest aquí; vitest en MCP-Shield (el exportador genera el fichero byte a byte y cumple este esquema) |
 | CTEM-Nexus → Norvik | `ctem-a-norvik.json` | `responsables-norvik.json` | Vitest y pytest aquí. Norvik es una aplicación de escritorio de código propio: el contrato queda publicado en este documento para que lo implemente. |
 
 ### Criticidad desde el BIA (KAIROS)
@@ -92,6 +96,18 @@ La política es parte del motor (TypeScript y Python) y la comprueba la prueba d
 4. CTEM-Nexus → Ecosistema → arrastrar el sobre: cada hallazgo indica el estado de sus controles en Rosetta.
 
 Los dos repositorios prueban el mismo par de ficheros (`ctem-a-rosetta.json` y `rosetta-a-ctem.json`): Rosetta comprueba que lee la evidencia sin pérdidas y CTEM-Nexus que la recibe de vuelta idéntica.
+
+### Hallazgos de MCP-Shield
+
+| Categoría | Guía | Controles unificados | ATT&CK |
+|---|---|---|---|
+| `supply-chain` (`npx -y` sin versión, imágenes sin digest) | `mcp_supply_chain` | DES-09, OPE-05, OPE-02 | T1195 |
+| `supply-chain` con transporte HTTP (MCPS-SC-003) | `mcp_transport` | RED-03, OPE-14 | T1040, T1557 |
+| `secrets` | `mcp_secrets` | ACC-06, OPE-14 | T1552.001 |
+| `filesystem` | `mcp_filesystem` | ACC-02, OPE-01 | T1083, T1005 |
+| `tool-poisoning` | `mcp_tool_poisoning` | OPE-01, OPE-10 | T1059 |
+
+La severidad pasa a CVSS con la escala que MCP-Shield publica en su SARIF (`security-severity`): crítica 9,5, alta 7,5, media 5 y baja 2. Las guías son por categoría, así que al reimportar los hallazgos se reconocen por el título, que incluye el servidor. Se descartan las reglas, categorías y severidades fuera de catálogo; el SARIF de MCP-Shield sigue entrando por Priorización → «Importar escáner».
 
 ## Propiedad intelectual
 

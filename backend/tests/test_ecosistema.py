@@ -16,7 +16,8 @@ def test_el_esquema_es_valido():
 
 def test_los_sobres_de_ejemplo_cumplen_el_esquema():
     for fichero in ("ctem-a-rosetta.json", "rosetta-a-ctem.json", "ctem-a-kairos.json", "ctem-a-norvik.json", "responsables-norvik.json",
-                    "kairos-bia-meridiano.json", "studio-soa-meridiano.json", "ens-ad-auditor-hallazgos-meridiano.json"):
+                    "kairos-bia-meridiano.json", "studio-soa-meridiano.json", "ens-ad-auditor-hallazgos-meridiano.json",
+                    "mcp-shield-hallazgos-ejemplo.json"):
         errores = [e.message for e in V.iter_errors(json.loads((SAMPLES / fichero).read_text(encoding="utf-8")))]
         assert errores == [], fichero
 
@@ -40,3 +41,13 @@ def test_los_contratos_de_bia_soa_y_ad_rechazan_datos_imposibles():
     assert not V.is_valid({k: v for k, v in soa.items() if k != "resumen"})
     ad = json.loads((SAMPLES / "ens-ad-auditor-hallazgos-meridiano.json").read_text(encoding="utf-8"))
     assert not V.is_valid({**ad, "datos": [{**ad["datos"][0], "risk": "Grave"}]})
+
+
+def test_el_contrato_de_mcp_shield_rechaza_datos_imposibles():
+    mcp = json.loads((SAMPLES / "mcp-shield-hallazgos-ejemplo.json").read_text(encoding="utf-8"))
+    assert mcp["origen"]["herramienta"] == "mcp-shield"
+    assert not V.is_valid({**mcp, "datos": [{**mcp["datos"][0], "ruleId": "XSS-1"}]})
+    assert not V.is_valid({**mcp, "datos": [{**mcp["datos"][0], "severity": "grave"}]})
+    assert not V.is_valid({**mcp, "datos": [{**mcp["datos"][0], "category": "malware"}]})
+    assert not V.is_valid({**mcp, "resumen": {**mcp["resumen"], "riesgo": 101}})
+    assert not V.is_valid({k: v for k, v in mcp.items() if k != "resumen"})

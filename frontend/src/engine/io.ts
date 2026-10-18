@@ -45,7 +45,7 @@ export interface EnsLink { category: 'BÁSICA' | 'MEDIA' | 'ALTA'; levels: Recor
 export interface RosettaLinkData { generado: string; proyecto: string; estados: Record<string, 'implantado' | 'parcial' | 'pendiente' | 'no-aplica'>; at: string }
 export interface EcoLog { at: string; tool: string; dir: 'entrada' | 'salida'; tipo: string; detail: string }
 export const MAX_ECO_LOG = 50;
-const ECO_LOG_TOOLS = ['ctem-nexus', 'rosetta', 'compliance-studio', 'kairos', 'ens-ad-auditor', 'argos', 'norvik'];
+const ECO_LOG_TOOLS = ['ctem-nexus', 'rosetta', 'compliance-studio', 'kairos', 'ens-ad-auditor', 'argos', 'norvik', 'mcp-shield'];
 const ROSETTA_ST = ['implantado', 'parcial', 'pendiente', 'no-aplica'];
 
 export interface ImportLog {
@@ -83,7 +83,7 @@ const ASSET_TYPES: AssetType[] = ['servidor', 'estacion', 'aplicacion_web', 'bas
 const KINDS: FindingKind[] = ['cve', 'configuracion', 'identidad'];
 const STATUSES: FindingStatus[] = ['abierto', 'validado', 'no_explotable', 'mitigado', 'aceptado'];
 const CVE_RE = /^CVE-\d{4}-\d{4,7}$/i;
-const SOURCES: FindingSource[] = ['manual', 'csv', 'nmap', 'bloodhound', 'nessus', 'openvas', 'nuclei', 'trivy', 'sarif', 'adauditor', 'zap', 'burp', 'pingcastle', 'certipy'];
+const SOURCES: FindingSource[] = ['manual', 'csv', 'nmap', 'bloodhound', 'nessus', 'openvas', 'nuclei', 'trivy', 'sarif', 'adauditor', 'zap', 'burp', 'pingcastle', 'certipy', 'mcpshield'];
 const ATTACK_RE = /^T\d{4}(\.\d{3})?$/;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 

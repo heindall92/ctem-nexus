@@ -9,7 +9,7 @@ import type { AssetType, FindingKind, FindingSource } from './types';
 import { child, childrenOf, descendants, parseXml, textOf, type XNode } from './xml';
 import { parseBurp, parseCertipy, parsePingCastle, parseZap } from './offensive';
 
-export type ScanSource = Extract<FindingSource, 'nessus' | 'openvas' | 'nuclei' | 'trivy' | 'sarif' | 'adauditor' | 'zap' | 'burp' | 'pingcastle' | 'certipy'>;
+export type ScanSource = Extract<FindingSource, 'nessus' | 'openvas' | 'nuclei' | 'trivy' | 'sarif' | 'adauditor' | 'zap' | 'burp' | 'pingcastle' | 'certipy' | 'mcpshield'>;
 export type DetectedFormat = ScanSource | 'nmap' | 'bloodhound' | 'kev' | 'epss' | 'proyecto' | 'desconocido';
 
 export interface ScanHost {
@@ -467,7 +467,7 @@ export function parseScan(text: string, filename = '', opts: { includeInfo?: boo
 }
 
 export const SOURCE_LABEL: Record<FindingSource, string> = {
-  manual: 'Manual', csv: 'CSV', nmap: 'Nmap', bloodhound: 'BloodHound', nessus: 'Nessus', openvas: 'OpenVAS', nuclei: 'Nuclei', trivy: 'Trivy', sarif: 'SARIF', adauditor: 'ENS AD Auditor', zap: 'OWASP ZAP', burp: 'Burp Suite', pingcastle: 'PingCastle', certipy: 'Certipy',
+  manual: 'Manual', csv: 'CSV', nmap: 'Nmap', bloodhound: 'BloodHound', nessus: 'Nessus', openvas: 'OpenVAS', nuclei: 'Nuclei', trivy: 'Trivy', sarif: 'SARIF', adauditor: 'ENS AD Auditor', zap: 'OWASP ZAP', burp: 'Burp Suite', pingcastle: 'PingCastle', certipy: 'Certipy', mcpshield: 'MCP-Shield',
 };
 
 export type { XNode };

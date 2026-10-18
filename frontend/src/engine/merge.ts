@@ -11,7 +11,7 @@ import type { ScanItem, ScanParse } from './scanners';
 import type { Asset, Finding, FindingSource } from './types';
 
 export const EVIDENCE_MAX = 4000;
-const PREFIX: Record<string, string> = { nessus: 'NES', openvas: 'OVS', nuclei: 'NUC', trivy: 'TRV', sarif: 'SRF', adauditor: 'ADA', zap: 'ZAP', burp: 'BRP', pingcastle: 'PGC', certipy: 'CTP' };
+const PREFIX: Record<string, string> = { nessus: 'NES', openvas: 'OVS', nuclei: 'NUC', trivy: 'TRV', sarif: 'SRF', adauditor: 'ADA', zap: 'ZAP', burp: 'BRP', pingcastle: 'PGC', certipy: 'CTP', mcpshield: 'MCP' };
 
 export const normTitle = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
 
@@ -44,8 +44,10 @@ const appendEvidence = (a: string | undefined, b: string | undefined): string | 
   return out;
 };
 
-/** Guías genéricas: no sirven para decir que dos hallazgos sin CVE son el mismo. */
-const GENERIC = new Set(['', 'patch_cve', 'weak_config', 'identity_generic', 'web_hardening', 'ad_hygiene']);
+/** Guías genéricas: no sirven para decir que dos hallazgos sin CVE son el mismo. Las de MCP-Shield son por categoría
+ * (una sola guía para todos los servidores sin versión, todos los secretos…): sus hallazgos se distinguen por el título. */
+const GENERIC = new Set(['', 'patch_cve', 'weak_config', 'identity_generic', 'web_hardening', 'ad_hygiene',
+  'mcp_supply_chain', 'mcp_secrets', 'mcp_filesystem', 'mcp_tool_poisoning', 'mcp_transport']);
 const SPECIFIC_GUIDE = (key: string) => !GENERIC.has(key);
 
 const cvesOf = (f: Pick<Finding, 'cve' | 'relatedCves'>) => [f.cve, ...(f.relatedCves ?? [])].filter((x): x is string => !!x);

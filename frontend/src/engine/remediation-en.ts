@@ -36,6 +36,52 @@ export const GUIDES_EN: Record<string, Text> = {
     ],
     verify: 'curl -sI https://app.example | grep -iE "strict-transport|content-security|x-content-type|set-cookie"',
   },
+  mcp_supply_chain: {
+    title: 'Pin MCP servers to a reviewed version and digest', owner: 'Workstation / Development',
+    steps: [
+      'Replace unversioned npx -y, uvx or pnpm dlx with the package at the exact reviewed version (package@1.2.3).',
+      'Pin container images by digest (image@sha256:…) and do not use --pull always.',
+      "Prefer packages with a verifiable scope from the official publisher and record every server in the software inventory (SBOM).",
+      'Review version changes before upgrading, like any third-party dependency.',
+    ],
+    verify: 'Re-audit the mcp.json in MCP-Shield: MCPS-SC-001, SC-002 and SC-004 are gone.',
+  },
+  mcp_secrets: {
+    title: 'Take the secrets out of mcp.json and rotate them', owner: 'Workstation / Identity',
+    steps: [
+      'Rotate the token or key exposed in the file now: it may live on in copies, syncs or screenshots.',
+      'Pass them by reference (${VAR}, ${env:VAR} in Cursor, ${input:id} or envFile in VS Code) from the secrets manager or the system keychain.',
+      'Give the token the least scope and a short expiry.',
+    ],
+    verify: 'Re-audit the mcp.json in MCP-Shield: MCPS-SEC-001 and SEC-002 are gone, and the old token is revoked.',
+  },
+  mcp_filesystem: {
+    title: 'Limit what the MCP server can read and write', owner: 'Workstation / Development',
+    steps: [
+      'Give the file server only the project directory, never the root, the user profile or ~/.ssh.',
+      'Run it in a container with no network, read-only, without capabilities and with the project mounted read-only.',
+      'Upgrade mcp-server-git to 2025.12.18 or later (CVE-2025-68144).',
+    ],
+    verify: 'Re-audit the mcp.json in MCP-Shield: MCPS-FS-001, FS-002 and FS-003 are gone.',
+  },
+  mcp_transport: {
+    title: 'Move the remote MCP server to HTTPS', owner: 'Workstation / Security',
+    steps: [
+      'Change the MCP server URL from http:// to https:// and validate the certificate.',
+      'Authenticate with OAuth 2.1 and never send tokens or authorisation headers over HTTP.',
+      'If the server offers no TLS, remove it or put it behind a reverse proxy with TLS.',
+    ],
+    verify: 'Re-audit the mcp.json in MCP-Shield: MCPS-SC-003 is gone.',
+  },
+  mcp_tool_poisoning: {
+    title: 'Remove the MCP tool with hidden instructions', owner: 'Workstation / Security',
+    steps: [
+      'Disable the server: its descriptions give the model orders (read files, hide actions or impersonate another tool).',
+      'Review the assistant history since it was installed and rotate any credentials it may have seen.',
+      "Approve only reviewed tools/list inventories and watch for changes with MCP-Shield's integrity monitor.",
+    ],
+    verify: 'Re-audit with the imported tools/list: MCPS-TP-001, TP-002 and TP-003 are gone.',
+  },
   ad_hygiene: {
     title: 'Fix the Active Directory hygiene rule', owner: 'Identity / Active Directory',
     steps: [

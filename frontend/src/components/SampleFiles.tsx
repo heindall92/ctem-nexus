@@ -21,6 +21,7 @@ import responsables from '../../../shared/samples/ecosistema/responsables-norvik
 import kairosBia from '../../../shared/samples/ecosistema/kairos-bia-meridiano.json?raw';
 import studioSoa from '../../../shared/samples/ecosistema/studio-soa-meridiano.json?raw';
 import adSobre from '../../../shared/samples/ecosistema/ens-ad-auditor-hallazgos-meridiano.json?raw';
+import mcpSobre from '../../../shared/samples/ecosistema/mcp-shield-hallazgos-ejemplo.json?raw';
 import { useL } from '../i18n';
 import { download } from '../lib/download';
 
@@ -45,6 +46,7 @@ export const SAMPLES: Array<{ file: string; tool: string; where: [string, string
   { file: 'kairos-bia-meridiano.json', tool: 'KAIROS · sobre «bia»', where: ['Ecosistema', 'Ecosystem'], text: kairosBia, mime: 'application/json' },
   { file: 'studio-soa-meridiano.json', tool: 'Compliance Studio · sobre «soa»', where: ['Ecosistema', 'Ecosystem'], text: studioSoa, mime: 'application/json' },
   { file: 'ens-ad-auditor-hallazgos-meridiano.json', tool: 'ENS AD Auditor · sobre «hallazgos»', where: ['Ecosistema', 'Ecosystem'], text: adSobre, mime: 'application/json' },
+  { file: 'mcp-shield-hallazgos-ejemplo.json', tool: 'MCP-Shield · sobre «hallazgos»', where: ['Ecosistema', 'Ecosystem'], text: mcpSobre, mime: 'application/json' },
 ];
 
 export function SampleFiles() {
