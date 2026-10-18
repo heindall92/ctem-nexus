@@ -331,14 +331,15 @@ export function parseAdAuditor(report: Record<string, unknown>): AdParse {
 /* ───────────── MCP-Shield → hallazgos de configuración de clientes MCP ───────────── */
 
 interface McpRule { remediation: string; attack: string[]; kind: Finding['kind'] }
-/** Categoría de MCP-Shield → guía de CTEM-Nexus, técnicas ATT&CK y tipo. El transporte HTTP (MCPS-SC-003) va a la guía de TLS. */
+/** Categoría de MCP-Shield → guía de CTEM-Nexus, técnicas ATT&CK y tipo. El transporte HTTP (MCPS-SC-003) tiene guía propia:
+ * no es el TLS del activo, sino la URL de un servidor MCP remoto. */
 export const MCP_CATEGORIES: Record<string, McpRule> = {
   'supply-chain': { remediation: 'mcp_supply_chain', attack: ['T1195'], kind: 'configuracion' },
   secrets: { remediation: 'mcp_secrets', attack: ['T1552.001'], kind: 'identidad' },
   filesystem: { remediation: 'mcp_filesystem', attack: ['T1083', 'T1005'], kind: 'configuracion' },
   'tool-poisoning': { remediation: 'mcp_tool_poisoning', attack: ['T1059'], kind: 'configuracion' },
 };
-const MCP_TLS: McpRule = { remediation: 'tls_hardening', attack: ['T1040', 'T1557'], kind: 'configuracion' };
+const MCP_TLS: McpRule = { remediation: 'mcp_transport', attack: ['T1040', 'T1557'], kind: 'configuracion' };
 /** Severidad de MCP-Shield → CVSS equivalente: la misma escala que MCP-Shield publica en su SARIF (security-severity). */
 export const MCP_SEVERITY_CVSS: Record<string, number> = { critical: 9.5, high: 7.5, medium: 5, low: 2 };
 const MCP_RULE = /^MCPS-[A-Z]{2,4}-\d{3}$/;
@@ -415,7 +416,7 @@ export function studioCategory(f: Pick<Finding, 'kind' | 'remediation' | 'cve'>)
     log4shell: 'OUTDATED', proxyshell: 'OUTDATED', citrix_bleed: 'OUTDATED', patch_cve: 'OUTDATED',
     kerberoast: 'AUTH_MFA', asrep_roast: 'AUTH_MFA', adcs_esc1: 'AUTH_MFA', weak_credentials: 'BRUTE',
     unconstrained_delegation: 'IDOR', identity_generic: 'IDOR', laps: 'DEFCREDS',
-    smb_signing: 'TLS', tls_hardening: 'TLS', llmnr: 'NETSEG', print_spooler: 'NETSEG', weak_config: 'NETSEG',
+    smb_signing: 'TLS', tls_hardening: 'TLS', mcp_transport: 'TLS', llmnr: 'NETSEG', print_spooler: 'NETSEG', weak_config: 'NETSEG',
     web_injection: 'SQLI', web_xss: 'XSS', web_hardening: 'INFOLEAK', ad_hygiene: 'IDOR',
   };
   return byGuide[f.remediation] ?? (f.cve || f.kind === 'cve' ? 'OUTDATED' : f.kind === 'identidad' ? 'IDOR' : 'NETSEG');

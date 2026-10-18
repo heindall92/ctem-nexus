@@ -56,12 +56,13 @@ describe('guías, ATT&CK y controles por categoría', () => {
       expect(inferAttack('', null, rule.kind, rule.remediation).length, cat).toBeGreaterThan(0);
     }
   });
-  it('cadena de suministro → DES-09; secretos → ACC-06 (identidad); ficheros → ACC-02; tool poisoning → OPE-10; HTTP → guía de TLS', () => {
+  it('cadena de suministro → DES-09; secretos → ACC-06 (identidad); ficheros → ACC-02; tool poisoning → OPE-10; HTTP → guía propia de transporte', () => {
     expect(controlsFor({ remediation: byRule('MCPS-SC-001').remediation, kind: 'configuracion' })[0]).toBe('DES-09');
     expect(byRule('MCPS-SEC-001')).toMatchObject({ kind: 'identidad', remediation: 'mcp_secrets', attack: ['T1552.001'] });
     expect(controlsFor({ remediation: byRule('MCPS-FS-001').remediation, kind: 'configuracion' })[0]).toBe('ACC-02');
     expect(controlsFor({ remediation: byRule('MCPS-TP-001').remediation, kind: 'configuracion' })).toContain('OPE-10');
-    expect(byRule('MCPS-SC-003')).toMatchObject({ remediation: 'tls_hardening', attack: ['T1040', 'T1557'] });
+    expect(byRule('MCPS-SC-003')).toMatchObject({ remediation: 'mcp_transport', attack: ['T1040', 'T1557'] });
+    expect(controlsFor({ remediation: 'mcp_transport', kind: 'configuracion' })).toEqual(['RED-03', 'OPE-14']);
   });
 });
 
@@ -100,6 +101,34 @@ describe('importación en el proyecto y evidencia para Rosetta', () => {
     const back = parseProject(saved)!;
     expect(back.findings.every((f) => f.sources?.includes('mcpshield'))).toBe(true);
     expect(back.ecoLog?.[0].tool).toBe('mcp-shield');
+  });
+});
+
+describe('Bugbot: la guía por categoría no funde hallazgos distintos', () => {
+  const p = parseMcpShield(env);
+  it('reimportar actualiza cada hallazgo consigo mismo, no con el primero de su categoría', () => {
+    const first = planImport(p, { assets: [], findings: [] }, { today: TODAY });
+    const project = { assets: first.newAssets, findings: first.newFindings };
+    const again = planImport(p, project, { today: TODAY });
+    expect(again.newFindings).toHaveLength(0);
+    expect(again.updatedFindings).toHaveLength(project.findings.length);
+    const byId = new Map(project.findings.map((f) => [f.id, f.title]));
+    for (const u of again.updatedFindings) expect(u.title, u.id).toBe(byId.get(u.id));
+  });
+  it('con el destino elegido no se funde con un hallazgo de TLS de otro escáner en ese activo', () => {
+    const asset = { ...DEMO_ASSETS[0] };
+    const tls = { ...DEMO_FINDINGS[0], id: 'NES-900', assetId: asset.id, cve: null, relatedCves: [], title: 'SSL/TLS: versiones obsoletas', remediation: 'tls_hardening', kind: 'configuracion' as const, status: 'abierto' as const, sources: ['nessus' as const] };
+    const plan = planImport(p, { assets: [asset], findings: [tls] }, { today: TODAY, targetAssetId: asset.id });
+    expect(plan.updatedFindings).toHaveLength(0);
+    expect(plan.newFindings).toHaveLength(p.items.length);
+  });
+  it('un hallazgo de MCP-Shield solo se reconoce por su título (servidor incluido)', () => {
+    const one = { ...p, items: [p.items[0]] };
+    const other = { ...p, items: [{ ...p.items[0], title: 'Otro hallazgo [otro-servidor]' }] };
+    const base = planImport(one, { assets: [], findings: [] }, { today: TODAY });
+    const plan = planImport(other, { assets: base.newAssets, findings: base.newFindings }, { today: TODAY });
+    expect(plan.newFindings).toHaveLength(1);
+    expect(plan.updatedFindings).toHaveLength(0);
   });
 });
 

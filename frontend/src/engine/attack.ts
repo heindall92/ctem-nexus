@@ -139,6 +139,7 @@ const REMEDIATION_TECHNIQUES: Record<string, string[]> = {
   mcp_secrets:              ['T1552.001'],
   mcp_filesystem:           ['T1083', 'T1005'],
   mcp_tool_poisoning:       ['T1059'],
+  mcp_transport:            ['T1040', 'T1557'],
   // web_hardening y ad_hygiene son genéricas: deciden el título o el tipo.
   // patch_cve y weak_config son genéricas: deciden el título o el tipo.
 };

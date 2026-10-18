@@ -69,6 +69,7 @@ export const REMEDIATION_CONTROLS: Record<string, string[]> = {
   mcp_secrets: ['ACC-06', 'OPE-14'],
   mcp_filesystem: ['ACC-02', 'OPE-01'],
   mcp_tool_poisoning: ['OPE-01', 'OPE-10'],
+  mcp_transport: ['RED-03', 'OPE-14'],
 };
 
 /** Controles de un hallazgo: por su guía o, si no la tiene, por su tipo. */

@@ -64,6 +64,15 @@ export const GUIDES_EN: Record<string, Text> = {
     ],
     verify: 'Re-audit the mcp.json in MCP-Shield: MCPS-FS-001, FS-002 and FS-003 are gone.',
   },
+  mcp_transport: {
+    title: 'Move the remote MCP server to HTTPS', owner: 'Workstation / Security',
+    steps: [
+      'Change the MCP server URL from http:// to https:// and validate the certificate.',
+      'Authenticate with OAuth 2.1 and never send tokens or authorisation headers over HTTP.',
+      'If the server offers no TLS, remove it or put it behind a reverse proxy with TLS.',
+    ],
+    verify: 'Re-audit the mcp.json in MCP-Shield: MCPS-SC-003 is gone.',
+  },
   mcp_tool_poisoning: {
     title: 'Remove the MCP tool with hidden instructions', owner: 'Workstation / Security',
     steps: [

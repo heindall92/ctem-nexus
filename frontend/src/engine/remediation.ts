@@ -217,6 +217,15 @@ export const GUIDES: Record<string, RemediationGuide> = {
     ],
     verify: 'Revisar de nuevo el mcp.json en MCP-Shield: MCPS-FS-001, FS-002 y FS-003 ya no aparecen.',
   }),
+  mcp_transport: G({
+    key: 'mcp_transport', title: 'Llevar el servidor MCP remoto a HTTPS', owner: 'Puesto de trabajo / Seguridad',
+    steps: [
+      'Cambiar la URL del servidor MCP de http:// a https:// y validar el certificado.',
+      'Autenticar con OAuth 2.1 y no enviar tokens ni cabeceras de autorización por HTTP.',
+      'Si el servidor no ofrece TLS, retirarlo o ponerlo detrás de un proxy inverso con TLS.',
+    ],
+    verify: 'Revisar de nuevo el mcp.json en MCP-Shield: MCPS-SC-003 ya no aparece.',
+  }),
   mcp_tool_poisoning: G({
     key: 'mcp_tool_poisoning', title: 'Retirar la herramienta MCP con instrucciones ocultas', owner: 'Puesto de trabajo / Seguridad',
     steps: [

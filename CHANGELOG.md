@@ -11,7 +11,7 @@ MCP-Shield entra en el ecosistema: CTEM-Nexus importa el sobre `hallazgos` que e
   - La vista previa enseña el riesgo, la nota y si el análisis fue completo.
   - La severidad pasa a la misma escala CVSS del SARIF de MCP-Shield.
   - El título lleva el servidor, y la evidencia la regla, el fichero, la línea y la ruta JSON.
-- **Cuatro guías de remediación nuevas** (ES/EN) con sus técnicas ATT&CK y sus controles unificados:
+- **Cinco guías de remediación nuevas** (ES/EN) con sus técnicas ATT&CK y sus controles unificados:
 
   | Guía | Controles | ATT&CK |
   |---|---|---|
@@ -19,14 +19,15 @@ MCP-Shield entra en el ecosistema: CTEM-Nexus importa el sobre `hallazgos` que e
   | `mcp_secrets` | ACC-06, OPE-14 | T1552.001 |
   | `mcp_filesystem` | ACC-02, OPE-01 | T1083, T1005 |
   | `mcp_tool_poisoning` | OPE-01, OPE-10 | T1059 |
+  | `mcp_transport` (MCPS-SC-003, servidor remoto por HTTP) | RED-03, OPE-14 | T1040, T1557 |
 
-  El transporte remoto sin TLS (MCPS-SC-003) usa la guía de TLS que ya existía.
+  Son guías por categoría, así que no sirven para reconocer un hallazgo: al reimportar, los de MCP-Shield se emparejan por el título, que incluye el servidor. Así no se funden hallazgos distintos de la misma categoría, ni el transporte de un servidor MCP con un hallazgo de TLS de otro escáner sobre el mismo activo (lo detectó Cursor Bugbot).
 - **Esquema común:** `mcp-shield` como herramienta y el contrato de sus hallazgos (regla `MCPS-XXX-000`, categoría, severidad, CWE, línea) y de su resumen (riesgo 0–100, nota, completo, servidores y recuento).
 - **Ejemplo** `mcp-shield-hallazgos-ejemplo.json`. Lo genera MCP-Shield, que comprueba en su repositorio que coincide byte a byte con su exportador y que cumple este esquema. Se descarga también desde la ayuda.
 - MCP-Shield en «Acerca de» (Suite), en la ayuda, en la vista Ecosistema y en el registro de intercambios.
 
 ### Pruebas
-- Vitest 184 (+13: detección, escala, guías y controles por categoría, importación con y sin destino, reimportación sin duplicados, evidencia para Rosetta, proyecto guardado y un sobre hostil con claves de prototipo).
+- Vitest 187 (+16: detección, escala, guías y controles por categoría, importación con y sin destino, reimportación sin duplicados y sin fundir hallazgos de la misma categoría, sin fundirse con el TLS de otro escáner, evidencia para Rosetta, proyecto guardado y un sobre hostil con claves de prototipo).
 - Pytest 29 (+1: el contrato rechaza reglas, severidades, categorías y riesgos imposibles).
 - e2e 164/164 (+3: vista previa, importación con guía y registro, reimportación sin duplicar).
 - axe 0 infracciones en 236 estados (+4: la vista previa de MCP-Shield).
