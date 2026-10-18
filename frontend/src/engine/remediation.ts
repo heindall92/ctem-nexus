@@ -188,6 +188,44 @@ export const GUIDES: Record<string, RemediationGuide> = {
     verify: 'PingCastle.exe --healthcheck --server corp.example   # la regla ya no aparece y la puntuación baja',
     reference: 'https://www.pingcastle.com/documentation/',
   }),
+  mcp_supply_chain: G({
+    key: 'mcp_supply_chain', title: 'Fijar los servidores MCP a una versión y un digest revisados', owner: 'Puesto de trabajo / Desarrollo',
+    steps: [
+      'Sustituir npx -y, uvx o pnpm dlx sin versión por el paquete con la versión exacta que se ha revisado (paquete@1.2.3).',
+      'Fijar las imágenes de contenedor por digest (imagen@sha256:…) y no usar --pull always.',
+      'Preferir paquetes con scope verificable del publicador oficial y registrar cada servidor en el inventario de software (SBOM).',
+      'Revisar los cambios de versión antes de actualizar, como cualquier dependencia de terceros.',
+    ],
+    verify: 'Revisar de nuevo el mcp.json en MCP-Shield: MCPS-SC-001, SC-002 y SC-004 ya no aparecen.',
+    reference: 'https://modelcontextprotocol.io/specification/2025-06-18/basic/security_best_practices',
+  }),
+  mcp_secrets: G({
+    key: 'mcp_secrets', title: 'Sacar los secretos del mcp.json y rotarlos', owner: 'Puesto de trabajo / Identidad',
+    steps: [
+      'Rotar ya el token o la clave expuestos en el fichero: puede estar en copias, sincronizaciones o capturas.',
+      'Pasarlos por referencia (${VAR}, ${env:VAR} en Cursor, ${input:id} o envFile en VS Code) desde el gestor de secretos o el llavero del sistema.',
+      'Dar al token el mínimo alcance y una caducidad corta.',
+    ],
+    verify: 'Revisar de nuevo el mcp.json en MCP-Shield: MCPS-SEC-001 y SEC-002 ya no aparecen, y el token antiguo está revocado.',
+  }),
+  mcp_filesystem: G({
+    key: 'mcp_filesystem', title: 'Limitar lo que el servidor MCP puede leer y escribir', owner: 'Puesto de trabajo / Desarrollo',
+    steps: [
+      'Dar al servidor de ficheros solo el directorio del proyecto, nunca la raíz, el perfil de usuario ni ~/.ssh.',
+      'Ejecutarlo en un contenedor sin red, de solo lectura, sin capacidades y con el proyecto montado en modo lectura.',
+      'Actualizar mcp-server-git a 2025.12.18 o posterior (CVE-2025-68144).',
+    ],
+    verify: 'Revisar de nuevo el mcp.json en MCP-Shield: MCPS-FS-001, FS-002 y FS-003 ya no aparecen.',
+  }),
+  mcp_tool_poisoning: G({
+    key: 'mcp_tool_poisoning', title: 'Retirar la herramienta MCP con instrucciones ocultas', owner: 'Puesto de trabajo / Seguridad',
+    steps: [
+      'Desactivar el servidor: sus descripciones dan órdenes al modelo (leer ficheros, ocultar acciones o suplantar otra herramienta).',
+      'Revisar el historial del asistente desde que se instaló y rotar las credenciales que haya podido ver.',
+      'Aprobar solo inventarios tools/list revisados y vigilar los cambios con el monitor de integridad de MCP-Shield.',
+    ],
+    verify: 'Revisar de nuevo con el tools/list importado: MCPS-TP-001, TP-002 y TP-003 ya no aparecen.',
+  }),
   identity_generic: G({
     key: 'identity_generic', title: 'Corregir el problema de identidad', owner: 'Identidad / Directorio Activo',
     steps: ['Aplicar el principio de privilegio mínimo a la cuenta o grupo afectado.', 'Rotar las credenciales expuestas.', 'Añadir supervisión de su uso.'],

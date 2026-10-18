@@ -33,7 +33,7 @@ export type FindingKind = 'cve' | 'configuracion' | 'identidad';
 export type FindingStatus = 'abierto' | 'validado' | 'no_explotable' | 'mitigado' | 'aceptado';
 
 /** Origen de un hallazgo (importador o alta manual). */
-export type FindingSource = 'manual' | 'csv' | 'nmap' | 'bloodhound' | 'nessus' | 'openvas' | 'nuclei' | 'trivy' | 'sarif' | 'adauditor' | 'zap' | 'burp' | 'pingcastle' | 'certipy';
+export type FindingSource = 'manual' | 'csv' | 'nmap' | 'bloodhound' | 'nessus' | 'openvas' | 'nuclei' | 'trivy' | 'sarif' | 'adauditor' | 'zap' | 'burp' | 'pingcastle' | 'certipy' | 'mcpshield';
 
 /** Aceptación formal del riesgo: el hallazgo sale de los abiertos hasta que caduca (y vuelve a abierto). */
 export interface RiskException {

@@ -1,8 +1,8 @@
-/* Ecosistema: intercambio por fichero con Rosetta, Compliance Studio, KAIROS, ENS AD Auditor, Norvik y ARGOS.
+/* Ecosistema: intercambio por fichero con Rosetta, Compliance Studio, KAIROS, ENS AD Auditor, MCP-Shield, Norvik y ARGOS.
  * Se detecta el fichero, se enseña qué cambiará y solo entonces se aplica. Nada sale del navegador. */
 import {
   AlertCircle, AlertTriangle, ArrowDownToLine, ArrowUpFromLine, CheckCircle2, Download, ExternalLink, Eye, FileJson, Hourglass,
-  Blocks, KeyRound, Landmark, Languages, ShieldCheck,
+  Blocks, Bot, KeyRound, Landmark, Languages, ShieldCheck,
 } from 'lucide-react';
 import { useMemo, useState, type DragEvent, type ReactNode } from 'react';
 import { TopBar } from '../components/Shell';
@@ -10,7 +10,7 @@ import { Empty, PageHeader, Reveal, SectionTitle, Segmented } from '../component
 import { SLA_POLICIES } from '../engine/constants';
 import { argosFor, argosUrl, CONTROLS } from '../engine/controls';
 import {
-  applyKairos, contradictions, controlEvidence, detectEcosystem, kairosPlan, makeEnvelope, ownerRows, parseAdAuditor,
+  applyKairos, contradictions, controlEvidence, detectEcosystem, kairosPlan, makeEnvelope, ownerRows, parseAdAuditor, parseMcpShield,
   planOwners, rosettaStates, SLA_FOR_CATEGORY, studioInfo, toKairos, toNorvik, toStudio, type EcoDetected, type KairosItem,
 } from '../engine/ecosystem';
 import { isActive } from '../engine/engine';
@@ -80,6 +80,7 @@ export function Ecosystem() {
   const [dragging, setDragging] = useState(false);
   const [pairs, setPairs] = useState<Record<string, string>>({});
   const [adTarget, setAdTarget] = useState('');
+  const [mcpTarget, setMcpTarget] = useState('');
   const [studioTarget, setStudioTarget] = useState('CTEM');
   const today = new Date().toISOString().slice(0, 10);
   const assets = project.assets;
@@ -89,6 +90,7 @@ export function Ecosystem() {
   const contra = useMemo(() => contradictions(evidence, project.rosetta), [evidence, project.rosetta]);
   const kairosLinked = assets.filter((a) => a.tags.some((t) => t.startsWith('kairos:')));
   const adFindings = project.findings.filter((f) => f.sources?.includes('adauditor'));
+  const mcpFindings = project.findings.filter((f) => f.sources?.includes('mcpshield'));
   const argos = useMemo(() => {
     const m = new Map<string, { link: ReturnType<typeof argosFor>[number]; n: number }>();
     for (const f of project.findings.filter(isActive)) for (const l of argosFor(f)) m.set(l.id, { link: l, n: (m.get(l.id)?.n ?? 0) + 1 });
@@ -100,13 +102,14 @@ export function Ecosystem() {
     try {
       const text = await readFile(file, MAX_BYTES);
       const d = detectEcosystem(text, file.name);
-      if (d.kind === 'desconocido') throw new Error(L('No es un fichero del ecosistema. Admite: sobre «yrd-ecosistema» (bia, soa, hallazgos de ENS AD Auditor, controles y responsables), proyecto o copia de KAIROS, proyecto o copia de Compliance Studio, informe JSON de ENS AD Auditor, proyecto de Rosetta y CSV de responsables (activo, responsable, rol).', 'Not an ecosystem file. Supported: “yrd-ecosistema” envelope (bia, soa, ENS AD Auditor hallazgos, controles and responsables), KAIROS project or backup, Compliance Studio project or backup, ENS AD Auditor JSON report, Rosetta project and an owners CSV (asset, owner, role).'));
-      if (d.kind === 'sobre' && !['controles', 'responsables'].includes(d.envelope.tipo)) throw new Error(L(`Sobre de ${d.envelope.origen.herramienta} con datos de tipo «${d.envelope.tipo}»: CTEM-Nexus importa «bia» (KAIROS), «soa» (Compliance Studio), «hallazgos» (ENS AD Auditor), «controles» (Rosetta) y «responsables» (Norvik).`, `Envelope from ${d.envelope.origen.herramienta} with “${d.envelope.tipo}” data: CTEM-Nexus imports “bia” (KAIROS), “soa” (Compliance Studio), “hallazgos” (ENS AD Auditor), “controles” (Rosetta) and “responsables” (Norvik).`));
+      if (d.kind === 'desconocido') throw new Error(L('No es un fichero del ecosistema. Admite: sobre «yrd-ecosistema» (bia, soa, hallazgos de ENS AD Auditor o MCP-Shield, controles y responsables), proyecto o copia de KAIROS, proyecto o copia de Compliance Studio, informe JSON de ENS AD Auditor, proyecto de Rosetta y CSV de responsables (activo, responsable, rol).', 'Not an ecosystem file. Supported: “yrd-ecosistema” envelope (bia, soa, ENS AD Auditor or MCP-Shield hallazgos, controles and responsables), KAIROS project or backup, Compliance Studio project or backup, ENS AD Auditor JSON report, Rosetta project and an owners CSV (asset, owner, role).'));
+      if (d.kind === 'sobre' && !['controles', 'responsables'].includes(d.envelope.tipo)) throw new Error(L(`Sobre de ${d.envelope.origen.herramienta} con datos de tipo «${d.envelope.tipo}»: CTEM-Nexus importa «bia» (KAIROS), «soa» (Compliance Studio), «hallazgos» (ENS AD Auditor y MCP-Shield), «controles» (Rosetta) y «responsables» (Norvik).`, `Envelope from ${d.envelope.origen.herramienta} with “${d.envelope.tipo}” data: CTEM-Nexus imports “bia” (KAIROS), “soa” (Compliance Studio), “hallazgos” (ENS AD Auditor and MCP-Shield), “controles” (Rosetta) and “responsables” (Norvik).`));
       if (d.kind === 'kairos') {
         const plan = kairosPlan(d.project, assets, d.name);
         setPairs(Object.fromEntries(plan.items.map((i) => [i.kid, i.match ?? ''])));
       }
       if (d.kind === 'adauditor') setAdTarget(assets.find((a) => a.type === 'controlador_dominio')?.id ?? '');
+      if (d.kind === 'mcpshield') setMcpTarget('');
       setDetected({ file: file.name, d });
     } catch (e) {
       setError(e instanceof Error ? e.message : L('No se pudo leer el archivo.', 'The file could not be read.'));
@@ -119,6 +122,8 @@ export function Ecosystem() {
   const kairos = useMemo(() => (d?.kind === 'kairos' ? kairosPlan(d.project, assets, d.name) : null), [d, assets]);
   const ad = useMemo(() => (d?.kind === 'adauditor' ? parseAdAuditor(d.report) : null), [d]);
   const adPlan = useMemo(() => (ad ? planImport(ad, project, { today, targetAssetId: adTarget || null }) : null), [ad, project, today, adTarget]);
+  const mcp = useMemo(() => (d?.kind === 'mcpshield' ? parseMcpShield(d.envelope) : null), [d]);
+  const mcpPlan = useMemo(() => (mcp ? planImport(mcp, project, { today, targetAssetId: mcpTarget || null }) : null), [mcp, project, today, mcpTarget]);
   const studio = useMemo(() => (d?.kind === 'studio' ? studioInfo(d.project, d.name) : null), [d]);
   const rosetta = useMemo(() => (d?.kind === 'rosetta' ? rosettaStates({ project: d.project, name: d.name }) : d?.kind === 'sobre' && d.envelope.tipo === 'controles' ? rosettaStates({ envelope: d.envelope }) : null), [d]);
   const owners = useMemo(() => {
@@ -142,6 +147,13 @@ export function Ecosystem() {
     applyImport(adPlan, detected!.file);
     logEco({ tool: 'ens-ad-auditor', dir: 'entrada', tipo: 'hallazgos', detail: `${ad.domain}: ${adPlan.newFindings.length} nuevos, ${adPlan.updatedFindings.length} actualizados` });
     notify(L(`ENS AD Auditor (${ad.domain}): ${plural(adPlan.newFindings.length, 'hallazgo nuevo', 'hallazgos nuevos')} · ${plural(adPlan.updatedFindings.length, 'actualizado', 'actualizados')}.`, `ENS AD Auditor (${ad.domain}): ${plural(adPlan.newFindings.length, 'new finding', 'new findings')} · ${adPlan.updatedFindings.length} updated.`));
+    done();
+  };
+  const applyMcpNow = () => {
+    if (!mcpPlan || !mcp) return;
+    applyImport(mcpPlan, detected!.file);
+    logEco({ tool: 'mcp-shield', dir: 'entrada', tipo: 'hallazgos', detail: `${mcp.file}: ${mcpPlan.newFindings.length} nuevos, ${mcpPlan.updatedFindings.length} actualizados` });
+    notify(L(`MCP-Shield (${mcp.file}): ${plural(mcpPlan.newFindings.length, 'hallazgo nuevo', 'hallazgos nuevos')} · ${plural(mcpPlan.updatedFindings.length, 'actualizado', 'actualizados')}.`, `MCP-Shield (${mcp.file}): ${plural(mcpPlan.newFindings.length, 'new finding', 'new findings')} · ${mcpPlan.updatedFindings.length} updated.`));
     done();
   };
   const applyStudioNow = () => {
@@ -198,7 +210,7 @@ export function Ecosystem() {
   const ensPolicy = ens ? SLA_FOR_CATEGORY[ens.category] : null;
   const BL = { critica: L('crítica', 'critical'), alta: L('alta', 'high'), media: L('media', 'medium'), baja: L('baja', 'low') };
   const days = (p: SlaPolicy) => (['critica', 'alta', 'media', 'baja'] as const).map((b) => `${BL[b]} ${SLA_POLICIES[p][b]}`).join(' · ');
-  const toolName: Record<string, string> = { rosetta: 'Rosetta', 'compliance-studio': 'Compliance Studio', kairos: 'KAIROS', 'ens-ad-auditor': 'ENS AD Auditor', norvik: 'Norvik', argos: 'ARGOS', 'ctem-nexus': 'CTEM-Nexus' };
+  const toolName: Record<string, string> = { rosetta: 'Rosetta', 'compliance-studio': 'Compliance Studio', kairos: 'KAIROS', 'ens-ad-auditor': 'ENS AD Auditor', 'mcp-shield': 'MCP-Shield', norvik: 'Norvik', argos: 'ARGOS', 'ctem-nexus': 'CTEM-Nexus' };
 
   return (
     <>
@@ -206,7 +218,7 @@ export function Ecosystem() {
       <div className="mx-auto flex max-w-[1180px] flex-col gap-5 px-4 pb-8 sm:px-8">
         <PageHeader
           icon={<Blocks />} eyebrow={L('Ecosistema · intercambio por fichero', 'Ecosystem · file exchange')} title={chrome[lang].ecosistema}
-          lead={L('CTEM-Nexus es el puente entre lo ofensivo y el GRC. Recibe la criticidad del BIA, la categoría ENS y los hallazgos de directorio activo, y devuelve evidencia por control, riesgo de interrupción e indicadores. Las herramientas no hablan por red: tú mueves los ficheros.', 'CTEM-Nexus bridges offensive work and GRC. It takes BIA criticality, the ENS category and Active Directory findings, and returns per-control evidence, disruption risk and indicators. The tools never talk over the network: you move the files.')}
+          lead={L('CTEM-Nexus es el puente entre lo ofensivo y el GRC. Recibe la criticidad del BIA, la categoría ENS y los hallazgos de directorio activo y de las configuraciones MCP, y devuelve evidencia por control, riesgo de interrupción e indicadores. Las herramientas no hablan por red: tú mueves los ficheros.', 'CTEM-Nexus bridges offensive work and GRC. It takes BIA criticality, the ENS category and Active Directory and MCP configuration findings, and returns per-control evidence, disruption risk and indicators. The tools never talk over the network: you move the files.')}
         />
 
         <Reveal as="section" className="panel overflow-hidden" delay={0.04}>
@@ -218,7 +230,7 @@ export function Ecosystem() {
             >
               <div className="grid size-11 place-items-center rounded-xl bg-surface-2 text-accent"><FileJson className="size-5" /></div>
               <p className="mt-3 text-[0.875rem] font-medium">{L('Arrastra aquí el fichero o elígelo', 'Drop the file here or choose it')}</p>
-              <p className="mt-1 max-w-[60ch] text-xs leading-relaxed text-ink-3">KAIROS · Compliance Studio · ENS AD Auditor · Rosetta · Norvik ({L('sobre o CSV de responsables', 'envelope or owners CSV')}). {L('El archivo no sale de este navegador.', 'The file never leaves this browser.')}</p>
+              <p className="mt-1 max-w-[60ch] text-xs leading-relaxed text-ink-3">KAIROS · Compliance Studio · ENS AD Auditor · MCP-Shield · Rosetta · Norvik ({L('sobre o CSV de responsables', 'envelope or owners CSV')}). {L('El archivo no sale de este navegador.', 'The file never leaves this browser.')}</p>
               <label className="btn btn-sm mt-4 cursor-pointer focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-accent">
                 {detected ? L('Elegir otro archivo', 'Choose another file') : L('Elegir archivo', 'Choose file')}
                 <input type="file" accept=".json,.csv,application/json,text/csv" className="sr-only" aria-label={L('Fichero de una herramienta del ecosistema', 'File from an ecosystem tool')} onChange={(e) => { const f = e.target.files?.[0]; if (f) void handle(f); e.target.value = ''; }} />
@@ -277,6 +289,28 @@ export function Ecosystem() {
                 </ul>
                 <div className="flex flex-wrap gap-2">
                   <button type="button" className="btn btn-primary" disabled={!adPlan.newFindings.length && !adPlan.updatedFindings.length} onClick={applyAdNow}><CheckCircle2 />{L('Importar hallazgos', 'Import findings')}</button>
+                  <button type="button" className="btn btn-ghost" onClick={done}>{L('Descartar', 'Discard')}</button>
+                </div>
+              </section>
+            )}
+
+            {mcp && mcpPlan && (
+              <section className="flex flex-col gap-3" aria-label={L('Vista previa de MCP-Shield', 'MCP-Shield preview')} data-testid="eco-mcpshield">
+                {!mcp.complete && <Notice tone="warn">{L('MCP-Shield marcó el análisis como incompleto: faltan reglas por evaluar o el fichero no se pudo leer entero.', 'MCP-Shield flagged the analysis as incomplete: some rules were not evaluated or the file could not be fully read.')}</Notice>}
+                <p className="text-[0.8125rem] text-ink-2"><strong className="text-ink">MCP-Shield · {mcp.file}</strong> · {plural(mcp.items.length, L('hallazgo', 'finding'), L('hallazgos', 'findings'))} · {plural(mcp.servers, L('servidor MCP', 'MCP server'), L('servidores MCP', 'MCP servers'))}{mcp.riskScore !== null ? L(` · riesgo ${mcp.riskScore}/100`, ` · risk ${mcp.riskScore}/100`) : ''}{mcp.grade ? L(` · nota ${mcp.grade}`, ` · grade ${mcp.grade}`) : ''}{mcp.rejected ? L(` · ${mcp.rejected} descartados`, ` · ${mcp.rejected} discarded`) : ''}.</p>
+                <label className="flex max-w-md flex-col gap-1.5">
+                  <span className="label font-medium text-ink-2">{L('Equipo donde corre el cliente MCP', 'Machine running the MCP client')}</span>
+                  <select className="field" value={mcpTarget} onChange={(e) => setMcpTarget(e.target.value)}>
+                    <option value="">{L(`Crear un activo nuevo («Cliente MCP · ${mcp.file}»)`, `Create a new asset (“Cliente MCP · ${mcp.file}”)`)}</option>
+                    {assets.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
+                  </select>
+                </label>
+                <ul className="grid gap-1 text-[0.8125rem] text-ink-2">
+                  <li>{plural(mcpPlan.newFindings.length, L('hallazgo nuevo', 'new finding'), L('hallazgos nuevos', 'new findings'))} · {plural(mcpPlan.updatedFindings.length, L('actualizado', 'updated'), L('actualizados', 'updated'))}{mcpPlan.reopened ? ` · ${plural(mcpPlan.reopened, L('reabierto', 'reopened'), L('reabiertos', 'reopened'))}` : ''}{mcpPlan.newAssets.length ? ` · ${plural(mcpPlan.newAssets.length, L('activo nuevo', 'new asset'), L('activos nuevos', 'new assets'))}` : ''}</li>
+                  <li className="text-xs text-ink-3">{L('Cada hallazgo trae su guía, sus técnicas ATT&CK y sus controles: cadena de suministro → DES-09/OPE-05; secretos → ACC-06/OPE-14; sistema de ficheros → ACC-02/OPE-01; tool poisoning → OPE-01/OPE-10; transporte sin TLS → RED-03/OPE-14. La severidad pasa a CVSS equivalente (Crítica 9,5 · Alta 7,5 · Media 5 · Baja 2).', 'Each finding carries its guide, ATT&CK techniques and controls: supply chain → DES-09/OPE-05; secrets → ACC-06/OPE-14; file system → ACC-02/OPE-01; tool poisoning → OPE-01/OPE-10; transport without TLS → RED-03/OPE-14. Severity becomes an equivalent CVSS (Critical 9.5 · High 7.5 · Medium 5 · Low 2).')}</li>
+                </ul>
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" className="btn btn-primary" disabled={!mcpPlan.newFindings.length && !mcpPlan.updatedFindings.length} onClick={applyMcpNow}><CheckCircle2 />{L('Importar hallazgos', 'Import findings')}</button>
                   <button type="button" className="btn btn-ghost" onClick={done}>{L('Descartar', 'Discard')}</button>
                 </div>
               </section>
@@ -384,6 +418,11 @@ export function Ecosystem() {
           <ToolCard testid="eco-tool-adauditor" icon={<KeyRound />} name="ENS AD Auditor" role={L('Directorio activo frente a op.acc del ENS', 'Active Directory against ENS op.acc')}
             status={adFindings.length ? L(`${plural(adFindings.length, 'hallazgo importado', 'hallazgos importados')} del directorio activo.`, `${plural(adFindings.length, 'finding imported', 'findings imported')} from Active Directory.`) : L('Importa su sobre «hallazgos» o su informe JSON: cada alerta llega con su técnica ATT&CK.', 'Import its “hallazgos” envelope or JSON report: each alert arrives with its ATT&CK technique.')}>
             <Dir dir="in">{L('Kerberoasting, AS-REP, delegaciones, AD CS (ESC), firma SMB, LAPS y ACL → hallazgos de identidad en el grafo.', 'Kerberoasting, AS-REP, delegation, AD CS (ESC), SMB signing, LAPS and ACL → identity findings in the graph.')}</Dir>
+          </ToolCard>
+
+          <ToolCard testid="eco-tool-mcpshield" icon={<Bot />} name="MCP-Shield" role={L('Configuraciones MCP de los asistentes de IA', 'MCP configurations of AI assistants')}
+            status={mcpFindings.length ? L(`${plural(mcpFindings.length, 'hallazgo importado', 'hallazgos importados')} de configuraciones MCP.`, `${plural(mcpFindings.length, 'finding imported', 'findings imported')} from MCP configurations.`) : L('Importa su sobre «hallazgos» (Auditor → Ecosistema) o su SARIF por «Importar escáner».', 'Import its “hallazgos” envelope (Auditor → Ecosystem) or its SARIF through “Import scanner”.')}>
+            <Dir dir="in">{L('Paquetes e imágenes sin fijar, secretos en el mcp.json, acceso excesivo a ficheros y tool poisoning → hallazgos del puesto que ejecuta el cliente MCP.', 'Unpinned packages and images, secrets in mcp.json, excessive file access and tool poisoning → findings on the machine running the MCP client.')}</Dir>
           </ToolCard>
 
           <ToolCard testid="eco-tool-norvik" icon={<Landmark />} name="Norvik" role={L('Gobernanza y cuadro de mando', 'Governance and scorecard')}

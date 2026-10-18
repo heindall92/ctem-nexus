@@ -2,6 +2,35 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico. La hoja de ruta está en [ROADMAP.md](ROADMAP.md).
 
+## [1.2.1] - 2026-10-18
+
+MCP-Shield entra en el ecosistema: CTEM-Nexus importa el sobre `hallazgos` que exporta MCP-Shield 1.6.0 y lo convierte en evidencia para Rosetta. Es la octava herramienta del bloque «Suite».
+
+### Añadido
+- **Importador de MCP-Shield** en la vista Ecosistema (`parseMcpShield`). Cada hallazgo de un `mcp.json` (Claude Desktop, Cursor, VS Code) pasa a hallazgo del equipo que ejecuta el cliente MCP: un activo nuevo de tipo estación o el que elija el usuario en la vista previa.
+  - La vista previa enseña el riesgo, la nota y si el análisis fue completo.
+  - La severidad pasa a la misma escala CVSS del SARIF de MCP-Shield.
+  - El título lleva el servidor, y la evidencia la regla, el fichero, la línea y la ruta JSON.
+- **Cuatro guías de remediación nuevas** (ES/EN) con sus técnicas ATT&CK y sus controles unificados:
+
+  | Guía | Controles | ATT&CK |
+  |---|---|---|
+  | `mcp_supply_chain` | DES-09, OPE-05, OPE-02 | T1195 |
+  | `mcp_secrets` | ACC-06, OPE-14 | T1552.001 |
+  | `mcp_filesystem` | ACC-02, OPE-01 | T1083, T1005 |
+  | `mcp_tool_poisoning` | OPE-01, OPE-10 | T1059 |
+
+  El transporte remoto sin TLS (MCPS-SC-003) usa la guía de TLS que ya existía.
+- **Esquema común:** `mcp-shield` como herramienta y el contrato de sus hallazgos (regla `MCPS-XXX-000`, categoría, severidad, CWE, línea) y de su resumen (riesgo 0–100, nota, completo, servidores y recuento).
+- **Ejemplo** `mcp-shield-hallazgos-ejemplo.json`. Lo genera MCP-Shield, que comprueba en su repositorio que coincide byte a byte con su exportador y que cumple este esquema. Se descarga también desde la ayuda.
+- MCP-Shield en «Acerca de» (Suite), en la ayuda, en la vista Ecosistema y en el registro de intercambios.
+
+### Pruebas
+- Vitest 184 (+13: detección, escala, guías y controles por categoría, importación con y sin destino, reimportación sin duplicados, evidencia para Rosetta, proyecto guardado y un sobre hostil con claves de prototipo).
+- Pytest 29 (+1: el contrato rechaza reglas, severidades, categorías y riesgos imposibles).
+- e2e 164/164 (+3: vista previa, importación con guía y registro, reimportación sin duplicar).
+- axe 0 infracciones en 236 estados (+4: la vista previa de MCP-Shield).
+
 ## [1.2.0] - 2026-10-10
 
 Fase 7 del ROADMAP: **Ecosistema 2**. El sobre `yrd-ecosistema` ya no es solo cosa de CTEM-Nexus y Rosetta: las herramientas hermanas lo exportan e importan.

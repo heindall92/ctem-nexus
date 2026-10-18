@@ -22,6 +22,7 @@ al BIA (KAIROS) y a la formación (ARGOS) sin copiar datos a mano y sin que nada
 | 1.0.0 ✓ | 5 · Lanzamiento | Documentación, guía práctica, capturas, publicación |
 | 1.1.0 ✓ | 6 · Validación ofensiva | ZAP, Burp, PingCastle y Certipy; evidencias de explotación y ciclo de *retest* |
 | 1.2.0 ✓ | 7 · Ecosistema 2 | Las herramientas hermanas exportan e importan el sobre; bloque «Suite» común |
+| 1.2.1 ✓ | 7 · Ecosistema 2 | MCP-Shield, octava herramienta: su sobre «hallazgos» entra con guía, ATT&CK y controles |
 | 1.3.0 | 8 · Superficie externa y amenaza | Exposición externa (Shodan, Censys, crt.sh, subfinder), ransomware y STIX 2.1 |
 | 1.4.0 | 9 · Gobierno de la remediación | Registro de riesgos, burndown, calendario de plazos (.ics) y cuadro para el comité |
 | 1.5.0 | 10 · Riesgo en euros | Pérdida esperada por hallazgo con los costes del BIA de KAIROS |

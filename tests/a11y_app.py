@@ -83,6 +83,7 @@ def states(page, mobile):
     entrada = page.get_by_test_id("eco-importar").locator('input[type="file"]')
     entrada.set_input_files(str(eco / "kairos-meridiano.json")); page.get_by_test_id("eco-kairos").wait_for(); yield "ecosistema/kairos"
     entrada.set_input_files(str(eco / "ens-ad-auditor-meridiano.json")); page.get_by_test_id("eco-adauditor").wait_for(); yield "ecosistema/adauditor"
+    entrada.set_input_files(str(eco / "mcp-shield-hallazgos-ejemplo.json")); page.get_by_test_id("eco-mcpshield").wait_for(); yield "ecosistema/mcpshield"
     entrada.set_input_files(str(eco / "studio-meridiano.json")); page.get_by_test_id("eco-studio").wait_for(); yield "ecosistema/studio"
     entrada.set_input_files(str(eco / "responsables-norvik.csv")); page.get_by_test_id("eco-responsables").wait_for(); yield "ecosistema/responsables"
     entrada.set_input_files(str(eco / "rosetta-a-ctem.json")); page.get_by_test_id("eco-rosetta").get_by_role("button", name="Vincular con Rosetta").click()

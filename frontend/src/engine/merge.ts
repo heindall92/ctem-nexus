@@ -11,7 +11,7 @@ import type { ScanItem, ScanParse } from './scanners';
 import type { Asset, Finding, FindingSource } from './types';
 
 export const EVIDENCE_MAX = 4000;
-const PREFIX: Record<string, string> = { nessus: 'NES', openvas: 'OVS', nuclei: 'NUC', trivy: 'TRV', sarif: 'SRF', adauditor: 'ADA', zap: 'ZAP', burp: 'BRP', pingcastle: 'PGC', certipy: 'CTP' };
+const PREFIX: Record<string, string> = { nessus: 'NES', openvas: 'OVS', nuclei: 'NUC', trivy: 'TRV', sarif: 'SRF', adauditor: 'ADA', zap: 'ZAP', burp: 'BRP', pingcastle: 'PGC', certipy: 'CTP', mcpshield: 'MCP' };
 
 export const normTitle = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
 

@@ -1,5 +1,5 @@
 /* Integración con el ecosistema (sin DOM): sobre JSON común «yrd-ecosistema», detección de ficheros de las herramientas
- * hermanas, importadores (KAIROS, ENS AD Auditor, Compliance Studio, Rosetta, Norvik) y exportadores.
+ * hermanas, importadores (KAIROS, ENS AD Auditor, MCP-Shield, Compliance Studio, Rosetta, Norvik) y exportadores.
  *
  * Principio: el usuario mueve ficheros; las herramientas no hablan entre sí por red. Todo fichero se trata como hostil:
  * JSON sin claves de prototipo, textos recortados, listas con tope y valores fuera de catálogo descartados. */
@@ -17,7 +17,7 @@ export const ECO_FORMAT = 'yrd-ecosistema';
 export const ECO_VERSION = 1;
 export const ECO_MAX_ITEMS = 20000;
 
-export const ECO_TOOLS = ['ctem-nexus', 'rosetta', 'compliance-studio', 'kairos', 'ens-ad-auditor', 'argos', 'norvik'] as const;
+export const ECO_TOOLS = ['ctem-nexus', 'rosetta', 'compliance-studio', 'kairos', 'ens-ad-auditor', 'argos', 'norvik', 'mcp-shield'] as const;
 export type EcoTool = (typeof ECO_TOOLS)[number];
 export const ECO_TYPES = ['hallazgos', 'activos', 'controles', 'bia', 'soa', 'indicadores', 'responsables'] as const;
 export type EcoType = (typeof ECO_TYPES)[number];
@@ -76,6 +76,7 @@ export type EcoDetected =
   | { kind: 'kairos'; project: Record<string, unknown>; name: string; others: number }
   | { kind: 'studio'; project: Record<string, unknown>; name: string; others: number }
   | { kind: 'adauditor'; report: Record<string, unknown> }
+  | { kind: 'mcpshield'; envelope: Envelope<Record<string, unknown>> }
   | { kind: 'rosetta'; project: Record<string, unknown>; name: string }
   | { kind: 'responsables-csv'; rows: Array<Record<string, string>> }
   | { kind: 'desconocido' };
@@ -102,6 +103,7 @@ export function detectEcosystem(text: string, name = ''): EcoDetected {
     if (h === 'kairos' && env.tipo === 'bia') return { kind: 'kairos', project: kairosFromBia(env), name: nm, others: 0 };
     if (h === 'compliance-studio' && env.tipo === 'soa') return { kind: 'studio', project: studioFromSoa(env), name: nm, others: 0 };
     if (h === 'ens-ad-auditor' && env.tipo === 'hallazgos') return { kind: 'adauditor', report: adReportFromEnvelope(env) };
+    if (h === 'mcp-shield' && env.tipo === 'hallazgos') return { kind: 'mcpshield', envelope: env };
     return { kind: 'sobre', envelope: env };
   }
   if (kairosProject(o)) return { kind: 'kairos', project: o, name: str((o.meta as Record<string, unknown>).organizacion ?? (o.meta as Record<string, unknown>).nombre, 120) || name, others: 0 };
@@ -324,6 +326,58 @@ export function parseAdAuditor(report: Record<string, unknown>): AdParse {
     });
   }
   return { source: 'adauditor', tool: 'ENS AD Auditor', hosts: [host], items, skipped: 0, domain, sample: report.is_sample === true, daPath, rejected };
+}
+
+/* ───────────── MCP-Shield → hallazgos de configuración de clientes MCP ───────────── */
+
+interface McpRule { remediation: string; attack: string[]; kind: Finding['kind'] }
+/** Categoría de MCP-Shield → guía de CTEM-Nexus, técnicas ATT&CK y tipo. El transporte HTTP (MCPS-SC-003) va a la guía de TLS. */
+export const MCP_CATEGORIES: Record<string, McpRule> = {
+  'supply-chain': { remediation: 'mcp_supply_chain', attack: ['T1195'], kind: 'configuracion' },
+  secrets: { remediation: 'mcp_secrets', attack: ['T1552.001'], kind: 'identidad' },
+  filesystem: { remediation: 'mcp_filesystem', attack: ['T1083', 'T1005'], kind: 'configuracion' },
+  'tool-poisoning': { remediation: 'mcp_tool_poisoning', attack: ['T1059'], kind: 'configuracion' },
+};
+const MCP_TLS: McpRule = { remediation: 'tls_hardening', attack: ['T1040', 'T1557'], kind: 'configuracion' };
+/** Severidad de MCP-Shield → CVSS equivalente: la misma escala que MCP-Shield publica en su SARIF (security-severity). */
+export const MCP_SEVERITY_CVSS: Record<string, number> = { critical: 9.5, high: 7.5, medium: 5, low: 2 };
+const MCP_RULE = /^MCPS-[A-Z]{2,4}-\d{3}$/;
+
+export interface McpParse extends ScanParse { file: string; riskScore: number | null; grade: string; complete: boolean; servers: number; rejected: number }
+
+/** Sobre «hallazgos» de MCP-Shield → formato neutro de los escáneres. Un activo por fichero: el equipo que ejecuta el cliente MCP. */
+export function parseMcpShield(env: Envelope<Record<string, unknown>>): McpParse {
+  const r = isObj(env.resumen) ? env.resumen : {};
+  const file = str(env.proyecto ?? r.archivo, 120) || 'mcp.json';
+  const host: ScanHost = { key: `mcp:${file.toLowerCase()}`, ip: '', name: `Cliente MCP · ${file}`, type: 'estacion', exposed: false };
+  const items: ScanItem[] = [];
+  let rejected = 0;
+  for (const d of env.datos.slice(0, 5000)) {
+    const ruleId = str(d.ruleId, 20);
+    const category = str(d.category, 20);
+    const severity = str(d.severity, 10);
+    const server = str(d.server, 120);
+    const title = str(d.title, 200);
+    if (!MCP_RULE.test(ruleId) || !(category in MCP_CATEGORIES) || !(severity in MCP_SEVERITY_CVSS) || !title) { rejected++; continue; }
+    const rule = ruleId === 'MCPS-SC-003' ? MCP_TLS : MCP_CATEGORIES[category];
+    const cwe = /^CWE-\d{1,5}$/.test(str(d.cwe, 12)) ? str(d.cwe, 12) : '';
+    const loc = str(d.location, 200);
+    const line = num(d.line);
+    items.push({
+      hostKey: host.key, title: server ? `${title} [${server}]` : title, cve: null, relatedCves: [],
+      cvss: MCP_SEVERITY_CVSS[severity], epss: null, kev: false, exploitPublic: false,
+      kind: rule.kind, remediation: rule.remediation,
+      description: [str(d.detail, 600), str(d.remediation, 600) && `Corrección: ${str(d.remediation, 600)}`].filter(Boolean).join(' · '),
+      evidence: [`MCP-Shield · ${ruleId}${cwe ? ` · ${cwe}` : ''}`, loc && `${file}${line !== null && line >= 1 ? `:${Math.trunc(line)}` : ''} · ${loc}`, str(d.evidence, 400)].filter(Boolean).join('\n'),
+      ref: `mcpshield:${ruleId}:${server}:${loc}`, attack: rule.attack,
+    });
+  }
+  const risk = num(r.riesgo);
+  return {
+    source: 'mcpshield', tool: `MCP-Shield${env.origen.version ? ` ${env.origen.version}` : ''}`, hosts: [host], items, skipped: 0,
+    file, riskScore: risk !== null && risk >= 0 && risk <= 100 ? Math.round(risk) : null, grade: /^(A|B|C|D|F|N\/A)$/.test(str(r.nota, 3)) ? str(r.nota, 3) : '',
+    complete: r.completo === true, servers: Math.max(0, Math.trunc(num(r.servidores) ?? 0)), rejected,
+  };
 }
 
 /* ───────────── Compliance Studio (ENS) ───────────── */

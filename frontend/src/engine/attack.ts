@@ -135,6 +135,10 @@ const REMEDIATION_TECHNIQUES: Record<string, string[]> = {
   identity_generic:         ['T1078', 'T1552'],
   web_injection:            ['T1190', 'T1059'],
   web_xss:                  ['T1059.007', 'T1189'],
+  mcp_supply_chain:         ['T1195'],
+  mcp_secrets:              ['T1552.001'],
+  mcp_filesystem:           ['T1083', 'T1005'],
+  mcp_tool_poisoning:       ['T1059'],
   // web_hardening y ad_hygiene son genéricas: deciden el título o el tipo.
   // patch_cve y weak_config son genéricas: deciden el título o el tipo.
 };
