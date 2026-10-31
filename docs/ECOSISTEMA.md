@@ -4,6 +4,7 @@ CTEM-Nexus es el puente entre lo ofensivo y el GRC dentro de un conjunto de herr
 
 | Herramienta | Qué hace | Web | Código |
 |---|---|---|---|
+| **Atlas GRC** | Aprender la ISO/IEC 27001 desde cero: lecciones, prácticas y simulacros CertiProf (no intercambia sobres) | [abrir](https://heindall92.github.io/atlas-grc/) | [heindall92/atlas-grc](https://github.com/heindall92/atlas-grc) |
 | **Rosetta Multinorma** | Mapa de 15 normas y leyes sobre 152 controles unificados | [abrir](https://heindall92.github.io/rosetta_multinorma/) | [heindall92/rosetta_multinorma](https://github.com/heindall92/rosetta_multinorma) |
 | **ENS Compliance Studio** | Categorización, MAGERIT y declaración de aplicabilidad del ENS | [abrir](https://heindall92.github.io/grc_ens_compliance_studio/) | [heindall92/grc_ens_compliance_studio](https://github.com/heindall92/grc_ens_compliance_studio) |
 | **KAIROS** | Continuidad de negocio: BIA, BCP y DRP | [abrir](https://heindall92.github.io/kairos/) | [heindall92/kairos](https://github.com/heindall92/kairos) |

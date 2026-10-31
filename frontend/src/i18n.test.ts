@@ -26,4 +26,11 @@ describe('textos ES/EN', () => {
       expect(t.noteEn).not.toMatch(/[áéíóúñ]/);
     }
   });
+
+  it('Atlas GRC aparece en el ecosistema con su web y su código', () => {
+    const atlas = ECOSYSTEM.find((t) => t.name === 'Atlas GRC');
+    expect(atlas?.web).toBe('https://heindall92.github.io/atlas-grc/');
+    expect(atlas?.code).toBe('https://github.com/heindall92/atlas-grc');
+    expect(ECOSYSTEM).toHaveLength(9);
+  });
 });

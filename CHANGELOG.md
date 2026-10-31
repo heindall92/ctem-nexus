@@ -2,6 +2,12 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico. La hoja de ruta está en [ROADMAP.md](ROADMAP.md).
 
+## [Sin publicar]
+
+### Añadido
+- **Atlas GRC en Ayuda → Acerca de.** El bloque de herramientas del ecosistema pasa a nueve: se suma Atlas GRC, que enseña la ISO/IEC 27001 desde cero con lecciones, prácticas, simulacros CertiProf y la ciudad de Albatrel que crece contigo. La frase de resumen empieza por «Atlas te enseña la norma». Atlas no intercambia sobres `yrd-ecosistema`, así que no cambia `ECO_TOOLS`.
+- **Pruebas.** Vitest comprueba que Atlas aparece con su web y su código.
+
 ## [1.2.1] - 2026-10-18
 
 MCP-Shield entra en el ecosistema: CTEM-Nexus importa el sobre `hallazgos` que exporta MCP-Shield 1.6.0 y lo convierte en evidencia para Rosetta. Es la octava herramienta del bloque «Suite».

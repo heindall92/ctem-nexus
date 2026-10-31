@@ -325,7 +325,7 @@ export function HelpModal() {
 
                   <section>
                     <h4 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-3">{L('Herramientas del ecosistema', 'Ecosystem tools')}</h4>
-                    <p className="mt-2 text-xs text-ink-3">{L('Compliance Studio prepara la declaración de aplicabilidad y Rosetta la cruza con otras normas. KAIROS cubre la continuidad. CTEM-Nexus prioriza la exposición técnica. ENS AD Auditor revisa el directorio. ARGOS es el laboratorio de práctica y Norvik, la gobernanza.', 'Compliance Studio prepares the statement of applicability and Rosetta maps it to other standards. KAIROS covers continuity. CTEM-Nexus prioritizes technical exposure. ENS AD Auditor reviews the directory. ARGOS is the practice lab and Norvik, governance.')}</p>
+                    <p className="mt-2 text-xs text-ink-3">{L('Atlas te enseña la norma. Compliance Studio prepara la declaración de aplicabilidad y Rosetta la cruza con otras normas. KAIROS cubre la continuidad. CTEM-Nexus prioriza la exposición técnica. ENS AD Auditor revisa el directorio. ARGOS es el laboratorio de práctica y Norvik, la gobernanza.', 'Atlas teaches you the standard. Compliance Studio prepares the statement of applicability and Rosetta maps it to other standards. KAIROS covers continuity. CTEM-Nexus prioritizes technical exposure. ENS AD Auditor reviews the directory. ARGOS is the practice lab and Norvik, governance.')}</p>
                     <ul className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                       {ECOSYSTEM.map((tool) => (
                         <li key={tool.code} className={`flex flex-col rounded-2xl border bg-surface p-4 ${tool.here ? 'border-accent/50' : 'border-hairline'}`}>
