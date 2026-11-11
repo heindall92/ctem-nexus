@@ -363,7 +363,7 @@ ctem-nexus/
 
 ## <img src="docs/assets/icons/route.svg" width="20" height="20" valign="middle"/> Hoja de ruta
 
-Las fases 0 a 7 están cerradas: de la higiene del repositorio a la 1.2.0, en la que las herramientas hermanas ya exportan e importan el sobre común. Lo que viene (superficie externa, gobierno y riesgo en euros) está en [ROADMAP.md](ROADMAP.md); los cambios de cada versión, en [CHANGELOG.md](CHANGELOG.md), y cómo colaborar, en [CONTRIBUTING.md](CONTRIBUTING.md).
+Las fases 0 a 7 están cerradas: de la higiene del repositorio a la 1.2.0, en la que las herramientas hermanas ya exportan e importan el sobre común. Lo que viene, hasta la 2.0 (datos reales a escala, cifrado, grafo exacto, CVSS 4.0 y SSVC, superficie externa, validación y detección, gobierno y riesgo en euros), está en [ROADMAP.md](ROADMAP.md); los cambios de cada versión, en [CHANGELOG.md](CHANGELOG.md), y cómo colaborar, en [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Licencia e independencia
 
