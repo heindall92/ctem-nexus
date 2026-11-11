@@ -23,9 +23,14 @@ al BIA (KAIROS) y a la formación (ARGOS) sin copiar datos a mano y sin que nada
 | 1.1.0 ✓ | 6 · Validación ofensiva | ZAP, Burp, PingCastle y Certipy; evidencias de explotación y ciclo de *retest* |
 | 1.2.0 ✓ | 7 · Ecosistema 2 | Las herramientas hermanas exportan e importan el sobre; bloque «Suite» común |
 | 1.2.1 ✓ | 7 · Ecosistema 2 | MCP-Shield, octava herramienta: su sobre «hallazgos» entra con guía, ATT&CK y controles |
-| 1.3.0 | 8 · Superficie externa y amenaza | Exposición externa (Shodan, Censys, crt.sh, subfinder), ransomware y STIX 2.1 |
-| 1.4.0 | 9 · Gobierno de la remediación | Registro de riesgos, burndown, calendario de plazos (.ics) y cuadro para el comité |
-| 1.5.0 | 10 · Riesgo en euros | Pérdida esperada por hallazgo con los costes del BIA de KAIROS |
+| 1.3.0 | 8 · Datos reales | Que no pierda nada y vaya fluida con 50.000 hallazgos |
+| 1.4.0 | 9 · Proteger el mapa | Cifrado del proyecto, API con credencial y entregas firmadas |
+| 1.5.0 | 10 · Grafo exacto | Brecha asumida, objetivos elegidos, identidades y corte mínimo exacto |
+| 1.6.0 | 11 · Priorización de referencia | CVSS 4.0, SSVC, VEX, controles compensatorios y nota contrastada con la historia |
+| 1.7.0 | 12 · Superficie externa y amenaza | Shodan, Censys, crt.sh, subdominios, ransomware y STIX 2.1, más nube, SBOM e identidad en la nube |
+| 1.8.0 | 13 · Validación y detección | dark_spear, pruebas de equipo morado y cobertura de detección |
+| 1.9.0 | 14 · Gobierno | Registro de riesgos, burndown, .ics y comité, más plazos de notificación, traza de auditoría y trabajo en equipo |
+| 2.0.0 | 15 · Euros, experiencia y alcance | Pérdida esperada con el BIA de KAIROS, ciclo guiado, modo comité, línea de comandos y acción de CI |
 
 ---
 
@@ -214,38 +219,223 @@ El sobre `yrd-ecosistema` se implementa en las herramientas hermanas, no solo en
 
 **Estado: cerrada en 1.2.0.** KAIROS 1.1.0, Compliance Studio 2.2.0, ENS AD Auditor 0.4.0, Rosetta 2.11.1 y ARGOS 1.3.2 publicados. CTEM-Nexus: Vitest 171, Pytest 28, e2e 161/161 y axe 0 infracciones en 232 estados.
 
-## Fase 8 · Superficie externa y amenaza (1.3.0)
+## Hacia la 2.0: auditoría del 11 de noviembre de 2026
 
-Lo que ve un atacante desde fuera, sin escanear nada desde la herramienta: el usuario trae las exportaciones.
+> Sobre la 1.2.1 (commit `94dabe5`). Las antiguas fases 8 (superficie externa), 9 (gobierno) y 10 (riesgo en euros)
+> se conservan enteras dentro de las fases 12, 14 y 15.
+
+### Punto de partida, medido
+
+Auditoría hecha sobre el código y sobre la app compilada, en Chromium a 1440×900. Las 187 pruebas de Vitest pasan y
+la demo no da ni un error de consola. La interfaz, la accesibilidad y la explicación de la nota están a un nivel que
+pocas herramientas abiertas tienen. Lo que la separa del máximo nivel no es el acabado: es lo que pasa cuando entran
+datos de verdad, y hasta dónde llega el modelo.
+
+| Qué | Medido | Qué significa |
+|---|---|---|
+| Guardado | Proyecto de 6.000 hallazgos importado por la interfaz: la app dice «importado», `localStorage` queda vacío y al recargar no hay nada. Sin aviso. Con 5.000 ocupa 5,15 MB, justo en el límite | **Pérdida de datos silenciosa** con un solo Nessus mediano. Es lo primero |
+| Tabla de priorización | 5.000 hallazgos → 171.047 nodos en el DOM y 1,8 s por cada entrada a la vista | No hay virtualización: todo se pinta |
+| «¿Y si…?» | 17,5 s con la pestaña congelada (5.000 hallazgos, 861 aristas). En el motor solo: 12 s; con 50.000, 56 s | El plan voraz recalcula rutas en el hilo principal |
+| Movilización | 9,2 s en abrir con 5.000 hallazgos | Igual: sin límite ni trabajo en segundo plano |
+| Motor de puntuación | 50.000 hallazgos y 2.000 activos en 352 ms | **El motor escala bien.** El problema es la interfaz y el guardado |
+| Tope por fichero | `MAX_ITEMS = 5000` en los escáneres | Un Nessus de una red mediana pasa de ahí |
+| Rutas | DFS con tope de 2.000 rutas y profundidad 8; los puntos de estrangulamiento salen de esa muestra | En un grafo grande el resultado depende del orden de exploración, no es exacto |
+| Entrada del atacante | Solo «Internet → activo expuesto» | No modela la brecha asumida: un puesto con phishing, un proveedor, la VPN o un interno |
+| Activos críticos | Solo criticidad 5 | No se puede decir «mi objetivo es este» sin tocar la criticidad |
+| Severidad | Un número CVSS de 0 a 10 | Sin vector, sin CVSS 4.0, sin métricas de entorno |
+| ATT&CK | Tabla escrita a mano, v14.1, 55 técnicas | Dos versiones mayores por detrás y sin sub-técnicas de nube ni identidad |
+| Estándares que faltan | SSVC, VEX, CycloneDX y D3FEND: 0 apariciones en el código | Son el idioma en el que hoy se comunican las decisiones de vulnerabilidades |
+| Datos en reposo | El proyecto se guarda y se exporta en claro | El fichero es, literalmente, el mapa para comprometer a la organización |
+| API opcional | FastAPI sin autenticación; acepta `Origin: null` | Cualquier página abierta desde disco puede llamarla si está levantada |
+| Paquete | HTML único de 1,1 MB (361 kB con gzip) | Correcto; no es un problema |
+
+### Por qué este orden
+
+El orden no es de gusto. La 1.3.0 arregla una pérdida de datos. La 1.4.0 va antes de crecer porque todo lo que viene
+después hace el fichero más valioso para un atacante. La 1.5.0 y la 1.6.0 son el núcleo: sin grafo exacto y sin una
+nota defendible, lo demás son importadores.
+
+---
+
+## Fase 8 · Datos reales (1.3.0)
+
+- [ ] **Guardado en IndexedDB**, con migración automática desde `localStorage` y petición de almacenamiento
+  persistente (`navigator.storage.persist()`). Los ajustes siguen en `localStorage`.
+- [ ] **Nunca más un guardado silencioso.** Si no se puede guardar, aviso fijo y visible con el motivo y el botón
+  «Exportar proyecto ahora». Indicador permanente de «guardado hace N s» junto al nombre del proyecto.
+- [ ] **Tablas virtualizadas** en Priorización, Movilización, Alcance y Rutas: solo se pinta lo visible. Mantiene
+  teclado, lector de pantalla (`aria-rowcount`, `aria-rowindex`) y la vista de tarjetas en móvil.
+- [ ] **Cálculo en un Web Worker** (motor, «¿Y si…?», importadores): la interfaz no se congela nunca; barra de
+  progreso y botón de cancelar en las operaciones de más de 300 ms.
+- [ ] **Plan «¿Y si…?» incremental.** Hoy recalcula las rutas en cada paso. Contar rutas por arista una vez y
+  actualizar solo lo que cambia.
+- [ ] **Quitar el tope de 5.000 por fichero**: análisis por partes (XML y JSONL en flujo) y resumen previo cuando
+  el fichero trae más de 20.000 entradas («agrupar por complemento», «solo altas y críticas», «todo»).
+- [ ] **Agrupación de hallazgos**: el mismo CVE en 200 equipos es una fila que se despliega, no 200 filas.
+- [ ] Prueba de carga en la CI con un proyecto sintético de 50.000 hallazgos y 2.000 activos.
+
+**Aceptación:** con 50.000 hallazgos, cada vista responde en menos de 300 ms y ninguna tarea bloquea el hilo
+principal más de 100 ms; importar, recargar y exportar conserva todo; el e2e de carga está en la CI; axe sigue a 0.
+
+## Fase 9 · Proteger el mapa (1.4.0)
+
+- [ ] **Proyecto cifrado en reposo y al exportar** (WebCrypto, AES-GCM, clave derivada de una frase de paso).
+  Opcional pero recomendado en el primer arranque con datos propios. Bloqueo por inactividad.
+- [ ] **Exportación para compartir**: seudonimizar nombres de equipo, IP, dominios y responsables con un mapa
+  reversible que se queda en el proyecto. Para enseñar un informe o pedir ayuda sin filtrar la red.
+- [ ] **Integridad de lo que sale**: cada exportación e informe lleva su SHA-256 y un manifiesto; el importador
+  avisa si el fichero se ha tocado.
+- [ ] **API opcional con credencial**: token generado al arrancar, escucha solo en `127.0.0.1`, se retira
+  `Origin: null` y se limita el tamaño y la tasa de peticiones.
+- [ ] **Modelo de amenazas del propio producto** en `docs/THREAT-MODEL.md` (qué protege, de quién y qué no).
+- [ ] **Entregas verificables**: SBOM CycloneDX de la herramienta, compilación reproducible, firma de la entrega y
+  procedencia en la CI.
+- [ ] **Pruebas de propiedades en los importadores** (entradas generadas, no solo ejemplos hostiles escritos a
+  mano) para XML, JSON, JSONL y CSV.
+
+**Aceptación:** con cifrado activo, ni IndexedDB ni el fichero exportado contienen un solo nombre de activo en
+claro (lo comprueba una prueba); la API rechaza peticiones sin token; la entrega se verifica con un comando
+documentado.
+
+## Fase 10 · Grafo exacto (1.5.0)
+
+- [ ] **Brecha asumida**: puntos de entrada configurables además de Internet (puesto de usuario comprometido,
+  proveedor con acceso, VPN, red wifi, interno). Cada escenario tiene sus rutas y su índice.
+- [ ] **Objetivos explícitos**: marcar «joyas de la corona» por activo o por función de negocio de KAIROS, sin
+  depender de la criticidad 5.
+- [ ] **Identidades como nodos**: usuarios, grupos, cuentas de servicio y plantillas de certificado dejan de
+  plegarse sobre el equipo. Importadores de BloodHound CE y de AzureHound (Entra ID).
+- [ ] **Alcanzabilidad de red**: segmentos y reglas entre ellos (a mano o deducidos de Nmap lanzados desde
+  varios puntos). Un movimiento solo cuenta si la red lo permite.
+- [ ] **Cálculo exacto, sin muestreo**: número de rutas por nodo y arista con programación dinámica sobre el
+  grafo condensado; puntos de estrangulamiento por dominadores; **corte mínimo** (flujo máximo) para el conjunto
+  más pequeño de correcciones que desconecta la entrada de cada objetivo.
+- [ ] **Ruta más probable**, no solo la más corta: cada arista lleva la probabilidad de su hallazgo y la ruta
+  se ordena por el producto.
+- [ ] **Grafo legible con cientos de nodos**: agrupación por segmento o dominio, modo foco, minimapa y dibujo en
+  lienzo cuando pasa de 300 nodos. Alternativa accesible en tabla, como ahora.
+- [ ] Paridad TS ↔ Python de todos los algoritmos nuevos en el fichero dorado.
+
+**Aceptación:** en un grafo sintético de 2.000 nodos y 10.000 aristas el resultado no depende del orden de
+entrada (prueba con barajado); el corte mínimo coincide con el óptimo calculado por fuerza bruta en grafos
+pequeños; el plan voraz actual se conserva y se compara contra el óptimo en la interfaz.
+
+## Fase 11 · Priorización de referencia (1.6.0)
+
+- [ ] **CVSS 4.0 y 3.1 por vector**: se guarda el vector, se calcula la nota en local y las métricas de entorno
+  salen del activo (criticidad, exposición). Fuera el «CVSS equivalente estimado» cuando hay vector.
+- [ ] **EPSS con fecha y percentil**, y aviso de catálogo caducado (más de 7 días).
+- [ ] **Decisión SSVC** junto a la nota (Actuar, Atender, Seguir de cerca, Seguir), con el árbol visible. La
+  nota ordena; SSVC dice qué hacer y aguanta una auditoría.
+- [ ] **VEX**: importar OpenVEX y CSAF para marcar «no afectado» con su justificación, y exportar las
+  decisiones propias («no explotable», «mitigado») como VEX.
+- [ ] **Controles compensatorios que cuentan**: EDR, WAF, MFA o segmentación declarados por activo, con su
+  evidencia, reducen la explotabilidad o cortan la arista. Correspondencia con D3FEND.
+- [ ] **ATT&CK generado, no escrito**: la tabla sale del paquete STIX oficial con un script (versión vigente,
+  sub-técnicas, nube e identidad), con la fecha en el informe.
+- [ ] **La nota, contrastada con la historia**: con el histórico público de KEV y EPSS, medir cuántos días antes
+  de entrar en KEV habría puesto la fórmula cada CVE en banda crítica o alta, frente a ordenar solo por CVSS.
+  Publicar el resultado en `docs/SCORING.md`, salga como salga.
+- [ ] **Análisis de sensibilidad**: qué hallazgos cambian de banda si un dato varía (EPSS ±0,1, criticidad ±1).
+- [ ] **El índice no ve el volumen**: hoy es el peor hallazgo y la media de los cinco peores, así que 20
+  hallazgos y 20.000 pueden dar la misma cifra. Añadir exposición agregada por activo crítico y tendencia.
+- [ ] **Perfiles propios**: pesos editables con vista previa del cambio de orden y exportables.
+
+**Aceptación:** vectores CVSS comprobados contra los ejemplos oficiales de FIRST; el árbol SSVC reproduce los
+casos de la guía de CISA; ida y vuelta VEX sin pérdida; el contraste histórico es reproducible con un comando.
+
+## Fase 12 · Superficie externa y amenaza (1.7.0)
+
+Lo que el usuario trae de fuera, sin escanear nada desde la herramienta. De la antigua fase 8:
 
 - [ ] **Superficie externa** por fichero: Shodan (JSON de `shodan download`), Censys (JSON de búsqueda), crt.sh (JSON de certificados) y listas de subdominios (subfinder, amass). Activos expuestos nuevos, servicios y CVE anunciados, certificados caducados o a punto y subdominios fuera del inventario («shadow IT»).
 - [ ] **Ransomware**: el campo `knownRansomwareCampaignUse` del catálogo KEV se guarda y se señala en la ficha, en el panel y en el informe.
 - [ ] **Inteligencia STIX 2.1**: un *bundle* (MISP, OpenCTI…) relaciona vulnerabilidades con actores y campañas; la ficha enseña quién explota cada CVE.
 - [ ] Vista de exposición externa con su propia visualización (no anillos): mapa de servicios por puerto y antigüedad.
 
-**Aceptación:** importadores con ejemplo y pruebas hostiles; el informe distingue la exposición externa; axe 0.
+Además:
 
-## Fase 9 · Gobierno de la remediación (1.4.0)
+- [ ] **Nube**: Prowler y ScoutSuite (AWS, Azure, GCP), con sus hallazgos de identidad como aristas.
+- [ ] **Identidad y correo en la nube**: Maester y ScubaGear (Microsoft 365, Entra ID); SPF, DKIM y DMARC por
+  fichero de resultados.
+- [ ] **Contenedores y Kubernetes**: kube-bench y Trivy de configuración.
+- [ ] **Inventario de componentes**: importar SBOM CycloneDX y SPDX y cruzarlos con un volcado local de
+  vulnerabilidades (OSV, EUVD) que trae el usuario.
+- [ ] **Identificadores europeos**: mostrar el identificador de la base de datos europea de vulnerabilidades
+  junto al CVE cuando el volcado lo traiga.
 
-Para el comité de seguridad y para las auditorías de ENS, NIS2 y DORA.
+**Aceptación:** importadores con ejemplo y pruebas hostiles; el informe distingue la exposición externa; axe 0; cada importador nuevo (nube, identidad, Kubernetes, SBOM) con su ejemplo, sus pruebas hostiles y su paso e2e.
+
+## Fase 13 · Validación y detección (1.8.0)
+
+Hoy «validar» es una declaración del analista. El máximo nivel es evidencia, y además saber si te enterarías.
+
+- [ ] **dark_spear como validador del ecosistema**: sobre `validaciones` (sonda, técnica ATT&CK, resultado,
+  fecha, evidencia). Sus 60 sondas pasan a ser la prueba de que una ruta existe o está cortada.
+- [ ] **Resultados de equipo morado**: importar ejecuciones de Atomic Red Team y de Caldera; cada técnica
+  probada marca los hallazgos y aristas que cubre.
+- [ ] **Cobertura de detección**: importar el conjunto de reglas (Sigma, Wazuh) y cruzarlo con las técnicas
+  que aparecen en las rutas. Nuevo dato por arista: «se explota **y** no se detecta».
+- [ ] **Mapa ATT&CK con dos capas**: exposición y detección, y exportación de ambas a Navigator.
+- [ ] **Plan de validación**: para cada ruta, la lista ordenada de comprobaciones defensivas que la confirman o
+  la descartan, con quién y cuándo.
+- [ ] **Caducidad de la validación**: una prueba de hace 90 días deja de contar como vigente.
+- [ ] Enlace con Blue-Jr: «practica la detección de esta técnica».
+
+**Aceptación:** ida y vuelta dark_spear ↔ CTEM-Nexus probada en los dos repositorios; la matriz distingue las
+cuatro combinaciones (expuesta o no, detectada o no) y una prueba lo comprueba con la demo.
+
+## Fase 14 · Gobierno (1.9.0)
+
+Para el comité de seguridad y para las auditorías de ENS, NIS2 y DORA. De la antigua fase 9:
 
 - [ ] **Registro de riesgos** exportable a Excel (XLSX sin fórmulas) y CSV: riesgo, activo, responsable, tratamiento, aceptaciones con caducidad y controles afectados.
 - [ ] **Burndown** de hallazgos abiertos por banda entre ciclos y **MTTR por responsable y por banda**, con su tendencia.
 - [ ] **Calendario de plazos** (.ics) con la fecha límite de cada ticket, para importarlo en Outlook o Google Calendar.
 - [ ] **Paquete para el comité**: una página con indicadores de NIS2 (art. 21) y DORA (art. 9 y 10), decisiones pendientes y riesgos aceptados que caducan.
 
-**Aceptación:** el XLSX abre sin avisos en Excel y LibreOffice; el .ics se valida contra RFC 5545 en las pruebas.
+Además:
 
-## Fase 10 · Riesgo en euros (1.5.0)
+- [ ] **Plazos legales de notificación**: cuando un hallazgo pasa a «explotado», cuenta atrás de NIS2 (alerta
+  temprana a las 24 h, notificación a las 72 h, informe final al mes) y, para fabricantes, de la obligación de
+  notificación del Reglamento de Ciberresiliencia. Orientativo, con la cita del artículo y sin texto protegido.
+- [ ] **Traza de auditoría**: registro solo de adición de quién cambió qué y cuándo (estado, aceptación,
+  validación), encadenado por hash y exportable. Es lo que pide un auditor de ENS o ISO.
+- [ ] **Trabajo en equipo sin servidor**: fusionar dos copias del mismo proyecto (dos analistas, dos ficheros)
+  con resolución de conflictos visible.
+- [ ] **Comparar ciclos**: qué apareció, qué se cerró, qué se reabrió y qué cambió de banda entre dos instantáneas.
+- [ ] **Acuerdos por responsable**: carga de trabajo, cumplimiento de plazos y hallazgos sin dueño.
 
-El puente definitivo entre lo técnico y la dirección: de un CVE a euros, con los datos que ya tiene el BIA.
+**Aceptación:** el XLSX abre sin avisos en Excel y LibreOffice; el .ics se valida contra RFC 5545 en las pruebas; la cadena de la traza se verifica en una prueba y se rompe si se edita una entrada; la fusión de dos copias divergentes no pierde ningún cambio.
+
+## Fase 15 · Euros, experiencia y alcance (2.0.0)
+
+El puente entre lo técnico y la dirección: de un CVE a euros, con los datos que ya tiene el BIA. De la antigua fase 10:
 
 - [ ] Desde **KAIROS**, el coste por hora de cada función y su RTO llegan a los activos que la soportan.
 - [ ] **Pérdida esperada** por hallazgo, explicable y conservadora: probabilidad (EPSS, KEV y validación) × impacto (coste por hora × horas hasta el RTO o el MTPD), con rango bajo y alto y sin falsa precisión.
 - [ ] Orden alternativo del plan por **euros evitados por hora de trabajo** y su efecto en «¿Y si…?».
 - [ ] El informe para la dirección incluye la exposición económica y su método.
 
-**Aceptación:** la fórmula está en `docs/SCORING.md`, con paridad TS ↔ Python y un ejemplo resuelto a mano en las pruebas.
+Además:
+
+- [ ] **Rangos, no cifras**: simulación con semilla fija (resultado reproducible) y curva de pérdida
+  excedida. Sin anillos.
+- [ ] **Ciclo guiado**: las cinco fases de CTEM como recorrido con «qué te falta para cerrar este ciclo», y
+  estado del ciclo siempre visible.
+- [ ] **Modo comité**: presentación a pantalla completa de cinco pantallas generada del proyecto (índice,
+  tendencia, tres decisiones, riesgos aceptados que caducan y euros).
+- [ ] **Vistas guardadas y acciones en bloque** en Priorización y Movilización.
+- [ ] **Instalable y sin conexión** como aplicación web, sin romper la regla de cero peticiones a terceros.
+- [ ] **Línea de comandos** sobre el motor de Python: `ctem-nexus puntuar escaneo.nessus --proyecto p.json`,
+  con salida JSON, SARIF y código de salida por umbral.
+- [ ] **Acción de GitHub** y paquete en PyPI: la priorización como puerta de calidad en un despliegue.
+- [ ] **Contrato de importadores**: plantilla, pruebas obligatorias y guía para que un tercero añada un formato.
+- [ ] **Laboratorio de demostración realista**: un segundo ejemplo basado en un laboratorio público de
+  directorio activo, con sus ficheros de origen, para enseñar el recorrido completo.
+
+**Aceptación:** la fórmula está en `docs/SCORING.md`, con paridad TS ↔ Python y un ejemplo resuelto a mano en las pruebas; el motor de Python instalado desde PyPI da el mismo fichero dorado;
+Lighthouse ≥ 95 en las cuatro categorías; axe 0 en todos los estados nuevos.
 
 ---
 
@@ -255,3 +445,4 @@ El puente definitivo entre lo técnico y la dirección: de un CVE a euros, con l
 - El motor TypeScript y su espejo en Python se cambian juntos: `npm run golden` + `pytest`.
 - Todo dato importado se trata como hostil: XML sin DTD ni entidades, JSON sin claves de prototipo, CSV saneado contra inyección de fórmulas.
 - Iconos solo de Lucide. Interfaz en español, con inglés completo como segundo idioma.
+- **Ningún guardado falla en silencio**: si no se puede guardar, la interfaz lo dice y ofrece exportar el proyecto.
