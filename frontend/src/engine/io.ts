@@ -298,7 +298,10 @@ export function parseException(v: unknown): RiskException | null {
   };
 }
 
-export interface ImportResult { findings: Finding[]; rejected: number }
+export interface ImportResult { findings: Finding[]; rejected: number; /** Filas no leídas por superar MAX_FILAS. */ truncated: number }
+
+/** Tope de seguridad de filas por fichero CSV o JSON (memoria). Hasta la 1.2.1 eran 5.000 y lo demás se perdía sin aviso. */
+export const MAX_FILAS = 250_000;
 
 /** Importa hallazgos desde texto JSON (array u objeto con findings) o CSV. */
 export function importFindings(text: string, assets: Asset[]): ImportResult {
@@ -313,11 +316,11 @@ export function importFindings(text: string, assets: Asset[]): ImportResult {
   }
   const findings: Finding[] = [];
   let rejected = 0;
-  rows.slice(0, 5000).forEach((r, i) => {
+  rows.slice(0, MAX_FILAS).forEach((r, i) => {
     const f = normalizeFinding(r, i, assets);
     if (f) findings.push(f); else rejected++;
   });
-  return { findings, rejected };
+  return { findings, rejected, truncated: Math.max(0, rows.length - MAX_FILAS) };
 }
 
 /** Valida y sanea un proyecto completo importado desde JSON. */

@@ -3,32 +3,26 @@
  * Todo ocurre en el navegador: el fichero no sale del equipo. */
 import { AlertCircle, CheckCircle2, ChevronRight, FileSearch, RotateCcw, ShieldAlert } from 'lucide-react';
 import { useMemo, useState, type DragEvent } from 'react';
-import { applyIntel, gunzipText, parseEpss, parseKev, type EpssCatalog, type KevCatalog } from '../engine/intel';
+import { applyIntel, type EpssCatalog, type KevCatalog } from '../engine/intel';
 import { planImport, type ImportPlan } from '../engine/merge';
-import { detectFormat, parseScan, SOURCE_LABEL, type DetectedFormat, type ScanParse } from '../engine/scanners';
+import { MAX_ITEMS, reducirEscaneo, SOURCE_LABEL, type DetectedFormat, type ModoReduccion, type ResumenEscaneo, type ScanParse } from '../engine/scanners';
 import { useL } from '../i18n';
-import { plural } from '../lib/format';
+import { locale, plural } from '../lib/format';
+import { esCancelacion, leerEscaneoEnSegundoPlano } from '../lib/segundo-plano';
 import { useStore } from '../store/store';
-
-const MAX_BYTES = 60 * 1024 * 1024;
+import { ProgresoTarea, useTarea } from './ProgresoTarea';
 const ACCEPT = '.nessus,.xml,.json,.jsonl,.sarif,.csv,.gz,application/json,text/xml,text/csv,application/gzip';
 
 type Parsed =
-  | { kind: 'scan'; file: string; parse: ScanParse }
+  | { kind: 'scan'; file: string; parse: ScanParse; resumen: ResumenEscaneo | null }
   | { kind: 'kev'; file: string; kev: KevCatalog }
   | { kind: 'epss'; file: string; epss: EpssCatalog };
-
-async function readAny(file: File): Promise<string> {
-  if (file.size > MAX_BYTES) throw new Error(`El archivo supera ${Math.round(MAX_BYTES / 1048576)} MB.`);
-  if (/\.gz$/i.test(file.name)) return gunzipText(await file.arrayBuffer());
-  return file.text();
-}
 
 function Stat({ value, label, tone }: { value: number; label: string; tone?: 'accent' | 'warn' }) {
   const color = tone === 'warn' && value > 0 ? 'var(--color-alta)' : tone === 'accent' && value > 0 ? 'var(--color-accent)' : 'var(--color-ink)';
   return (
     <div className="rounded-xl bg-surface px-3 py-2.5 shadow-[inset_0_0_0_1px_var(--color-hairline)]">
-      <div className="num text-[1.25rem] font-semibold leading-none" style={{ color }}>{value.toLocaleString()}</div>
+      <div className="num text-[1.25rem] font-semibold leading-none" style={{ color }}>{value.toLocaleString(locale())}</div>
       <div className="mt-1 text-[0.6875rem] leading-tight text-ink-3">{label}</div>
     </div>
   );
@@ -40,7 +34,9 @@ export function ScanUploader({ onDone }: { onDone?: () => void }) {
   const applyImport = useStore((s) => s.applyImport);
   const applyIntelCatalogs = useStore((s) => s.applyIntelCatalogs);
   const notify = useStore((s) => s.notify);
-  const [busy, setBusy] = useState(false);
+  const tarea = useTarea();
+  const busy = tarea.estado !== null;
+  const [modo, setModo] = useState<ModoReduccion>('todo');
   const [error, setError] = useState<string | null>(null);
   const [parsed, setParsed] = useState<Parsed | null>(null);
   const [target, setTarget] = useState('');
@@ -54,29 +50,32 @@ export function ScanUploader({ onDone }: { onDone?: () => void }) {
   } as Record<string, string>)[f];
 
   const handle = async (file: File) => {
-    setBusy(true); setError(null); setParsed(null); setTarget('');
+    setError(null); setParsed(null); setTarget(''); setModo('todo');
+    const opciones = tarea.empezar();
     try {
-      const text = await readAny(file);
-      const fmt = detectFormat(text, file.name.replace(/\.gz$/i, ''));
-      if (fmt === 'kev') setParsed({ kind: 'kev', file: file.name, kev: parseKev(text) });
-      else if (fmt === 'epss') setParsed({ kind: 'epss', file: file.name, epss: parseEpss(text) });
-      else if (wrongTool(fmt)) throw new Error(wrongTool(fmt));
-      else if (fmt === 'desconocido') throw new Error(L('Formato no reconocido. Admite Nessus (.nessus), OpenVAS/Greenbone (XML), Nuclei (JSONL/JSON), Trivy (JSON), SARIF 2.1.0, OWASP ZAP (JSON), Burp Suite (XML), PingCastle (XML), Certipy (JSON), CISA KEV (JSON) y FIRST EPSS (CSV o .gz).', 'Unrecognised format. Supported: Nessus (.nessus), OpenVAS/Greenbone (XML), Nuclei (JSONL/JSON), Trivy (JSON), SARIF 2.1.0, OWASP ZAP (JSON), Burp Suite (XML), PingCastle (XML), Certipy (JSON), CISA KEV (JSON) and FIRST EPSS (CSV or .gz).'));
+      // Lectura y análisis en un Worker: con un Nessus de cientos de MB la página sigue respondiendo.
+      const r = await leerEscaneoEnSegundoPlano(file, opciones);
+      if (r.kind === 'kev') setParsed({ kind: 'kev', file: file.name, kev: r.kev });
+      else if (r.kind === 'epss') setParsed({ kind: 'epss', file: file.name, epss: r.epss });
+      else if (r.kind === 'otro') throw new Error(wrongTool(r.fmt) ?? L('Formato no reconocido. Admite Nessus (.nessus), OpenVAS/Greenbone (XML), Nuclei (JSONL/JSON), Trivy (JSON), SARIF 2.1.0, OWASP ZAP (JSON), Burp Suite (XML), PingCastle (XML), Certipy (JSON), CISA KEV (JSON) y FIRST EPSS (CSV o .gz).', 'Unrecognised format. Supported: Nessus (.nessus), OpenVAS/Greenbone (XML), Nuclei (JSONL/JSON), Trivy (JSON), SARIF 2.1.0, OWASP ZAP (JSON), Burp Suite (XML), PingCastle (XML), Certipy (JSON), CISA KEV (JSON) and FIRST EPSS (CSV or .gz).'));
       else {
-        const parse = parseScan(text, file.name);
-        if (!parse.items.length) throw new Error(L(`El informe de ${parse.tool} no trae resultados con severidad (${parse.skipped} informativos omitidos).`, `The ${parse.tool} report has no rated results (${parse.skipped} informational skipped).`));
-        setParsed({ kind: 'scan', file: file.name, parse });
+        if (!r.parse.items.length) throw new Error(L(`El informe de ${r.parse.tool} no trae resultados con severidad (${r.parse.skipped} informativos omitidos).`, `The ${r.parse.tool} report has no rated results (${r.parse.skipped} informational skipped).`));
+        setParsed({ kind: 'scan', file: file.name, parse: r.parse, resumen: r.resumen });
       }
+      tarea.terminar();
     } catch (e) {
+      if (esCancelacion(e)) return;
+      tarea.terminar();
       setError(e instanceof Error ? e.message : L('No se pudo leer el archivo.', 'The file could not be read.'));
-    } finally {
-      setBusy(false);
     }
   };
 
+  // Con ficheros enormes se puede importar todo, solo lo alto y crítico o un hallazgo por regla y equipo.
+  const scan = useMemo(() => (parsed?.kind === 'scan' ? reducirEscaneo(parsed.parse, modo) : null), [parsed, modo]);
+
   const plan: ImportPlan | null = useMemo(
-    () => (parsed?.kind === 'scan' ? planImport(parsed.parse, project, { today, targetAssetId: target || null }) : null),
-    [parsed, project, today, target],
+    () => (scan ? planImport(scan, project, { today, targetAssetId: target || null }) : null),
+    [scan, project, today, target],
   );
   const intelPreview = useMemo(
     () => (parsed?.kind === 'kev' ? applyIntel(project.findings, { kev: parsed.kev }) : parsed?.kind === 'epss' ? applyIntel(project.findings, { epss: parsed.epss }) : null),
@@ -131,6 +130,34 @@ export function ScanUploader({ onDone }: { onDone?: () => void }) {
           <AlertCircle className="mt-0.5 size-4 shrink-0" /><span>{error}</span>
         </div>
       )}
+
+      <ProgresoTarea estado={tarea.estado} onCancelar={tarea.cancelar} que={L('el informe', 'the report')} />
+
+      {parsed?.kind === 'scan' && parsed.resumen && (
+        <fieldset className="flex flex-col gap-3 rounded-xl bg-ground px-3.5 py-3 shadow-[inset_0_0_0_1px_var(--color-hairline)]" data-testid="resumen-escaneo">
+          <legend className="sr-only">{L('Qué importar', 'What to import')}</legend>
+          <p className="text-[0.8125rem] leading-relaxed text-ink-2">
+            <strong className="font-semibold text-ink">{L(`Este informe trae ${parsed.resumen.total.toLocaleString('es-ES')} resultados en ${plural(parsed.resumen.hosts, 'equipo', 'equipos')}.`, `This report has ${parsed.resumen.total.toLocaleString('en-GB')} results on ${plural(parsed.resumen.hosts, 'host', 'hosts')}.`)}</strong>{' '}
+            {L(`Críticos ${parsed.resumen.porSeveridad.critica.toLocaleString('es-ES')} · altos ${parsed.resumen.porSeveridad.alta.toLocaleString('es-ES')} · medios ${parsed.resumen.porSeveridad.media.toLocaleString('es-ES')} · bajos ${parsed.resumen.porSeveridad.baja.toLocaleString('es-ES')}. Puedes importarlo todo o reducirlo antes:`, `Critical ${parsed.resumen.porSeveridad.critica.toLocaleString('en-GB')} · high ${parsed.resumen.porSeveridad.alta.toLocaleString('en-GB')} · medium ${parsed.resumen.porSeveridad.media.toLocaleString('en-GB')} · low ${parsed.resumen.porSeveridad.baja.toLocaleString('en-GB')}. You can import everything or reduce it first:`)}
+          </p>
+          {([
+            ['todo', L('Todo', 'Everything'), L('cada resultado, como viene', 'every result, as it comes')],
+            ['regla', L('Agrupar por complemento', 'Group by plugin'), L('un hallazgo por regla y equipo, con todos sus CVE', 'one finding per rule and host, with all its CVEs')],
+            ['altas', L('Solo altas y críticas', 'High and critical only'), L('CVSS 7 o más; el resto cuenta como omitido', 'CVSS 7 or more; the rest counts as skipped')],
+          ] as [ModoReduccion, string, string][]).map(([m, titulo, detalle]) => (
+            <label key={m} className="flex cursor-pointer items-start gap-2.5 text-[0.8125rem]">
+              <input type="radio" name="modo-importacion" value={m} checked={modo === m} onChange={() => setModo(m)} className="mt-1 accent-[var(--color-accent)]" />
+              <span><span className="font-medium">{titulo}</span> <span className="num text-ink-2">· {parsed.resumen!.quedan[m].toLocaleString(L('es-ES', 'en-GB'))} {L('hallazgos como mucho', 'findings at most')}</span><br /><span className="text-xs text-ink-3">{detalle}</span></span>
+            </label>
+          ))}
+        </fieldset>
+      )}
+
+      {parsed?.kind === 'scan' && parsed.parse.truncated ? (
+        <p role="alert" data-testid="aviso-truncado" className="aviso-guardado rounded-xl px-3.5 py-2.5 text-[0.8125rem]">
+          {L(`El informe supera el máximo de ${MAX_ITEMS.toLocaleString('es-ES')} resultados por fichero: ${parsed.parse.truncated.toLocaleString('es-ES')} no se han leído. Divide el escaneo por segmentos de red.`, `The report exceeds the ${MAX_ITEMS.toLocaleString('en-GB')} results per file limit: ${parsed.parse.truncated.toLocaleString('en-GB')} were not read. Split the scan by network segment.`)}
+        </p>
+      ) : null}
 
       {parsed?.kind === 'scan' && plan && (
         <section className="flex flex-col gap-4" aria-label={L('Plan de importación', 'Import plan')} data-testid="plan-importacion">
@@ -200,8 +227,8 @@ export function ScanUploader({ onDone }: { onDone?: () => void }) {
             <span className="font-semibold">{parsed.kind === 'kev' ? 'CISA KEV' : 'FIRST EPSS'}</span>
             <span className="text-xs text-ink-3">
               · {parsed.file} · {parsed.kind === 'kev'
-                ? L(`versión ${parsed.kev.version}${parsed.kev.released ? ` del ${parsed.kev.released}` : ''} · ${parsed.kev.count.toLocaleString()} CVE`, `version ${parsed.kev.version}${parsed.kev.released ? ` of ${parsed.kev.released}` : ''} · ${parsed.kev.count.toLocaleString()} CVEs`)
-                : L(`${parsed.epss.model || 'modelo'}${parsed.epss.scoreDate ? ` del ${parsed.epss.scoreDate}` : ''} · ${parsed.epss.count.toLocaleString()} puntuaciones`, `${parsed.epss.model || 'model'}${parsed.epss.scoreDate ? ` of ${parsed.epss.scoreDate}` : ''} · ${parsed.epss.count.toLocaleString()} scores`)}
+                ? L(`versión ${parsed.kev.version}${parsed.kev.released ? ` del ${parsed.kev.released}` : ''} · ${parsed.kev.count.toLocaleString('es-ES')} CVE`, `version ${parsed.kev.version}${parsed.kev.released ? ` of ${parsed.kev.released}` : ''} · ${parsed.kev.count.toLocaleString('en-GB')} CVEs`)
+                : L(`${parsed.epss.model || 'modelo'}${parsed.epss.scoreDate ? ` del ${parsed.epss.scoreDate}` : ''} · ${parsed.epss.count.toLocaleString('es-ES')} puntuaciones`, `${parsed.epss.model || 'model'}${parsed.epss.scoreDate ? ` of ${parsed.epss.scoreDate}` : ''} · ${parsed.epss.count.toLocaleString('en-GB')} scores`)}
             </span>
           </div>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">

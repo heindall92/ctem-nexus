@@ -727,6 +727,101 @@ def guardado(b, tmp):
     ctx.close()
 
 
+def nessus_grande(hosts, por_host, relleno=600):
+    """Nessus sintético: `hosts` equipos con `por_host` resultados cada uno (50 complementos con un CVE por resultado)."""
+    partes = ['<?xml version="1.0" ?><NessusClientData_v2><Policy><policyName>Red completa</policyName></Policy><Report name="carga">']
+    pad = "x" * relleno
+    for h in range(hosts):
+        ip = f"10.9.{h // 256}.{h % 256}"
+        partes.append(f'<ReportHost name="{ip}"><HostProperties><tag name="host-ip">{ip}</tag><tag name="host-fqdn">nodo{h}.carga.example</tag></HostProperties>')
+        for i in range(por_host):
+            partes.append(f'<ReportItem port="443" svc_name="www" protocol="tcp" severity="{1 + i % 4}" pluginID="{200000 + i % 50}" pluginName="Complemento {i % 50}">'
+                          f'<cve>CVE-2024-{20000 + i}</cve><cvss3_base_score>{4 + i % 6}.0</cvss3_base_score><synopsis>Sinopsis</synopsis><plugin_output>{pad}</plugin_output></ReportItem>')
+        partes.append("</ReportHost>")
+    partes.append("</Report></NessusClientData_v2>")
+    return "".join(partes)
+
+
+LARGAS = """window.__largas = [];
+try { new PerformanceObserver((l) => { for (const e of l.getEntries()) window.__largas.push(Math.round(e.duration)); }).observe({ type: 'longtask', buffered: true }); } catch (e) {}"""
+
+
+def datos_reales(b, tmp):
+    """1.3.0: un Nessus de 30.000 resultados se lee en segundo plano, con progreso, resumen y cancelar; las tablas
+    se virtualizan y el motor calcula en un Worker sin bloquear la página."""
+    print("Datos reales · Worker, resumen, cancelar y virtualización")
+    fichero = tmp / "red-30000.nessus"
+    fichero.write_text(nessus_grande(400, 75), encoding="utf-8")
+    ctx = b.new_context(viewport={"width": 1440, "height": 900}, reduced_motion="reduce")
+    ctx.add_init_script(LARGAS)
+    page = ctx.new_page()
+    problemas = []
+    page.on("console", lambda m: m.type == "error" and problemas.append(m.text))
+    page.on("pageerror", lambda e: problemas.append(str(e)))
+    page.on("request", lambda r: not r.url.startswith(("file:", "data:", "blob:")) and problemas.append(r.url))
+    page.goto(APP)
+    esperar(page, f"!!window.__CTEM__ && {S}.guardado.estado === 'guardado'", 10000)
+    page.evaluate(f"{S}.reset()")
+    nav(page, "Ajustes y datos")
+    page.get_by_role("button", name="Importar escáner o catálogo").click()
+    modal = page.get_by_test_id("importador-escaner")
+
+    # Cancelar: la lectura se detiene y no queda ni error ni plan. Con un fichero de 100.000 resultados hay margen.
+    enorme = tmp / "red-100000.nessus"
+    enorme.write_text(nessus_grande(1000, 100), encoding="utf-8")
+    modal.locator("input[type=file]").set_input_files(str(enorme))
+    progreso = page.get_by_test_id("progreso-tarea")
+    expect(progreso).to_be_visible(timeout=5000)
+    check(f"un Nessus de {enorme.stat().st_size / 1048576:.0f} MB enseña el progreso (role=progressbar) mientras se lee", progreso.get_by_role("progressbar").count() == 1, progreso.inner_text())
+    progreso.get_by_role("button", name="Cancelar").click()
+    expect(progreso).to_have_count(0, timeout=3000)
+    page.wait_for_timeout(300)
+    check("«Cancelar» detiene la lectura sin error ni plan", modal.get_by_role("alert").count() == 0 and page.get_by_test_id("plan-importacion").count() == 0)
+
+    # Leer de verdad: resumen con las tres opciones y sin bloquear la página.
+    page.evaluate("window.__largas = []")
+    modal.locator("input[type=file]").set_input_files(str(fichero))
+    resumen = page.get_by_test_id("resumen-escaneo")
+    expect(resumen).to_be_visible(timeout=60000)
+    largas_lectura = page.evaluate("window.__largas.slice()")
+    check("el resumen previo aparece con más de 20.000 resultados", "30.000 resultados" in resumen.inner_text() and resumen.get_by_role("radio").count() == 3, resumen.inner_text()[:160])
+    check("leer el Nessus en el Worker no bloquea la página más de 200 ms seguidos", max(largas_lectura or [0]) < 200, f"tareas largas: {sorted(largas_lectura)[-5:]}")
+    plan = page.get_by_test_id("plan-importacion")
+    check("con «Todo», el plan incluye los 30.000 resultados", "30.000" in plan.inner_text())
+    resumen.get_by_role("radio", name=re.compile("Agrupar por complemento")).check()
+    expect(plan).to_contain_text("20.000", timeout=5000)
+    check("«Agrupar por complemento» deja un hallazgo por complemento y equipo (400 × 50)", "20.000" in plan.inner_text(), plan.inner_text()[:200])
+    page.get_by_role("button", name="Incorporar al proyecto").click()
+    esperar(page, f"{S}.project.findings.length === 20000 && {S}.project.assets.length === 400", 20000)
+    check("se incorporan 20.000 hallazgos y 400 activos", True)
+
+    # El motor calcula en el Worker: aviso «Calculando…» y las vistas responden.
+    aviso = page.get_by_test_id("aviso-calculo")
+    check("el aviso de cálculo es una región role=status", aviso.get_attribute("role") == "status")
+    esperar(page, "!document.querySelector('[data-testid=aviso-calculo]').textContent", 30000)
+    page.evaluate("window.__largas = []")
+    tiempos = {}
+    for vista in ["Priorización", "Rutas de ataque", "Movilización", "Alcance", "¿Y si…?"]:
+        t = page.evaluate("performance.now()")
+        nav(page, vista)
+        page.wait_for_timeout(50)
+        tiempos[vista] = round(page.evaluate("performance.now()") - t)
+    check("con 20.000 hallazgos, cada vista responde en menos de 1 s", all(v < 1000 for v in tiempos.values()), str(tiempos))
+
+    # Virtualización: la tabla declara cuántas filas hay y solo pinta las visibles.
+    nav(page, "Priorización")
+    tabla = page.locator("table[aria-rowcount]").first
+    expect(tabla).to_be_visible(timeout=5000)
+    filas = tabla.locator("tbody tr:not([data-hueco])").count()
+    check("Priorización: aria-rowcount = 20.001 y menos de 100 filas pintadas", tabla.get_attribute("aria-rowcount") == "20001" and filas < 100, f"rowcount {tabla.get_attribute('aria-rowcount')}, filas {filas}")
+    tabla.evaluate("t => { const c = t.closest('.overflow-auto'); c.scrollTop = c.scrollHeight; }")
+    page.wait_for_timeout(300)
+    ultima = tabla.locator("tbody tr[aria-rowindex='20001']")
+    check("al bajar hasta el final se pinta la última fila (aria-rowindex 20001)", ultima.count() == 1)
+    check("datos reales: sin errores de consola ni peticiones", not problemas, "; ".join(problemas[:3]))
+    ctx.close()
+
+
 def main():
     tmp = OUT / "tmp"
     tmp.mkdir(exist_ok=True)
@@ -734,6 +829,7 @@ def main():
         b = p.chromium.launch()
         escritorio(b, tmp)
         guardado(b, tmp)
+        datos_reales(b, tmp)
         movil(b)
         b.close()
     fallos = [r for r in resultados if not r[1]]

@@ -12,13 +12,13 @@ import { fixPlan, simulate } from '../engine/simulate';
 import { useL } from '../i18n';
 import { useResult } from '../lib/analysis';
 import { download, stamp } from '../lib/download';
-import { BAND_COLOR, n1, plural } from '../lib/format';
+import { BAND_COLOR, locale, n1, plural } from '../lib/format';
 import { useStore } from '../store/store';
 
 function Delta({ label, before, after, decimals = false, testId }: { label: string; before: number; after: number; decimals?: boolean; testId?: string }) {
   const L = useL();
   const d = Math.round((after - before) * 10) / 10;
-  const fmt = (x: number) => (decimals ? n1(x) : x.toLocaleString());
+  const fmt = (x: number) => (decimals ? n1(x) : x.toLocaleString(locale()));
   return (
     <div className="flex flex-col gap-1 px-5 py-4" data-testid={testId}>
       <span className="label">{label}</span>

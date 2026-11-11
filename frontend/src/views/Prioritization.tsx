@@ -9,7 +9,8 @@ import { argosFor, argosUrl, CONTROLS, controlsFor } from '../engine/controls';
 import { validateValidation, VALIDATION_RESULTS, type Validation, type ValidationError, type ValidationResult } from '../engine/retest';
 import { isActive } from '../engine/engine';
 import { addDays, exceptionState, isoDay, MAX_ACCEPT_DAYS, validateException, type ExceptionError, type ExceptionInput } from '../engine/exceptions';
-import { CSV_TEMPLATE, importFindings } from '../engine/io';
+import { CSV_TEMPLATE, importFindings, MAX_FILAS } from '../engine/io';
+import { MAX_FICHERO } from '../engine/tareas';
 import { GUIDE_KEYS, guideIn } from '../engine/remediation';
 import type { Band, Finding, FindingKind, FindingStatus } from '../engine/types';
 import { Drawer, Modal, TopBar } from '../components/Shell';
@@ -66,12 +67,12 @@ export function Prioritization() {
 
   const onImport = async (file: File) => {
     try {
-      const text = await readFile(file);
-      const { findings, rejected } = importFindings(text, project.assets);
+      const text = await readFile(file, MAX_FICHERO);
+      const { findings, rejected, truncated } = importFindings(text, project.assets);
       if (!findings.length) { notify(L('No se ha encontrado ningún hallazgo válido en el archivo.', 'No valid finding was found in the file.'), 'error'); return; }
       addFindings(findings);
       const orphan = findings.filter((f) => !aById.has(f.assetId)).length;
-      notify(L(`Importados ${plural(findings.length, 'hallazgo', 'hallazgos')}${rejected ? `, ${plural(rejected, 'fila descartada', 'filas descartadas')}` : ''}${orphan ? `; ${orphan} sin activo conocido` : ''}.`, `Imported ${plural(findings.length, 'finding', 'findings')}${rejected ? `, ${plural(rejected, 'row discarded', 'rows discarded')}` : ''}${orphan ? `; ${orphan} without a known asset` : ''}.`), rejected || orphan ? 'info' : 'ok');
+      notify(L(`Importados ${plural(findings.length, 'hallazgo', 'hallazgos')}${rejected ? `, ${plural(rejected, 'fila descartada', 'filas descartadas')}` : ''}${orphan ? `; ${orphan} sin activo conocido` : ''}${truncated ? `; ${plural(truncated, 'fila no leída', 'filas no leídas')} por superar el máximo de ${MAX_FILAS.toLocaleString('es-ES')}` : ''}.`, `Imported ${plural(findings.length, 'finding', 'findings')}${rejected ? `, ${plural(rejected, 'row discarded', 'rows discarded')}` : ''}${orphan ? `; ${orphan} without a known asset` : ''}${truncated ? `; ${truncated} rows not read (over the ${MAX_FILAS.toLocaleString('en-GB')} limit)` : ''}.`), rejected || orphan || truncated ? 'info' : 'ok');
     } catch (e) {
       notify(e instanceof Error ? e.message : L('No se pudo leer el archivo.', 'The file could not be read.'), 'error');
     }

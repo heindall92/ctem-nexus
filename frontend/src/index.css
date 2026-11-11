@@ -334,6 +334,11 @@
     border: 1px solid color-mix(in srgb, var(--color-critica) 45%, transparent);
   }
   .aviso-guardado svg { color: var(--color-critica); }
+  /* Barra de progreso sin porcentaje conocido: un tramo que recorre la pista. Sin movimiento, queda quieto. */
+  @media (prefers-reduced-motion: no-preference) {
+    .barra-indeterminada { animation: barra-indeterminada 1.1s cubic-bezier(0.65, 0, 0.35, 1) infinite; }
+  }
+  @keyframes barra-indeterminada { from { transform: translateX(-100%); } to { transform: translateX(300%); } }
   .aviso-guardado .btn svg { color: currentColor; }
   [data-theme='dark'] .demo-banner-card,
   html.dark .demo-banner-card {

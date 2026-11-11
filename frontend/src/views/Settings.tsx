@@ -1,16 +1,17 @@
 import { Download, FileSearch, PlugZap, SlidersHorizontal, RotateCcw, Sparkles, Upload } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { ProgresoTarea, useTarea } from '../components/ProgresoTarea';
 import { ScanUploader } from '../components/ScanUploader';
 import { PROFILE_IDS, PROFILES, type Weights } from '../engine/constants';
 import { prioritize } from '../engine/engine';
 import { SOURCE_LABEL } from '../engine/scanners';
 import type { ProfileId } from '../engine/types';
 import { n1, plural } from '../lib/format';
-import { parseProject } from '../engine/io';
 import { Modal, TopBar } from '../components/Shell';
 import { Field, PageHeader, ScoreBar, SectionTitle, Segmented, Toggle } from '../components/ui';
 import { pingApi } from '../lib/analysis';
-import { download, readFile, stamp } from '../lib/download';
+import { download, stamp } from '../lib/download';
+import { esCancelacion, leerProyectoEnSegundoPlano } from '../lib/segundo-plano';
 import { espacio } from '../lib/persistencia';
 import { chrome, screen, useL } from '../i18n';
 import { useStore } from '../store/store';
@@ -34,6 +35,7 @@ export function Settings() {
   const [ping, setPing] = useState<{ ok: boolean; detail: string } | null>(null);
   const [testing, setTesting] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
+  const tareaImportar = useTarea();
   const fileRef = useRef<HTMLInputElement>(null);
   const setProfile = useStore((s) => s.setProfile);
   const [showIntel, setShowIntel] = useState(false);
@@ -130,11 +132,11 @@ export function Settings() {
           <dl className="divide-hair border-t border-hairline text-[0.8125rem]">
             <div className="flex flex-wrap items-baseline justify-between gap-2 px-5 py-3">
               <dt className="font-medium">CISA KEV</dt>
-              <dd className="text-ink-2">{intel?.kev ? L(`versión ${intel.kev.version} · ${intel.kev.count.toLocaleString()} CVE · aplicado el ${intel.kev.importedAt}`, `version ${intel.kev.version} · ${intel.kev.count.toLocaleString()} CVEs · applied on ${intel.kev.importedAt}`) : L('Sin catálogo: cuentan las marcas del escáner o del analista', 'No catalog: scanner or analyst flags apply')}</dd>
+              <dd className="text-ink-2">{intel?.kev ? L(`versión ${intel.kev.version} · ${intel.kev.count.toLocaleString('es-ES')} CVE · aplicado el ${intel.kev.importedAt}`, `version ${intel.kev.version} · ${intel.kev.count.toLocaleString('en-GB')} CVEs · applied on ${intel.kev.importedAt}`) : L('Sin catálogo: cuentan las marcas del escáner o del analista', 'No catalog: scanner or analyst flags apply')}</dd>
             </div>
             <div className="flex flex-wrap items-baseline justify-between gap-2 px-5 py-3">
               <dt className="font-medium">FIRST EPSS</dt>
-              <dd className="text-ink-2">{intel?.epss ? L(`${intel.epss.scoreDate || intel.epss.model} · ${intel.epss.count.toLocaleString()} puntuaciones · aplicado el ${intel.epss.importedAt}`, `${intel.epss.scoreDate || intel.epss.model} · ${intel.epss.count.toLocaleString()} scores · applied on ${intel.epss.importedAt}`) : L('Sin catálogo: cuentan los valores del escáner o del analista', 'No catalog: scanner or analyst values apply')}</dd>
+              <dd className="text-ink-2">{intel?.epss ? L(`${intel.epss.scoreDate || intel.epss.model} · ${intel.epss.count.toLocaleString('es-ES')} puntuaciones · aplicado el ${intel.epss.importedAt}`, `${intel.epss.scoreDate || intel.epss.model} · ${intel.epss.count.toLocaleString('en-GB')} scores · applied on ${intel.epss.importedAt}`) : L('Sin catálogo: cuentan los valores del escáner o del analista', 'No catalog: scanner or analyst values apply')}</dd>
             </div>
           </dl>
           {project.imports?.length ? (
@@ -161,13 +163,20 @@ export function Settings() {
             <input ref={fileRef} type="file" accept=".json,application/json" className="hidden" onChange={async (e) => {
               const file = e.target.files?.[0]; e.target.value = '';
               if (!file) return;
+              const opciones = tareaImportar.empezar();
               try {
-                const p = parseProject(await readFile(file));
+                // En un Worker: un proyecto de 50.000 hallazgos (unos 50 MB) se valida sin congelar la página.
+                const p = await leerProyectoEnSegundoPlano(file, opciones);
+                tareaImportar.terminar();
                 if (!p) { notify(L('El archivo no es un proyecto de CTEM-Nexus válido.', 'The file is not a valid CTEM-Nexus project.'), 'error'); return; }
                 replace(p); notify(L(`Proyecto «${p.name}» importado: ${plural(p.assets.length, 'activo', 'activos')}, ${plural(p.findings.length, 'hallazgo', 'hallazgos')}.`, `Project “${p.name}” imported: ${plural(p.assets.length, 'asset', 'assets')}, ${plural(p.findings.length, 'finding', 'findings')}.`));
-              } catch (err) { notify(err instanceof Error ? err.message : L('No se pudo leer el archivo.', 'The file could not be read.'), 'error'); }
+              } catch (err) {
+                if (esCancelacion(err)) return;
+                tareaImportar.terminar();
+                notify(err instanceof Error ? err.message : L('No se pudo leer el archivo.', 'The file could not be read.'), 'error');
+              }
             }} />
-            <button type="button" className="btn" onClick={() => fileRef.current?.click()}><Upload />{L('Importar proyecto JSON', 'Import project JSON')}</button>
+            <button type="button" className="btn" disabled={tareaImportar.estado !== null} onClick={() => fileRef.current?.click()}><Upload />{L('Importar proyecto JSON', 'Import project JSON')}</button>
             <button type="button" className="btn" onClick={() => { loadDemo(); notify(c.demoLoadedShort); }}><Sparkles />{c.loadDemo}</button>
             {!confirmReset
               ? <button type="button" className="btn btn-ghost btn-danger ml-auto" onClick={() => setConfirmReset(true)}><RotateCcw />{L('Borrar todo', 'Delete everything')}</button>
@@ -176,6 +185,7 @@ export function Settings() {
                   <button type="button" className="btn btn-sm btn-ghost" onClick={() => setConfirmReset(false)}>{L('Cancelar', 'Cancel')}</button>
                 </span>}
           </div>
+          {tareaImportar.estado && <div className="border-t border-hairline px-5 py-3"><ProgresoTarea estado={tareaImportar.estado} onCancelar={tareaImportar.cancelar} que={L('el proyecto', 'the project')} /></div>}
         </section>
       </div>
       <Modal open={showIntel} onClose={() => setShowIntel(false)} title={L('Importar escáner o inteligencia', 'Import scanner or intelligence')} subtitle={L('Escáneres, validación ofensiva (ZAP, Burp, PingCastle, Certipy), CISA KEV y FIRST EPSS', 'Scanners, offensive validation (ZAP, Burp, PingCastle, Certipy), CISA KEV and FIRST EPSS')} maxWidth={720}>

@@ -4,8 +4,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { prioritize } from '../engine/engine';
 import type { EngineInput, EngineResult } from '../engine/types';
-import type { RespuestaMotor } from '../engine/motor.worker';
-import MotorWorker from '../engine/motor.worker?worker&inline';
+import type { Respuesta } from '../engine/tareas';
+import MotorWorker from '../engine/tareas.worker?worker&inline';
 import { useStore } from '../store/store';
 
 export type EngineStatus = { mode: 'local' } | { mode: 'api' } | { mode: 'fallback'; reason: string } | { mode: 'loading' } | { mode: 'calculando' };
@@ -15,19 +15,19 @@ export const UMBRAL_WORKER = 1500;
 
 let worker: Worker | null = null;
 let peticiones = 0;
-const esperando = new Map<number, (r: RespuestaMotor) => void>();
+const esperando = new Map<number, (r: Respuesta) => void>();
 /** Calcula en el Worker. Si el navegador no permite Workers (CSP, file:// antiguo), calcula aquí. */
 function enWorker(input: EngineInput): Promise<EngineResult> {
   try {
     if (!worker) {
       worker = new MotorWorker();
-      worker.onmessage = (e: MessageEvent<RespuestaMotor>) => { esperando.get(e.data.id)?.(e.data); esperando.delete(e.data.id); };
+      worker.onmessage = (e: MessageEvent<Respuesta>) => { if ('progreso' in e.data) return; esperando.get(e.data.id)?.(e.data); esperando.delete(e.data.id); };
       worker.onerror = () => { worker = null; for (const [id, f] of esperando) f({ id, error: 'worker' }); esperando.clear(); };
     }
     const id = ++peticiones;
     return new Promise((ok) => {
-      esperando.set(id, (r) => ok('result' in r ? r.result : prioritize(input)));
-      worker!.postMessage({ id, input });
+      esperando.set(id, (r) => ok('result' in r ? r.result as EngineResult : prioritize(input)));
+      worker!.postMessage({ id, tipo: 'motor', input });
     });
   } catch {
     return Promise.resolve(prioritize(input));

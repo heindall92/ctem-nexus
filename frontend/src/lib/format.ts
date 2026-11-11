@@ -6,7 +6,8 @@ export type Lang = 'es' | 'en';
 let LANG: Lang = 'es';
 export const setFormatLang = (lang: Lang) => { LANG = lang; };
 export const formatLang = () => LANG;
-const locale = () => (LANG === 'en' ? 'en-GB' : 'es-ES');
+/** Configuración regional del idioma activo, para formatear cifras y fechas. */
+export const locale = () => (LANG === 'en' ? 'en-GB' : 'es-ES');
 
 /** Relleno de gráficos por banda (no para texto: en claro no llega a 4,5:1). */
 export const BAND_FILL: Record<Band, string> = {
