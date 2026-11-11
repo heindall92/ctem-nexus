@@ -110,6 +110,55 @@ export interface PlanOptions {
 }
 
 /** Resuelve un host contra los activos: IP exacta, IP dentro de un CIDR, nombre o FQDN. */
+/** Asignador de ids libres que recuerda el máximo por prefijo: mismo resultado que llamar a nextFreeId cada vez,
+ * pero sin recorrer todos los ids en cada llamada (con 20.000 hallazgos nuevos eran miles de millones de pasos). */
+function asignador(taken: Set<string>) {
+  const maximo = new Map<string, number>();
+  return (prefix: string, pad = 3): string => {
+    let max = maximo.get(prefix);
+    if (max === undefined) {
+      max = 0;
+      for (const id of taken) if (id.startsWith(prefix)) { const m = /(\d+)$/.exec(id); if (m) max = Math.max(max, Number(m[1])); }
+    }
+    let n = max + 1;
+    let id = `${prefix}${String(n).padStart(pad, '0')}`;
+    while (taken.has(id)) id = `${prefix}${String(++n).padStart(pad, '0')}`;
+    taken.add(id);
+    // Un id nuevo con más dígitos o con otro sufijo no cambia la cuenta: el máximo es el número recién asignado.
+    maximo.set(prefix, n);
+    return id;
+  };
+}
+
+/** Índice de activos para resolveAsset: mismo orden de preferencia, sin recorrer la lista por cada host. */
+function indiceActivos(iniciales: Asset[]) {
+  const porIp = new Map<string, Asset>();
+  const porNombre = new Map<string, Asset>();
+  const porToken = new Map<string, Asset>();
+  const cidrs: Asset[] = [];
+  const poner = (m: Map<string, Asset>, k: string, a: Asset) => { if (!m.has(k)) m.set(k, a); };
+  const anadir = (a: Asset) => {
+    poner(porIp, a.ip, a);
+    if (a.ip.includes('/') && isIpOrCidr(a.ip)) cidrs.push(a);
+    const n = a.name.toLowerCase();
+    // nombre o id: gana el primer activo que coincide por cualquiera de los dos
+    poner(porNombre, n, a); poner(porNombre, a.id.toLowerCase(), a);
+    for (const t of n.split(/[\s.]/)) poner(porToken, t, a);
+  };
+  iniciales.forEach(anadir);
+  const resolver = (h: { ip: string; name: string }): Asset | undefined => {
+    const ip = h.ip.trim();
+    const name = h.name.trim().toLowerCase();
+    const short = name.split('.')[0];
+    return (ip && porIp.get(ip))
+      || (ip && cidrs.find((a) => inCidr(ip, a.ip)))
+      || (name && porNombre.get(name))
+      || (short && short.length > 2 && porToken.get(short))
+      || undefined;
+  };
+  return { anadir, resolver };
+}
+
 export function resolveAsset(h: { ip: string; name: string }, assets: Asset[]): Asset | undefined {
   const ip = h.ip.trim();
   const name = h.name.trim().toLowerCase();
@@ -128,16 +177,19 @@ export function planImport(parse: ScanParse, project: { assets: Asset[]; finding
   const target = opts.targetAssetId ? project.assets.find((a) => a.id === opts.targetAssetId) : undefined;
   const hostToAsset = new Map<string, string>();
   const newAssets: Asset[] = [];
+  const delProyecto = new Set(project.assets);
+  const activos = indiceActivos(project.assets);
+  const nuevoId = asignador(assetIds);
   let matchedAssets = 0;
   for (const h of parse.hosts) {
-    const existing = target ?? resolveAsset(h, [...project.assets, ...newAssets]);
+    const existing = target ?? activos.resolver(h);
     if (existing) {
       hostToAsset.set(h.key, existing.id);
-      if (project.assets.includes(existing)) matchedAssets++;
+      if (delProyecto.has(existing)) matchedAssets++;
       continue;
     }
     const asset: Asset = {
-      id: nextFreeId('a', assetIds, 2),
+      id: nuevoId('a', 2),
       name: h.name.slice(0, 120) || h.ip,
       type: h.type,
       ip: h.ip,
@@ -147,6 +199,7 @@ export function planImport(parse: ScanParse, project: { assets: Asset[]; finding
       tags: [parse.source],
     };
     newAssets.push(asset);
+    activos.anadir(asset);
     hostToAsset.set(h.key, asset.id);
   }
   if (target) matchedAssets = 1;
@@ -189,10 +242,19 @@ export function planImport(parse: ScanParse, project: { assets: Asset[]; finding
   const updated = new Map<string, Finding>();
   const newFindings: Finding[] = [];
   const reopenedIds: string[] = [];
-  const current = (id: string) => updated.get(id) ?? project.findings.find((f) => f.id === id)!;
+  // Hallazgos del proyecto por activo (en su orden) y por id: cada entrante mira solo los de su activo.
+  const porActivo = new Map<string, Finding[]>();
+  const porId = new Map<string, Finding>();
+  for (const e of project.findings) {
+    if (!porId.has(e.id)) porId.set(e.id, e);
+    const l = porActivo.get(e.assetId);
+    if (l) l.push(e); else porActivo.set(e.assetId, [e]);
+  }
+  const nuevoHallazgo = asignador(findingIds);
+  const current = (id: string) => updated.get(id) ?? porId.get(id)!;
   for (const f of incoming.values()) {
     const fCves = new Set(cvesOf(f));
-    const match = project.findings.find((e) => e.assetId === f.assetId && (
+    const match = porActivo.get(f.assetId)?.find((e) => (
       f.cve ? cvesOf(e).some((c) => fCves.has(c))
         : !e.cve && (normTitle(e.title) === normTitle(f.title) || (SPECIFIC_GUIDE(f.remediation) && e.remediation === f.remediation))
     ));
@@ -201,7 +263,7 @@ export function planImport(parse: ScanParse, project: { assets: Asset[]; finding
       if (r && !updated.has(match.id)) reopenedIds.push(match.id);
       updated.set(match.id, merged);
     } else {
-      newFindings.push({ ...f, id: nextFreeId(`${PREFIX[parse.source] ?? 'IMP'}-`, findingIds) });
+      newFindings.push({ ...f, id: nuevoHallazgo(`${PREFIX[parse.source] ?? 'IMP'}-`) });
     }
   }
   // 3) Retest: un mitigado pendiente queda verificado si la misma herramienta escanea su activo y ya no lo ve.

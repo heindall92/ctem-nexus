@@ -34,9 +34,10 @@ import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } f
 import { createPortal } from 'react-dom';
 import { ACCENT_SWATCHES, chrome, roleLabel, screen, useL } from '../i18n';
 import { useResult } from '../lib/analysis';
-import { download, stamp } from '../lib/download';
 import { useStore, type View } from '../store/store';
+import { exportarProyecto } from '../lib/exportar';
 import { SPRING } from './ui';
+import { AvisoCalculo, AvisoGuardado, EstadoGuardadoLinea } from './Guardado';
 
 const NAV: Array<{ view: View; icon: ReactNode }> = [
   { view: 'panel', icon: <LayoutDashboard /> },
@@ -254,7 +255,10 @@ export function Sidebar() {
               <span className="flex size-6 items-center justify-center rounded-lg bg-accent/15 text-accent">
                 <Layers className="size-3.5" />
               </span>
-              <span className="truncate font-medium text-ink">{project.name}</span>
+              <span className="min-w-0 text-left">
+                <span className="block truncate font-medium text-ink">{project.name}</span>
+                <EstadoGuardadoLinea />
+              </span>
             </div>
             <ChevronDown className="size-3.5 text-ink-3 shrink-0 ml-1" />
           </button>
@@ -662,7 +666,7 @@ function UserMenu({
       <MenuRow icon={<HelpCircle className="size-4" />} label={t.help} onClick={() => { onClose(); setHelpOpen(true); }} />
       <div className="my-1 h-px bg-hairline" />
       <MenuRow icon={<Compass className="size-4" />} label={t.scopeShort} onClick={() => { onClose(); setView('alcance'); }} />
-      <MenuRow icon={<Download className="size-4" />} label={t.export} onClick={() => { onClose(); download(`ctem-nexus-${stamp()}.json`, JSON.stringify(project, null, 2), 'application/json'); notify(t.exported); }} />
+      <MenuRow icon={<Download className="size-4" />} label={t.export} onClick={() => { onClose(); void exportarProyecto(project).then(() => notify(t.exported)); }} />
     </motion.div>,
     document.body
   );
@@ -760,7 +764,7 @@ export function TopBar({ title, actions }: { title: string; subtitle?: ReactNode
       </header>
     </div>
     {/* El aviso de datos de ejemplo se desplaza con el contenido: fijo arriba ocupaba demasiado en móvil. */}
-    <div className="no-print mx-auto w-full max-w-[1280px] px-3 sm:px-6"><DemoBanner /></div>
+    <div className="no-print mx-auto w-full max-w-[1280px] px-3 sm:px-6"><AvisoGuardado /><AvisoCalculo /><DemoBanner /></div>
     </>
   );
 }

@@ -108,7 +108,8 @@ export function CyclesPanel() {
   const [label, setLabel] = useState('');
   const snaps = project.snapshots ?? [];
   const today = new Date().toISOString().slice(0, 10);
-  const current = snapshotOf(result, project.findings, project.profile ?? 'defecto', new Date(), '');
+  // Memorizada: con 50.000 hallazgos la instantánea cuesta ~90 ms, y el panel se repinta con cada tecla del nombre.
+  const current = useMemo(() => snapshotOf(result, project.findings, project.profile ?? 'defecto', new Date(), ''), [result, project.findings, project.profile]);
   const lastClose = [...snaps].reverse().find((x) => x.at !== today) ?? null;
   const trend = lastClose ? trendOf([lastClose, current]) : null;
   const series = [...snaps.filter((s) => s.at !== today).slice(-11), { ...current, label: L('ahora', 'now') }];
@@ -195,10 +196,10 @@ export function RetestPanel() {
   const select = useStore((s) => s.selectFinding);
   const author = useStore((s) => s.settings.profile?.nombre?.trim() || '');
   const st = useMemo(() => retestStats(project.findings, project.imports ?? []), [project.findings, project.imports]);
-  const validated = project.findings.filter((f) => f.validation);
+  const validated = useMemo(() => project.findings.filter((f) => f.validation), [project.findings]);
   const exploited = validated.filter((f) => f.validation!.result === 'explotado').length;
-  const fById = new Map(project.findings.map((f) => [f.id, f]));
-  const aName = new Map(project.assets.map((a) => [a.id, a.name]));
+  const fById = useMemo(() => new Map(project.findings.map((f) => [f.id, f])), [project.findings]);
+  const aName = useMemo(() => new Map(project.assets.map((a) => [a.id, a.name])), [project.assets]);
   const tiles: Array<[string, string, string | undefined]> = [
     [L('Pendientes de verificar', 'Pending verification'), String(st.pending), st.pending ? 'var(--color-media)' : undefined],
     [L('Verificadas', 'Verified'), String(st.verified), st.verified ? 'var(--color-ok)' : undefined],

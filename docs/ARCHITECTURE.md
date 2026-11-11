@@ -4,11 +4,14 @@
 flowchart LR
   subgraph Navegador["Navegador (ctem-nexus.html, sin servidor)"]
     UI["React 19 + TypeScript<br/>Tailwind CSS 4 · Motion"]
-    Store["Estado (zustand)<br/>localStorage → memoria"]
+    Store["Estado (zustand)<br/>IndexedDB → localStorage → memoria"]
     Engine["Motor TS sin DOM<br/>src/engine/"]
+    Worker["Web Worker<br/>copia del proyecto · motor · importadores"]
     IO["Importación / exportación<br/>JSON · CSV · Markdown"]
     Eco["Ecosistema<br/>sobre yrd-ecosistema"]
     UI --> Store --> Engine
+    Store -- "parches (solo lo que cambia)" --> Worker
+    Worker -- "resultados en trozos" --> UI
     UI --> IO
     UI --> Eco
   end
@@ -33,6 +36,10 @@ flowchart LR
 | Fichero dorado compartido | `npm run golden` lo genera desde el motor TS; `pytest` exige que Python dé exactamente lo mismo (puntuaciones, textos, rutas, resumen). |
 | Grafo en SVG propio | Sin dependencias pesadas (Cytoscape/React Flow). Disposición por columnas según la distancia BFS desde Internet. |
 | Vistas cargadas bajo demanda (`React.lazy`) | En Pages solo el panel va en el arranque; el resto de vistas, la ayuda y la búsqueda se precargan con el navegador libre. Lighthouse de rendimiento: 93 → 96 (mediana, con gzip). En el HTML autocontenido todo sigue en un único fichero. |
+| Proyecto en IndexedDB (1.3.0) | `localStorage` tiene unos 5 MB: un Nessus mediano lo superaba y el guardado fallaba sin aviso. IndexedDB guarda el objeto tal cual (clonado estructurado), se pide almacenamiento persistente y cada fallo se ve: estado «Guardado hace N s» y aviso fijo con «Exportar proyecto ahora». Migra solo desde la clave antigua. Los ajustes siguen en `localStorage`. |
+| Web Worker con copia del proyecto (1.3.0) | Por encima de 1.500 hallazgos el motor calcula en un Worker (Blob en línea; CSP `worker-src blob:`). Pasar 50.000 hallazgos cuesta unos 240 ms de copia, así que el Worker guarda una copia: la primera vez se manda en trozos de 5.000, después solo los hallazgos que cambian (por identidad: el estado es inmutable). Motor, «¿Y si…?» y comparación de perfiles se piden sobre esa copia por canales (el cálculo nuevo de un canal sustituye al pendiente), y las listas grandes vuelven en trozos. Ninguna copia bloquea la página. |
+| Importadores en un Worker propio (1.3.0) | Cada lectura de un fichero va a un Worker que se termina al acabar: «Cancelar» es inmediato. El Worker recibe el `File` (no el texto), analiza XML por partes y devuelve el resultado en trozos. |
+| Listas virtualizadas y pintado progresivo (1.3.0) | Por encima de 150 filas solo se pintan las visibles, con `aria-rowcount` y `aria-rowindex`. Con proyectos grandes, los paneles secundarios se montan en la tarea siguiente y el grafo se resume en las rutas más cortas (120 nodos como máximo). |
 | Integración por fichero, nunca por red | Las herramientas del ecosistema intercambian un sobre JSON común (`shared/schemas/yrd-ecosistema.schema.json`). Cada importación enseña qué cambiará antes de aplicarlo. Ver [ECOSISTEMA.md](ECOSISTEMA.md). |
 
 ## Módulos de la interfaz

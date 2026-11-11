@@ -2,14 +2,14 @@
 import { BAND_LABEL } from './constants';
 import { fmt } from './engine';
 import { explanationIn, reasonsIn, type Lang } from './explain';
-import { guideIn } from './remediation';
+import { guideIn, type RemediationGuide } from './remediation';
 import { slaInfo } from './sla';
 import { fixPlan } from './simulate';
 import { CONTROLS, controlsFor } from './controls';
 import { parseRetest, parseValidation, retestStats } from './retest';
 import { PROFILE_IDS } from './constants';
 import type { IntelMeta } from './intel';
-import type { Asset, AssetType, Band, EngineResult, Finding, FindingKind, FindingSource, FindingStatus, ManualEdge, NetworkRange, ProfileId, RiskException, SlaPolicy } from './types';
+import type { Asset, AssetType, Band, EngineResult, Finding, FindingKind, FindingSource, FindingStatus, ManualEdge, NetworkRange, ProfileId, RiskException, ScoredFinding, SlaPolicy } from './types';
 import { SLA_POLICY_IDS } from './constants';
 
 export interface Project {
@@ -206,6 +206,27 @@ export function normalizeAsset(raw: Record<string, unknown>, i: number): Asset |
   };
 }
 
+/* Índice de activos para resolver referencias en O(1). Antes cada hallazgo recorría la lista entera de activos: con
+ * 6.000 hallazgos y cientos de activos, importar costaba millones de comparaciones. Se guarda por lista (WeakMap) y
+ * respeta el orden de `find`: gana el primer activo que coincide por id, nombre o IP. */
+interface IndiceActivos { porRef: Map<string, Asset>; porNombre: Map<string, Asset>; n: number }
+const indices = new WeakMap<Asset[], IndiceActivos>();
+function indiceDe(assets: Asset[]): IndiceActivos {
+  let idx = indices.get(assets);
+  if (idx && idx.n === assets.length) return idx;   // si la lista crece o mengua, se rehace
+  const porRef = new Map<string, Asset>();
+  const porNombre = new Map<string, Asset>();
+  const poner = (m: Map<string, Asset>, k: string, a: Asset) => { if (!m.has(k)) m.set(k, a); };
+  for (const a of assets) {
+    const id = a.id.toLowerCase(), nombre = a.name.toLowerCase();
+    poner(porRef, id, a); poner(porRef, nombre, a); poner(porRef, a.ip, a);
+    poner(porNombre, id, a); poner(porNombre, nombre, a);
+  }
+  idx = { porRef, porNombre, n: assets.length };
+  indices.set(assets, idx);
+  return idx;
+}
+
 /** Normaliza un hallazgo importado. Resuelve el activo por id, nombre o IP. Devuelve null si no es válido. */
 export function normalizeFinding(raw: Record<string, unknown>, i: number, assets: Asset[]): Finding | null {
   const title = str(raw.title, 200);
@@ -213,9 +234,10 @@ export function normalizeFinding(raw: Record<string, unknown>, i: number, assets
   const cve = CVE_RE.test(cveRaw) ? cveRaw : null;
   if (!title && !cve) return null;
   const assetRef = str(raw.assetId, 120).toLowerCase();
-  const asset = assets.find((a) => a.id.toLowerCase() === assetRef || a.name.toLowerCase() === assetRef || a.ip === assetRef);
+  const idx = indiceDe(assets);
+  const asset = idx.porRef.get(assetRef);
   const epss = num(raw.epss);
-  const resolveRef = (ref: string) => assets.find((a) => a.id.toLowerCase() === ref.toLowerCase() || a.name.toLowerCase() === ref.toLowerCase())?.id;
+  const resolveRef = (ref: string) => idx.porNombre.get(ref.toLowerCase())?.id;
   const leadsTo = list(raw.leadsTo).map(resolveRef).filter((x): x is string => !!x);
   const edgeFromRef = str(raw.edgeFrom, 120);
   return {
@@ -276,7 +298,10 @@ export function parseException(v: unknown): RiskException | null {
   };
 }
 
-export interface ImportResult { findings: Finding[]; rejected: number }
+export interface ImportResult { findings: Finding[]; rejected: number; /** Filas no leídas por superar MAX_FILAS. */ truncated: number }
+
+/** Tope de seguridad de filas por fichero CSV o JSON (memoria). Hasta la 1.2.1 eran 5.000 y lo demás se perdía sin aviso. */
+export const MAX_FILAS = 250_000;
 
 /** Importa hallazgos desde texto JSON (array u objeto con findings) o CSV. */
 export function importFindings(text: string, assets: Asset[]): ImportResult {
@@ -291,11 +316,11 @@ export function importFindings(text: string, assets: Asset[]): ImportResult {
   }
   const findings: Finding[] = [];
   let rejected = 0;
-  rows.slice(0, 5000).forEach((r, i) => {
+  rows.slice(0, MAX_FILAS).forEach((r, i) => {
     const f = normalizeFinding(r, i, assets);
     if (f) findings.push(f); else rejected++;
   });
-  return { findings, rejected };
+  return { findings, rejected, truncated: Math.max(0, rows.length - MAX_FILAS) };
 }
 
 /** Valida y sanea un proyecto completo importado desde JSON. */
@@ -398,17 +423,29 @@ const BAND_EN: Record<string, string> = { critica: 'Critical', alta: 'High', med
 const bandName = (lang: Lang, b: keyof typeof BAND_LABEL) => (lang === 'en' ? BAND_EN[b] : BAND_LABEL[b]);
 const numIn = (lang: Lang, x: number) => (lang === 'en' ? fmt(x).replace(',', '.') : fmt(x));
 
-export function buildTickets(findings: Finding[], assets: Asset[], result: EngineResult, lang: Lang = 'es') {
+/** Ticket de remediación. La explicación y los motivos se escriben al leerlos (getters del prototipo, sin coste por
+ * ticket): con 30.000 tickets solo se pintan los visibles. */
+export class Ticket {
+  private _explicacion?: string;
+  private _motivos?: string;
+  readonly owner: string;
+  constructor(readonly finding: Finding, readonly scored: ScoredFinding, readonly asset: Asset | undefined, readonly guide: RemediationGuide, private readonly lang: Lang) {
+    this.owner = asset?.owner ? `${guide.owner} · ${asset.owner}` : guide.owner;
+  }
+  get explanation(): string { return (this._explicacion ??= explanationIn(this.lang, this.scored, this.finding, this.asset)); }
+  get reasons(): string { return (this._motivos ??= reasonsIn(this.lang, this.scored, this.finding, this.asset)); }
+}
+
+export function buildTickets(findings: Finding[], assets: Asset[], result: EngineResult, lang: Lang = 'es'): Ticket[] {
   const fById = new Map(findings.map((f) => [f.id, f]));
   const aById = new Map(assets.map((a) => [a.id, a]));
-  return result.scored
-    .filter((s) => { const f = fById.get(s.id); return f && (f.status === 'abierto' || f.status === 'validado'); })
-    .map((s) => {
-      const f = fById.get(s.id)!;
-      const a = aById.get(f.assetId);
-      const g = guideIn(lang, f.remediation, f.kind);
-      return { finding: f, scored: s, asset: a, guide: g, owner: a?.owner ? `${g.owner} · ${a.owner}` : g.owner, explanation: explanationIn(lang, s, f, a), reasons: reasonsIn(lang, s, f, a) };
-    });
+  const out: Ticket[] = [];
+  for (const s of result.scored) {
+    const f = fById.get(s.id);
+    if (!f || (f.status !== 'abierto' && f.status !== 'validado')) continue;
+    out.push(new Ticket(f, s, aById.get(f.assetId), guideIn(lang, f.remediation, f.kind), lang));
+  }
+  return out;
 }
 
 /** Cabeceras en español y estables (las consume también la API); los valores siguen el idioma. */

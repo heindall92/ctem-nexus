@@ -1,17 +1,18 @@
 import { ArrowRight, Crosshair, Crown, Globe, FileJson, LayoutDashboard, ListChecks, Radar, Route, Scissors, ShieldOff, Sparkles } from 'lucide-react';
 import { motion } from 'motion/react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { CycleArt } from '../components/CycleArt';
 import { ExposureLanes } from '../components/ExposureLanes';
 import { NmapUploader } from '../components/NmapUploader';
-import { pathsBrokenBy } from '../engine/impact';
+import { rutasRotasPorSolo } from '../engine/impact';
 import { EXPIRY_WARNING_DAYS, expiringSoon, isoDay } from '../engine/exceptions';
 import { slaInfo } from '../engine/sla';
-import type { Band } from '../engine/types';
+import type { Band, Finding } from '../engine/types';
+import { Despues } from '../components/Despues';
 import { Modal, TopBar } from '../components/Shell';
 import { BandBadge, DemoBadge, PageHeader, Reveal, SPRING } from '../components/ui';
 import { screen, useL } from '../i18n';
-import { useResult } from '../lib/analysis';
+import { UMBRAL_WORKER, useResult } from '../lib/analysis';
 import { BAND_COLOR, BAND_FILL, n1 } from '../lib/format';
 import { useStore, type View } from '../store/store';
 
@@ -32,14 +33,42 @@ export function Dashboard() {
   const { result } = useResult();
   const s = result.summary;
   const { assets, findings } = project;
-  const fById = new Map(findings.map((f) => [f.id, f]));
-  const aById = new Map(assets.map((a) => [a.id, a]));
-  const crown = assets.filter((a) => a.criticality === 5).length;
-  const expiring = expiringSoon(findings, isoDay(new Date()));
-  const overdue = result.scored.filter((x) => {
+  // Todo lo que recorre los hallazgos, memorizado: con 50.000 el panel se pintaba en 700 ms.
+  const fById = useMemo(() => new Map(findings.map((f) => [f.id, f])), [findings]);
+  const aById = useMemo(() => new Map(assets.map((a) => [a.id, a])), [assets]);
+  const crown = useMemo(() => assets.filter((a) => a.criticality === 5).length, [assets]);
+  const expiring = useMemo(() => expiringSoon(findings, isoDay(new Date())), [findings]);
+  const overdue = useMemo(() => result.scored.filter((x) => {
     const f = fById.get(x.id);
     return f && (f.status === 'abierto' || f.status === 'validado') && slaInfo(f.detectedAt, x.slaDays).state === 'vencido';
-  }).length;
+  }).length, [result.scored, fById]);
+  const derivados = useMemo(() => {
+    // Una sola pasada por las puntuaciones (en su orden) para abiertos, rutas y franjas.
+    const abiertos: typeof result.scored = [];
+    const franjas: Array<{ scored: (typeof result.scored)[number]; finding: Finding }> = [];
+    const enRuta: typeof result.scored = [];
+    let validadosEnRuta = 0;
+    for (const x of result.scored) {
+      const f = fById.get(x.id);
+      if (!f) continue;
+      if (f.status === 'abierto' || f.status === 'validado') { abiertos.push(x); franjas.push({ scored: x, finding: f }); }
+      if (x.onAttackPath && (x.band === 'critica' || x.band === 'alta') && f.status !== 'mitigado') {
+        enRuta.push(x);
+        if (f.status === 'validado' || f.status === 'no_explotable') validadosEnRuta++;
+      }
+    }
+    const mitigados = findings.reduce((n, f) => n + (f.status === 'mitigado' ? 1 : 0), 0);
+    // Tres acciones para hoy: lo que más rutas rompe; a igualdad, KEV y puntuación. Sin ordenar los 30.000 abiertos.
+    const rotasPor = rutasRotasPorSolo(result.graph);
+    const mejores: Array<{ x: (typeof abiertos)[number]; f: Finding; broken: number }> = [];
+    const antes = (a: (typeof mejores)[number], b: (typeof mejores)[number]) => b.broken - a.broken || Number(b.f.kev) - Number(a.f.kev) || b.x.score - a.x.score;
+    for (const x of abiertos) {
+      const c = { x, f: fById.get(x.id)!, broken: rotasPor.get(x.id) ?? 0 };
+      if (mejores.length < 3) { mejores.push(c); mejores.sort(antes); continue; }
+      if (antes(c, mejores[2]) < 0) { mejores[2] = c; mejores.sort(antes); }
+    }
+    return { abiertos, enRuta, validadosEnRuta, mitigados, hoy: mejores, franjas };
+  }, [result.scored, result.graph, fById, findings]);
 
   if (assets.length === 0 && findings.length === 0) {
     return (
@@ -78,9 +107,9 @@ export function Dashboard() {
   }
 
   // Estado de cada fase del ciclo CTEM, derivado de los datos.
-  const onPathActive = result.scored.filter((x) => { const f = fById.get(x.id)!; return x.onAttackPath && (x.band === 'critica' || x.band === 'alta') && f.status !== 'mitigado'; });
-  const validatedOnPath = onPathActive.filter((x) => { const st = fById.get(x.id)!.status; return st === 'validado' || st === 'no_explotable'; }).length;
-  const mitigated = findings.filter((f) => f.status === 'mitigado').length;
+  const onPathActive = derivados.enRuta;
+  const validatedOnPath = derivados.validadosEnRuta;
+  const mitigated = derivados.mitigados;
   const stages: Array<{ name: string; detail: string; state: StageState; view: View }> = [
     { name: c.scope, view: 'alcance', detail: c.assetsJewels(assets.length, crown), state: assets.length === 0 ? 'pendiente' : crown > 0 ? 'hecho' : 'en_curso' },
     { name: c.discovery, view: 'priorizacion', detail: c.findings(findings.length), state: findings.length ? 'hecho' : 'pendiente' },
@@ -89,15 +118,13 @@ export function Dashboard() {
     { name: c.mobilize, view: 'movilizacion', detail: c.mitigated(mitigated, findings.length), state: findings.length === 0 ? 'pendiente' : s.openFindings === 0 ? 'hecho' : mitigated > 0 ? 'en_curso' : 'pendiente' },
   ];
 
-  const openItems = result.scored.filter((x) => { const st = fById.get(x.id)?.status; return st === 'abierto' || st === 'validado'; });
+  const openItems = derivados.abiertos;
+  const laneItems = derivados.franjas;
   const top = openItems.slice(0, 5);
   const bandOfIndex: Band = s.exposureIndex >= 80 ? 'critica' : s.exposureIndex >= 60 ? 'alta' : s.exposureIndex >= 40 ? 'media' : 'baja';
   const total = Math.max(1, s.openFindings);
   // Tres acciones para hoy: lo que más rutas rompe; a igualdad, KEV y puntuación.
-  const today = openItems
-    .map((x) => ({ x, f: fById.get(x.id)!, broken: pathsBrokenBy(result.graph, [x.id]) }))
-    .sort((a, b) => b.broken - a.broken || Number(b.f.kev) - Number(a.f.kev) || b.x.score - a.x.score)
-    .slice(0, 3);
+  const today = derivados.hoy;
   const openFinding = (id: string) => { setView('priorizacion'); selectFinding(id); };
 
   return (
@@ -123,7 +150,7 @@ export function Dashboard() {
               <span className="text-xs text-ink-3">{L('Cada marca es un hallazgo abierto, situado por su puntuación', 'Each mark is an open finding, placed by its score')}</span>
             </div>
             <div className="mt-4 flex-1">
-              <ExposureLanes items={openItems.map((x) => ({ scored: x, finding: fById.get(x.id)! }))} assets={assets} onOpen={openFinding} />
+              <Despues si={findings.length > UMBRAL_WORKER} alto={420}><ExposureLanes items={laneItems} assets={assets} onOpen={openFinding} /></Despues>
             </div>
             <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-ink-3">
               <li className="flex items-center gap-1.5"><span className="h-3.5 w-2 rounded-full bg-[var(--color-ink-3)] shadow-[0_0_0_1.5px_var(--color-surface),0_0_0_3px_var(--color-ink)]" />CISA KEV</li>

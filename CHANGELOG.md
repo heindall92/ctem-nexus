@@ -2,6 +2,76 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado semántico. La hoja de ruta está en [ROADMAP.md](ROADMAP.md).
 
+## [1.3.0] - 2026-11-11
+
+Datos reales: CTEM-Nexus ya no pierde un proyecto grande ni se congela con él. Un Nessus de 6.000 hallazgos se perdía
+entero al recargar (el guardado fallaba en silencio) y los ficheros de más de 5.000 resultados se recortaban sin
+aviso. Ahora el proyecto va a IndexedDB, nada se guarda ni se recorta en silencio y 50.000 hallazgos se importan,
+se calculan, se recorren, se recargan y se exportan sin bloquear la página. Primera fase de la hoja de ruta hacia la 2.0.
+
+### Añadido
+- **Guardado en IndexedDB** con migración automática desde `localStorage`, almacenamiento persistente si el navegador
+  lo concede y uso del espacio en Ajustes. Los ajustes siguen en `localStorage`.
+- **Ningún guardado falla en silencio.** «Guardado hace N s» junto al nombre del proyecto; si no se puede guardar
+  (sin espacio, modo privado), un aviso fijo con el motivo, «Reintentar» y «Exportar proyecto ahora», que no se
+  puede cerrar mientras dure el fallo. Un solo aviso por fallo y otro al recuperarse.
+- **Ficheros enormes:** hasta 400 MB, leídos en un Web Worker con barra de progreso y «Cancelar». Nessus y OpenVAS
+  se analizan por partes (cada `<ReportHost>` o `<result>`, con las comprobaciones de DTD y entidades sobre todo el
+  texto). Con más de 20.000 resultados, resumen previo por severidad y tres opciones: todo, solo altas y críticas o
+  agrupar por complemento (un hallazgo por regla y equipo con todos sus CVE).
+- **Agrupación por CVE** en Priorización: el mismo CVE en muchos activos es una fila que se despliega (con teclado y
+  `aria-expanded`), con activos afectados, abiertos, señales y la peor puntuación. Activa por defecto con más de
+  1.500 hallazgos.
+- **Grafo resumido** con redes grandes: las rutas más cortas hasta 120 nodos, siempre con la ruta o el nodo
+  seleccionados, y un aviso de cuántos se muestran.
+- **Prueba de carga en la CI** (`tests/carga_app.py`): 50.000 hallazgos y 2.000 activos; tiempos en el resumen de la
+  ejecución y en el artefacto `cifras-carga`.
+
+### Cambiado
+- **Rendimiento con 50.000 hallazgos** (contenedor de desarrollo, antes → ahora):
+
+  | Momento | Antes | Ahora |
+  |---|---|---|
+  | Entrar en Priorización (5.000 hallazgos) | 1,8 s · 171.000 nodos | 0,1 s · menos de 1.000 nodos |
+  | «¿Y si…?» (5.000 hallazgos) | 17,5 s | 35 ms |
+  | Mapa ATT&CK | 4,1 s | menos de 100 ms |
+  | Importar 20.000 resultados sobre 50.000 hallazgos | unos 110 s (10,9 s con 2.000) | 0,2 s |
+  | Tarea más larga al importar el proyecto | 765 ms | ninguna de más de 50 ms |
+  | Tarea más larga al exportar | 520 ms | ninguna de más de 50 ms |
+  | Cualquier vista, hasta pintarse | hasta 4,1 s | 30–145 ms |
+
+  Cómo: tablas y listas virtualizadas (`aria-rowcount`, `aria-rowindex`); motor en un Web Worker que guarda una
+  copia del proyecto y recibe solo los hallazgos que cambian, con resultados en trozos; plan «¿Y si…?» incremental;
+  índices en la importación (activos por IP, nombre y token; hallazgos por activo; ids por prefijo); cobertura
+  ATT&CK sin `includes()` cuadrático; inferencia ATT&CK, plazos SLA y guías en inglés con caché; rutas rotas por
+  hallazgo calculadas una vez por grafo; exportación por partes; pintado progresivo de los paneles secundarios.
+- La lectura de un proyecto JSON admite hasta 400 MB (antes 10 MB) y un CSV de hallazgos hasta 250.000 filas
+  (antes 5.000 sin aviso).
+- «Mostrar mitigados y no explotables» pasa a «Mostrar cerrados» (con la explicación al pasar el puntero).
+- `ENGINE_VERSION` 1.3.0 en TypeScript y Python. La fórmula no cambia: el fichero dorado solo cambia en la versión.
+
+### Corregido
+- El proyecto se perdía al recargar si pasaba de unos 5 MB (el guardado en `localStorage` fallaba sin avisar).
+- Los resultados por encima de 5.000 en un fichero se contaban como «informativos omitidos»; ahora se leen y, por
+  encima del tope de seguridad, se avisa aparte.
+- Las cifras del plan de importación, de los catálogos KEV/EPSS y de «¿Y si…?» seguían el idioma del navegador y no
+  el de la interfaz («20,000» en español).
+- El panel de ciclos recalculaba la instantánea del proyecto con cada tecla del nombre del ciclo.
+
+### Pruebas
+- Vitest 230 (+43): guardado en IndexedDB (migración, recarga sin reescribir, cambios durante la carga, cuota
+  agotada con un solo aviso, sin almacenamiento, «Borrar todo»), análisis XML por partes (anidados, autocerrados,
+  espacios de nombres, DTD), un `.nessus` de más de 40 MB, el tope avisado, CSV de 6.000 filas, resumen y reducción,
+  tareas del Worker, copia del proyecto con parches y respuestas en trozos, plan incremental idéntico al anterior en
+  300 grafos, rutas rotas por hallazgo, importación equivalente a la anterior, agrupación, grafo resumido,
+  exportación por partes, evidencia por control reducida y carga con 50.000 hallazgos.
+- e2e 193 (+29): guardado y migración en el navegador, aviso sin espacio con exportación, y un Nessus de 81 MB que se
+  cancela, se resume, se agrupa por complemento y se importa sin tareas largas, con agrupación por CVE y tablas
+  virtualizadas.
+- axe-core: 0 infracciones en 256 estados (+20: avisos de guardado, Priorización agrupada, grafo resumido y resumen
+  previo de un escaneo enorme).
+- Carga: 7 comprobaciones con 50.000 hallazgos y 2.000 activos.
+
 ## [1.2.1] - 2026-10-18
 
 MCP-Shield entra en el ecosistema: CTEM-Nexus importa el sobre `hallazgos` que exporta MCP-Shield 1.6.0 y lo convierte en evidencia para Rosetta. Es la octava herramienta del bloque «Suite».

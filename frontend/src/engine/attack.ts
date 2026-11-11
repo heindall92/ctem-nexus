@@ -200,7 +200,21 @@ const TITLE_PATTERNS: Array<{ re: RegExp; ids: string[] }> = [
  * Infiere técnicas ATT&CK a partir del título, CVE, tipo y guía de remediación.
  * Devuelve un array sin duplicados de IDs válidos, limitado a 6.
  */
+// Los escáneres repiten el mismo título en cientos de equipos: la inferencia (unas 40 expresiones regulares por título)
+// se guarda por título, guía, tipo y si hay CVE. Las listas devueltas están congeladas: nadie las puede modificar.
+const inferidas = new Map<string, string[]>();
+
 export function inferAttack(title: string, cve: string | null, kind: string, remediation: string): string[] {
+  const clave = `${remediation}\u0000${kind}\u0000${cve ? 1 : 0}\u0000${title}`;
+  const hecha = inferidas.get(clave);
+  if (hecha) return hecha;
+  if (inferidas.size > 50_000) inferidas.clear();
+  const ids = Object.freeze(inferir(title, cve, kind, remediation)) as string[];
+  inferidas.set(clave, ids);
+  return ids;
+}
+
+function inferir(title: string, cve: string | null, kind: string, remediation: string): string[] {
   const seen = new Set<string>();
   const add = (ids: string[]) => { for (const id of ids) if (TECH_BY_ID.has(id)) seen.add(id); };
 
@@ -243,13 +257,16 @@ export function buildCoverage(findings: Finding[]): Map<string, TechniqueCount> 
   const map = new Map<string, TechniqueCount>();
   for (const f of findings) {
     if (!isLive(f)) continue;
+    // Cada hallazgo entra una vez por técnica. Antes se comprobaba con includes() sobre la lista de la técnica, que con
+    // 50.000 hallazgos crecía hasta decenas de miles: 4 s para abrir el mapa.
+    const yaEsta = new Set<string>();
     for (const id of techniquesOf(f)) {
       const tech = TECH_BY_ID.get(id);
       if (!tech) continue;
-      const entry = map.get(id) ?? { technique: tech, count: 0, findingIds: [] };
+      let entry = map.get(id);
+      if (!entry) { entry = { technique: tech, count: 0, findingIds: [] }; map.set(id, entry); }
       entry.count++;
-      if (!entry.findingIds.includes(f.id)) entry.findingIds.push(f.id);
-      map.set(id, entry);
+      if (!yaEsta.has(id)) { yaEsta.add(id); entry.findingIds.push(f.id); }
     }
   }
   return map;

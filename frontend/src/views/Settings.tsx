@@ -1,19 +1,20 @@
 import { Download, FileSearch, PlugZap, SlidersHorizontal, RotateCcw, Sparkles, Upload } from 'lucide-react';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ProgresoTarea, useTarea } from '../components/ProgresoTarea';
 import { ScanUploader } from '../components/ScanUploader';
 import { PROFILE_IDS, PROFILES, type Weights } from '../engine/constants';
 import { prioritize } from '../engine/engine';
 import { SOURCE_LABEL } from '../engine/scanners';
-import type { ProfileId } from '../engine/types';
+import type { EngineResult, ProfileId } from '../engine/types';
 import { n1, plural } from '../lib/format';
-import { parseProject } from '../engine/io';
 import { Modal, TopBar } from '../components/Shell';
 import { Field, PageHeader, ScoreBar, SectionTitle, Segmented, Toggle } from '../components/ui';
-import { pingApi } from '../lib/analysis';
-import { download, readFile, stamp } from '../lib/download';
-import { storageBackend } from '../lib/storage';
+import { calcularEnSegundoPlano, pingApi, UMBRAL_WORKER } from '../lib/analysis';
+import { esCancelacion, leerProyectoEnSegundoPlano } from '../lib/segundo-plano';
+import { espacio } from '../lib/persistencia';
 import { chrome, screen, useL } from '../i18n';
 import { useStore } from '../store/store';
+import { exportarProyecto } from '../lib/exportar';
 
 export function Settings() {
   const lang = useStore((s) => s.lang);
@@ -27,9 +28,14 @@ export function Settings() {
   const reset = useStore((s) => s.reset);
   const loadDemo = useStore((s) => s.loadDemo);
   const notify = useStore((s) => s.notify);
+  const guardado = useStore((s) => s.guardado);
+  const [uso, setUso] = useState<{ usado: number; cuota: number } | null>(null);
+  useEffect(() => { void espacio().then(setUso); }, [guardado.en]);
+  const mb = (b: number) => `${(b / 1048576).toLocaleString(lang === 'en' ? 'en-GB' : 'es-ES', { maximumFractionDigits: b < 10485760 ? 1 : 0 })} MB`;
   const [ping, setPing] = useState<{ ok: boolean; detail: string } | null>(null);
   const [testing, setTesting] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
+  const tareaImportar = useTarea();
   const fileRef = useRef<HTMLInputElement>(null);
   const setProfile = useStore((s) => s.setProfile);
   const [showIntel, setShowIntel] = useState(false);
@@ -41,12 +47,24 @@ export function Settings() {
     banca: L('Amenaza dirigida (DORA, pruebas TLPT): pesan más la explotación real y la exposición a Internet.', 'Targeted threat (DORA, TLPT testing): real exploitation and Internet exposure weigh more.'),
   };
   const FACTOR: Record<keyof Weights, string> = { severidad: L('Severidad', 'Severity'), explotabilidad: L('Explotabilidad', 'Exploitability'), criticidad: L('Criticidad', 'Criticality'), exposicion: L('Exposición', 'Exposure'), proximidad: L('Proximidad', 'Proximity') };
-  const byProfile = useMemo(() => {
-    if (!project.findings.length) return null;
-    const out = {} as Record<ProfileId, ReturnType<typeof prioritize>>;
-    for (const p of PROFILE_IDS) out[p] = prioritize({ assets: project.assets, findings: project.findings, edges: project.edges, profile: p, slaPolicy: project.slaPolicy });
-    return out;
-  }, [project.assets, project.findings, project.edges]);
+  // Comparar perfiles es calcular el motor tres veces: con proyectos grandes, en el Worker (y mientras, «calculando»).
+  const grande = project.findings.length > UMBRAL_WORKER;
+  const entradas = useMemo(() => PROFILE_IDS.map((p) => ({ assets: project.assets, findings: project.findings, edges: project.edges, profile: p, slaPolicy: project.slaPolicy })), [project.assets, project.findings, project.edges, project.slaPolicy]);
+  const deUna = useMemo(() => {
+    if (grande || !project.findings.length) return null;
+    return Object.fromEntries(entradas.map((e) => [e.profile, prioritize(e)])) as Record<ProfileId, EngineResult>;
+  }, [grande, entradas, project.findings.length]);
+  const [diferido, setDiferido] = useState<{ de: typeof entradas; r: Record<ProfileId, EngineResult> } | null>(null);
+  useEffect(() => {
+    if (!grande) return;
+    let vigente = true;
+    void Promise.all(entradas.map((e) => calcularEnSegundoPlano(e, `perfil:${e.profile}`))).then((rs) => {
+      if (vigente && rs.every(Boolean)) setDiferido({ de: entradas, r: Object.fromEntries(rs.map((r, i) => [entradas[i].profile, r])) as Record<ProfileId, EngineResult> });
+    });
+    return () => { vigente = false; };
+  }, [grande, entradas]);
+  const byProfile = deUna ?? (diferido?.de === entradas ? diferido.r : null);
+  const comparando = grande && !byProfile;
   const bandShift = (p: ProfileId) => {
     if (!byProfile || p === profile) return 0;
     const cur = new Map(byProfile[profile].scored.map((x) => [x.id, x.band]));
@@ -64,7 +82,13 @@ export function Settings() {
           <SectionTitle title={L('Proyecto', 'Project')} />
           <div className="border-t border-hairline px-5 py-4">
             <Field label={L('Nombre de la organización o del proyecto', 'Organization or project name')}><input className="field" value={project.name} onChange={(e) => setName(e.target.value)} /></Field>
-            <p className="mt-3 text-xs text-ink-3">{L('Almacenamiento', 'Storage')}: {storageBackend() === 'local' ? L('localStorage del navegador', 'browser localStorage') : L('memoria (se perderá al cerrar la pestaña; exporta el proyecto)', 'memory (lost when the tab closes; export the project)')}.</p>
+            <p className="mt-3 text-xs text-ink-3" data-testid="almacenamiento">
+              {L('Almacenamiento', 'Storage')}: {guardado.almacen === 'indexeddb' ? L('IndexedDB de este navegador', 'this browser’s IndexedDB')
+                : guardado.almacen === 'local' ? L('localStorage de este navegador (unos 5 MB como máximo)', 'this browser’s localStorage (about 5 MB at most)')
+                  : L('memoria: se perderá al cerrar la pestaña; exporta el proyecto', 'memory: lost when the tab closes; export the project')}
+              {guardado.persistente ? L(' · persistente (el navegador no lo borra por falta de espacio)', ' · persistent (the browser will not evict it for lack of space)') : ''}
+              {uso ? L(` · ${mb(uso.usado)} usados de ${mb(uso.cuota)} disponibles`, ` · ${mb(uso.usado)} used of ${mb(uso.cuota)} available`) : ''}.
+            </p>
           </div>
         </section>
 
@@ -97,6 +121,7 @@ export function Settings() {
                 </div>
               ))}
             </dl>
+            {comparando && <p role="status" className="mt-3 text-xs text-ink-3">{L('Calculando la comparación de perfiles…', 'Computing the profile comparison…')}</p>}
             {byProfile && (
               <ul className="grid gap-2 sm:grid-cols-3" aria-label={L('Efecto de cada perfil en este proyecto', 'Effect of each profile on this project')}>
                 {PROFILE_IDS.map((p) => (
@@ -120,11 +145,11 @@ export function Settings() {
           <dl className="divide-hair border-t border-hairline text-[0.8125rem]">
             <div className="flex flex-wrap items-baseline justify-between gap-2 px-5 py-3">
               <dt className="font-medium">CISA KEV</dt>
-              <dd className="text-ink-2">{intel?.kev ? L(`versión ${intel.kev.version} · ${intel.kev.count.toLocaleString()} CVE · aplicado el ${intel.kev.importedAt}`, `version ${intel.kev.version} · ${intel.kev.count.toLocaleString()} CVEs · applied on ${intel.kev.importedAt}`) : L('Sin catálogo: cuentan las marcas del escáner o del analista', 'No catalog: scanner or analyst flags apply')}</dd>
+              <dd className="text-ink-2">{intel?.kev ? L(`versión ${intel.kev.version} · ${intel.kev.count.toLocaleString('es-ES')} CVE · aplicado el ${intel.kev.importedAt}`, `version ${intel.kev.version} · ${intel.kev.count.toLocaleString('en-GB')} CVEs · applied on ${intel.kev.importedAt}`) : L('Sin catálogo: cuentan las marcas del escáner o del analista', 'No catalog: scanner or analyst flags apply')}</dd>
             </div>
             <div className="flex flex-wrap items-baseline justify-between gap-2 px-5 py-3">
               <dt className="font-medium">FIRST EPSS</dt>
-              <dd className="text-ink-2">{intel?.epss ? L(`${intel.epss.scoreDate || intel.epss.model} · ${intel.epss.count.toLocaleString()} puntuaciones · aplicado el ${intel.epss.importedAt}`, `${intel.epss.scoreDate || intel.epss.model} · ${intel.epss.count.toLocaleString()} scores · applied on ${intel.epss.importedAt}`) : L('Sin catálogo: cuentan los valores del escáner o del analista', 'No catalog: scanner or analyst values apply')}</dd>
+              <dd className="text-ink-2">{intel?.epss ? L(`${intel.epss.scoreDate || intel.epss.model} · ${intel.epss.count.toLocaleString('es-ES')} puntuaciones · aplicado el ${intel.epss.importedAt}`, `${intel.epss.scoreDate || intel.epss.model} · ${intel.epss.count.toLocaleString('en-GB')} scores · applied on ${intel.epss.importedAt}`) : L('Sin catálogo: cuentan los valores del escáner o del analista', 'No catalog: scanner or analyst values apply')}</dd>
             </div>
           </dl>
           {project.imports?.length ? (
@@ -147,17 +172,24 @@ export function Settings() {
         <section className="panel overflow-hidden">
           <SectionTitle title={L('Datos', 'Data')} detail={L('Formato JSON propio (format: ctem-nexus). Al importar se validan y sanean todos los campos.', 'Own JSON format (format: ctem-nexus). Every field is validated and sanitized on import.')} />
           <div className="flex flex-wrap gap-2 border-t border-hairline px-5 py-4">
-            <button type="button" className="btn" onClick={() => { download(`ctem-nexus-${stamp()}.json`, JSON.stringify(project, null, 2), 'application/json'); notify(chrome[lang].exported); }}><Download />{L('Exportar proyecto JSON', 'Export project JSON')}</button>
+            <button type="button" className="btn" onClick={() => { void exportarProyecto(project).then(() => notify(chrome[lang].exported)); }}><Download />{L('Exportar proyecto JSON', 'Export project JSON')}</button>
             <input ref={fileRef} type="file" accept=".json,application/json" className="hidden" onChange={async (e) => {
               const file = e.target.files?.[0]; e.target.value = '';
               if (!file) return;
+              const opciones = tareaImportar.empezar();
               try {
-                const p = parseProject(await readFile(file));
+                // En un Worker: un proyecto de 50.000 hallazgos (unos 50 MB) se valida sin congelar la página.
+                const p = await leerProyectoEnSegundoPlano(file, opciones);
+                tareaImportar.terminar();
                 if (!p) { notify(L('El archivo no es un proyecto de CTEM-Nexus válido.', 'The file is not a valid CTEM-Nexus project.'), 'error'); return; }
                 replace(p); notify(L(`Proyecto «${p.name}» importado: ${plural(p.assets.length, 'activo', 'activos')}, ${plural(p.findings.length, 'hallazgo', 'hallazgos')}.`, `Project “${p.name}” imported: ${plural(p.assets.length, 'asset', 'assets')}, ${plural(p.findings.length, 'finding', 'findings')}.`));
-              } catch (err) { notify(err instanceof Error ? err.message : L('No se pudo leer el archivo.', 'The file could not be read.'), 'error'); }
+              } catch (err) {
+                if (esCancelacion(err)) return;
+                tareaImportar.terminar();
+                notify(err instanceof Error ? err.message : L('No se pudo leer el archivo.', 'The file could not be read.'), 'error');
+              }
             }} />
-            <button type="button" className="btn" onClick={() => fileRef.current?.click()}><Upload />{L('Importar proyecto JSON', 'Import project JSON')}</button>
+            <button type="button" className="btn" disabled={tareaImportar.estado !== null} onClick={() => fileRef.current?.click()}><Upload />{L('Importar proyecto JSON', 'Import project JSON')}</button>
             <button type="button" className="btn" onClick={() => { loadDemo(); notify(c.demoLoadedShort); }}><Sparkles />{c.loadDemo}</button>
             {!confirmReset
               ? <button type="button" className="btn btn-ghost btn-danger ml-auto" onClick={() => setConfirmReset(true)}><RotateCcw />{L('Borrar todo', 'Delete everything')}</button>
@@ -166,6 +198,7 @@ export function Settings() {
                   <button type="button" className="btn btn-sm btn-ghost" onClick={() => setConfirmReset(false)}>{L('Cancelar', 'Cancel')}</button>
                 </span>}
           </div>
+          {tareaImportar.estado && <div className="border-t border-hairline px-5 py-3"><ProgresoTarea estado={tareaImportar.estado} onCancelar={tareaImportar.cancelar} que={L('el proyecto', 'the project')} /></div>}
         </section>
       </div>
       <Modal open={showIntel} onClose={() => setShowIntel(false)} title={L('Importar escáner o inteligencia', 'Import scanner or intelligence')} subtitle={L('Escáneres, validación ofensiva (ZAP, Burp, PingCastle, Certipy), CISA KEV y FIRST EPSS', 'Scanners, offensive validation (ZAP, Burp, PingCastle, Certipy), CISA KEV and FIRST EPSS')} maxWidth={720}>

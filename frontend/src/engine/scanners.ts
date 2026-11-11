@@ -6,7 +6,7 @@
 import { safeJsonParse } from './io';
 import { isPrivateIp } from './nmap';
 import type { AssetType, FindingKind, FindingSource } from './types';
-import { child, childrenOf, descendants, parseXml, textOf, type XNode } from './xml';
+import { cabecera, child, childrenOf, descendants, porPartes, textOf, type XNode } from './xml';
 import { parseBurp, parseCertipy, parsePingCastle, parseZap } from './offensive';
 
 export type ScanSource = Extract<FindingSource, 'nessus' | 'openvas' | 'nuclei' | 'trivy' | 'sarif' | 'adauditor' | 'zap' | 'burp' | 'pingcastle' | 'certipy' | 'mcpshield'>;
@@ -49,9 +49,15 @@ export interface ScanParse {
   items: ScanItem[];
   /** Resultados informativos u omitidos (severidad 0, «Log», «PASS»…). */
   skipped: number;
+  /** Resultados que no se han leído por superar MAX_ITEMS (nunca en silencio: la interfaz lo dice). */
+  truncated?: number;
 }
 
-export const MAX_ITEMS = 5000;
+/** Tope de seguridad por fichero (memoria), no de uso: un Nessus de una red grande trae decenas de miles de
+ * resultados y se importan todos. Si un fichero lo supera, lo que sobra se cuenta en `truncated` y se dice. */
+export const MAX_ITEMS = 250_000;
+/** Por encima de esto, antes de importar se ofrece un resumen y la opción de reducir. */
+export const UMBRAL_RESUMEN = 20_000;
 const CVE_RE = /CVE-\d{4}-\d{4,7}/gi;
 const CVE_ONE = /^CVE-\d{4}-\d{4,7}$/i;
 const clip = (s: unknown, max = 300) => (typeof s === 'string' ? s : s == null ? '' : String(s)).replace(/\s+/g, ' ').trim().slice(0, max);
@@ -129,14 +135,16 @@ export function detectFormat(text: string, filename = ''): DetectedFormat {
 const NESSUS_SEV = [0, 3, 5.5, 8, 9.5];
 
 export function parseNessus(xml: string, opts: { includeInfo?: boolean } = {}): ScanParse {
-  const doc = parseXml(xml);
-  const rootEl = descendants(doc, 'nessusclientdata_v2')[0];
-  if (!rootEl) throw new Error('No es un fichero .nessus (falta NessusClientData_v2).');
+  if (!/<NessusClientData_v2[\s>]/i.test(xml)) throw new Error('No es un fichero .nessus (falta NessusClientData_v2).');
+  const rootEl = descendants(cabecera(xml, 'reporthost'), 'nessusclientdata_v2')[0];
   const hosts: ScanHost[] = [];
   const items: ScanItem[] = [];
   let skipped = 0;
+  let truncated = 0;
   const policy = textOf(child(rootEl, 'policy'), 'policyname');
-  for (const rh of descendants(rootEl, 'reporthost')) {
+  for (const parte of porPartes(xml, 'reporthost')) {
+    const rh = parte.children[0];
+    if (!rh) continue;
     const props: Record<string, string> = {};
     for (const tag of childrenOf(child(rh, 'hostproperties'), 'tag')) if (tag.attrs.name) props[tag.attrs.name] = textOf(tag);
     const ip = props['host-ip'] || (isIp(rh.attrs.name ?? '') ? rh.attrs.name : '');
@@ -148,7 +156,7 @@ export function parseNessus(xml: string, opts: { includeInfo?: boolean } = {}): 
     for (const ri of childrenOf(rh, 'reportitem')) {
       const sev = Math.max(0, Math.min(4, Math.round(num(ri.attrs.severity) ?? 0)));
       if (sev === 0 && !opts.includeInfo) { skipped++; continue; }
-      if (items.length >= MAX_ITEMS) { skipped++; continue; }
+      if (items.length >= MAX_ITEMS) { truncated++; continue; }
       const cves = [...new Set(childrenOf(ri, 'cve').map((c) => textOf(c).toUpperCase()).filter((c) => CVE_ONE.test(c)))].sort();
       const score = num(textOf(ri, 'cvss3_base_score')) ?? num(textOf(ri, 'cvss_base_score')) ?? NESSUS_SEV[sev];
       const epssRaw = num(textOf(ri, 'epss_score'));
@@ -173,7 +181,7 @@ export function parseNessus(xml: string, opts: { includeInfo?: boolean } = {}): 
       });
     }
   }
-  return { source: 'nessus', tool: policy ? `Nessus · ${policy}` : 'Nessus', hosts, items, skipped };
+  return { source: 'nessus', tool: policy ? `Nessus · ${policy}` : 'Nessus', hosts, items, skipped, ...(truncated ? { truncated } : {}) };
 }
 
 /* ───────────────────────── OpenVAS / Greenbone ───────────────────────── */
@@ -190,15 +198,17 @@ function openvasTags(raw: string): Record<string, string> {
 }
 
 export function parseOpenVas(xml: string, opts: { includeInfo?: boolean } = {}): ScanParse {
-  const doc = parseXml(xml);
-  const results = descendants(doc, 'result').filter((r) => child(r, 'nvt'));
-  if (!results.length && !descendants(doc, 'report').length) throw new Error('No es un informe XML de OpenVAS/Greenbone.');
+  // Por partes: cada <result> (con los que lleve anidados) se analiza por separado.
+  const results = (function* () { for (const parte of porPartes(xml, 'result')) for (const r of descendants(parte, 'result')) if (child(r, 'nvt')) yield r; })();
+  let alguno = false;
   const seen = new Set<string>();
   const hostMap = new Map<string, ScanHost>();
   const items: ScanItem[] = [];
   let skipped = 0;
+  let truncated = 0;
   // Los informes de GMP repiten <report> anidado: un mismo resultado (id) cuenta una vez.
   for (const r of results) {
+    alguno = true;
     const rid = r.attrs.id ?? '';
     if (rid && seen.has(rid)) continue;
     if (rid) seen.add(rid);
@@ -206,7 +216,7 @@ export function parseOpenVas(xml: string, opts: { includeInfo?: boolean } = {}):
     const threat = textOf(r, 'threat').toLowerCase();
     const sevResult = num(textOf(r, 'severity'));
     if ((THREAT_SKIP.has(threat) || (sevResult !== null && sevResult <= 0)) && !opts.includeInfo) { skipped++; continue; }
-    if (items.length >= MAX_ITEMS) { skipped++; continue; }
+    if (items.length >= MAX_ITEMS) { truncated++; continue; }
     const hostEl = child(r, 'host');
     const ip = textOf(hostEl).split(/\s+/)[0] ?? '';
     const hostname = textOf(hostEl, 'hostname');
@@ -240,7 +250,8 @@ export function parseOpenVas(xml: string, opts: { includeInfo?: boolean } = {}):
       ref: `openvas:${nvt.attrs.oid ?? title}`,
     });
   }
-  return { source: 'openvas', tool: 'OpenVAS / Greenbone', hosts: [...hostMap.values()], items, skipped };
+  if (!alguno && !/<(?:[\w.-]+:)?report(?=[\s/>])/i.test(xml)) throw new Error('No es un informe XML de OpenVAS/Greenbone.');
+  return { source: 'openvas', tool: 'OpenVAS / Greenbone', hosts: [...hostMap.values()], items, skipped, ...(truncated ? { truncated } : {}) };
 }
 
 /* ───────────────────────── Nuclei ───────────────────────── */
@@ -267,6 +278,7 @@ export function parseNuclei(text: string, opts: { includeInfo?: boolean } = {}):
   const hostMap = new Map<string, ScanHost>();
   const items: ScanItem[] = [];
   let skipped = 0;
+  let truncated = 0;
   for (const raw of rows) {
     if (!raw || typeof raw !== 'object') { skipped++; continue; }
     const r = raw as Record<string, unknown>;
@@ -274,7 +286,7 @@ export function parseNuclei(text: string, opts: { includeInfo?: boolean } = {}):
     const cls = (info.classification && typeof info.classification === 'object' ? info.classification : {}) as Record<string, unknown>;
     const severity = clip(info.severity, 20).toLowerCase() || 'unknown';
     if ((severity === 'info' || severity === 'unknown') && !opts.includeInfo) { skipped++; continue; }
-    if (items.length >= MAX_ITEMS) { skipped++; continue; }
+    if (items.length >= MAX_ITEMS) { truncated++; continue; }
     const tagsArr = (Array.isArray(info.tags) ? info.tags.map((t) => clip(t, 40)) : clip(info.tags, 400).split(',')).map((t) => t.trim().toLowerCase()).filter(Boolean);
     const target = clip(r['matched-at'] ?? r.host ?? r.url, 400);
     const ip = clip(r.ip, 60);
@@ -304,7 +316,7 @@ export function parseNuclei(text: string, opts: { includeInfo?: boolean } = {}):
     });
   }
   if (!rows.length) throw new Error('No hay resultados de Nuclei (se espera JSONL de -jsonl o JSON de -json-export).');
-  return { source: 'nuclei', tool: 'Nuclei', hosts: [...hostMap.values()], items, skipped };
+  return { source: 'nuclei', tool: 'Nuclei', hosts: [...hostMap.values()], items, skipped, ...(truncated ? { truncated } : {}) };
 }
 
 /* ───────────────────────── Trivy ───────────────────────── */
@@ -318,6 +330,7 @@ export function parseTrivy(text: string): ScanParse {
   const h = host(`trivy:${artifact}`, '', artifact, type);
   const items: ScanItem[] = [];
   let skipped = 0;
+  let truncated = 0;
   for (const res of data.Results as unknown[]) {
     if (!res || typeof res !== 'object') continue;
     const r = res as Record<string, unknown>;
@@ -325,7 +338,7 @@ export function parseTrivy(text: string): ScanParse {
     for (const v of Array.isArray(r.Vulnerabilities) ? (r.Vulnerabilities as Record<string, unknown>[]) : []) {
       const sev = clip(v.Severity, 20).toLowerCase();
       if (sev === 'unknown' || !v || typeof v !== 'object') { skipped++; continue; }
-      if (items.length >= MAX_ITEMS) { skipped++; continue; }
+      if (items.length >= MAX_ITEMS) { truncated++; continue; }
       const id = clip(v.VulnerabilityID, 40).toUpperCase();
       const cve = CVE_ONE.test(id) ? id : null;
       const cvssObj = (v.CVSS && typeof v.CVSS === 'object' ? v.CVSS : {}) as Record<string, Record<string, unknown>>;
@@ -350,7 +363,7 @@ export function parseTrivy(text: string): ScanParse {
     }
     for (const m of Array.isArray(r.Misconfigurations) ? (r.Misconfigurations as Record<string, unknown>[]) : []) {
       if (!m || typeof m !== 'object' || clip(m.Status, 10).toUpperCase() === 'PASS') { skipped++; continue; }
-      if (items.length >= MAX_ITEMS) { skipped++; continue; }
+      if (items.length >= MAX_ITEMS) { truncated++; continue; }
       const sev = clip(m.Severity, 20).toLowerCase();
       const title = clip(m.Title, 200) || clip(m.ID, 40);
       items.push({
@@ -363,7 +376,7 @@ export function parseTrivy(text: string): ScanParse {
     }
     for (const s of Array.isArray(r.Secrets) ? (r.Secrets as Record<string, unknown>[]) : []) {
       if (!s || typeof s !== 'object') continue;
-      if (items.length >= MAX_ITEMS) { skipped++; continue; }
+      if (items.length >= MAX_ITEMS) { truncated++; continue; }
       const sev = clip(s.Severity, 20).toLowerCase();
       // Nunca se guarda el valor del secreto (campo Match): solo la regla, el fichero y la línea.
       items.push({
@@ -375,7 +388,7 @@ export function parseTrivy(text: string): ScanParse {
       });
     }
   }
-  return { source: 'trivy', tool: `Trivy${artifactType ? ` · ${artifactType}` : ''}`, hosts: [h], items, skipped };
+  return { source: 'trivy', tool: `Trivy${artifactType ? ` · ${artifactType}` : ''}`, hosts: [h], items, skipped, ...(truncated ? { truncated } : {}) };
 }
 
 /* ───────────────────────── SARIF 2.1.0 ───────────────────────── */
@@ -388,6 +401,7 @@ export function parseSarif(text: string, opts: { includeInfo?: boolean } = {}): 
   const hosts: ScanHost[] = [];
   const items: ScanItem[] = [];
   let skipped = 0;
+  let truncated = 0;
   const tools: string[] = [];
   (data.runs as unknown[]).forEach((runRaw, runIdx) => {
     if (!runRaw || typeof runRaw !== 'object') return;
@@ -414,7 +428,7 @@ export function parseSarif(text: string, opts: { includeInfo?: boolean } = {}): 
       const secSev = num(props['security-severity']);
       const score = secSev ?? SARIF_LEVEL[level] ?? 5.5;
       if (score <= 0 && !opts.includeInfo) { skipped++; continue; }
-      if (items.length >= MAX_ITEMS) { skipped++; continue; }
+      if (items.length >= MAX_ITEMS) { truncated++; continue; }
       const msg = clip((res.message as Record<string, unknown> | undefined)?.text, 1000);
       const short = clip((rule.shortDescription as Record<string, unknown> | undefined)?.text, 200);
       const cves = cvesIn(ruleId, short);
@@ -442,7 +456,7 @@ export function parseSarif(text: string, opts: { includeInfo?: boolean } = {}): 
       });
     }
   });
-  return { source: 'sarif', tool: tools.join(', ') || 'SARIF', hosts, items, skipped };
+  return { source: 'sarif', tool: tools.join(', ') || 'SARIF', hosts, items, skipped, ...(truncated ? { truncated } : {}) };
 }
 
 /** Analiza el fichero con el importador que corresponda a su formato. */
@@ -471,3 +485,79 @@ export const SOURCE_LABEL: Record<FindingSource, string> = {
 };
 
 export type { XNode };
+
+/* ───────────────────────── Ficheros muy grandes: resumen previo y reducción ───────────────────────── */
+
+export type ModoReduccion = 'todo' | 'altas' | 'regla';
+
+export interface ResumenEscaneo {
+  total: number;
+  hosts: number;
+  /** Por bandas de CVSS: crítica ≥ 9, alta ≥ 7, media ≥ 4, baja < 4. */
+  porSeveridad: { critica: number; alta: number; media: number; baja: number };
+  /** Resultados que quedarían con cada opción. */
+  quedan: Record<ModoReduccion, number>;
+}
+
+const claveRegla = (it: ScanItem) => (it.ref ? `${it.hostKey}\u0000${it.ref}` : null);
+
+/** Lo que trae el fichero, para decidir antes de importar. */
+export function resumenEscaneo(parse: ScanParse): ResumenEscaneo {
+  const porSeveridad = { critica: 0, alta: 0, media: 0, baja: 0 };
+  const reglas = new Set<string>();
+  let sinRegla = 0;
+  for (const it of parse.items) {
+    if (it.cvss >= 9) porSeveridad.critica++; else if (it.cvss >= 7) porSeveridad.alta++; else if (it.cvss >= 4) porSeveridad.media++; else porSeveridad.baja++;
+    const k = claveRegla(it);
+    if (k) reglas.add(k); else sinRegla++;
+  }
+  return {
+    total: parse.items.length,
+    hosts: parse.hosts.length,
+    porSeveridad,
+    quedan: { todo: parse.items.length, altas: porSeveridad.critica + porSeveridad.alta, regla: reglas.size + sinRegla },
+  };
+}
+
+/**
+ * Reduce un escaneo grande según la opción elegida:
+ * - «todo»: tal cual.
+ * - «altas»: solo CVSS ≥ 7 (altas y críticas); el resto cuenta como omitido.
+ * - «regla»: un resultado por regla (complemento de Nessus, NVT, plantilla, paquete) y equipo, con todos sus CVE.
+ *   El principal es el de CVSS más alto; se suman KEV, exploit y EPSS máximo. Trivy, por ejemplo, da un resultado
+ *   por CVE del mismo paquete: 40 CVE de una librería pasan a ser un hallazgo con 40 CVE relacionados.
+ */
+export function reducirEscaneo(parse: ScanParse, modo: ModoReduccion): ScanParse {
+  if (modo === 'todo') return parse;
+  if (modo === 'altas') {
+    const items = parse.items.filter((it) => it.cvss >= 7);
+    return { ...parse, items, skipped: parse.skipped + (parse.items.length - items.length) };
+  }
+  const grupos = new Map<string, ScanItem[]>();
+  const orden: (string | ScanItem)[] = [];
+  for (const it of parse.items) {
+    const k = claveRegla(it);
+    if (!k) { orden.push(it); continue; }
+    const g = grupos.get(k);
+    if (g) g.push(it); else { grupos.set(k, [it]); orden.push(k); }
+  }
+  const fundir = (g: ScanItem[]): ScanItem => {
+    if (g.length === 1) return g[0];
+    const base = g.reduce((a, b) => (b.cvss > a.cvss ? b : a));
+    const cves = [...new Set(g.flatMap((x) => [x.cve, ...x.relatedCves]).filter((c): c is string => !!c))].sort();
+    const cve = base.cve ?? cves[0] ?? null;
+    const epss = g.reduce<number | null>((m, x) => (x.epss === null ? m : m === null ? x.epss : Math.max(m, x.epss)), null);
+    const evidencias = [...new Set(g.map((x) => x.evidence).filter(Boolean))];
+    return {
+      ...base,
+      cve,
+      relatedCves: cves.filter((c) => c !== cve).slice(0, 200),
+      epss,
+      kev: g.some((x) => x.kev),
+      exploitPublic: g.some((x) => x.exploitPublic),
+      evidence: clip(`${evidencias.slice(0, 20).join(' | ')}${evidencias.length > 20 ? ` | +${evidencias.length - 20}` : ''}`, 2000),
+    };
+  };
+  const items = orden.map((o) => (typeof o === 'string' ? fundir(grupos.get(o)!) : o));
+  return { ...parse, items };
+}

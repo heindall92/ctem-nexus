@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState, type ComponentType, type PointerE
 import type { GraphAnalysis, GraphNode } from '../engine/types';
 import { useL } from '../i18n';
 import { wrapLabel } from '../lib/format';
+import { grafoVisible } from '../lib/grafo-visible';
 
 const ICON: Record<GraphNode['type'], ComponentType<{ x?: number; y?: number; width?: number; height?: number; color?: string; strokeWidth?: number }>> = {
   internet: Globe, servidor: Server, estacion: Monitor, aplicacion_web: AppWindow, base_datos: Database,
@@ -16,24 +17,35 @@ const ROW = 88;
 const PAD = 24;
 
 /** Grafo de rutas de ataque en SVG puro: columnas por distancia desde Internet (BFS), sin dependencias. */
-export function AttackGraph({ graph, highlight, focusNode, onNode }: {
+export function AttackGraph({ graph: completo, highlight, focusNode, onNode }: {
   graph: GraphAnalysis;
   highlight: Set<string> | null; // ids de nodos y aristas de la ruta seleccionada
   focusNode: string | null;
   onNode: (id: string | null) => void;
 }) {
   const L = useL();
+  // Con redes grandes, solo las rutas más cortas (y lo seleccionado): ver grafo-visible.ts.
+  const vis = useMemo(() => {
+    const fijos = new Set<string>(highlight ?? []);
+    if (focusNode) fijos.add(focusNode);
+    return grafoVisible(completo, fijos);
+  }, [completo, highlight, focusNode]);
+  const graph = vis.graph;
   const layout = useMemo(() => {
+    // Columnas por distancia desde Internet (BFS con lista de adyacencia).
+    const salen = new Map<string, string[]>();
+    for (const e of graph.edges) { const l = salen.get(e.from); if (l) l.push(e.to); else salen.set(e.from, [e.to]); }
     const level = new Map<string, number>([['internet', 0]]);
     const q = ['internet'];
     for (let i = 0; i < q.length; i++) {
-      for (const e of graph.edges) if (e.from === q[i] && !level.has(e.to)) { level.set(e.to, level.get(q[i])! + 1); q.push(e.to); }
+      for (const to of salen.get(q[i]) ?? []) if (!level.has(to)) { level.set(to, level.get(q[i])! + 1); q.push(to); }
     }
     const maxL = Math.max(0, ...level.values());
     const cols = new Map<number, GraphNode[]>();
     for (const n of graph.nodes) {
       const l = level.has(n.id) ? level.get(n.id)! : maxL + 1;
-      cols.set(l, [...(cols.get(l) ?? []), n]);
+      const col = cols.get(l);
+      if (col) col.push(n); else cols.set(l, [n]);
     }
     const tallest = Math.max(...[...cols.values()].map((c) => c.length));
     const height = PAD * 2 + tallest * ROW - (ROW - NH);
@@ -108,6 +120,12 @@ export function AttackGraph({ graph, highlight, focusNode, onNode }: {
 
   return (
     <div className="relative pt-11">
+    {vis.resumido && (
+      <p className="absolute left-0 top-1.5 max-w-[calc(100%-12rem)] text-xs leading-snug text-ink-3" data-testid="grafo-resumido">
+        {L(`Grafo resumido: ${graph.nodes.length} de ${completo.nodes.length.toLocaleString('es-ES')} nodos, los de las ${vis.rutas} rutas más cortas. Elige otra ruta en la lista para verla aquí.`,
+          `Summarised graph: ${graph.nodes.length} of ${completo.nodes.length.toLocaleString('en-GB')} nodes, those of the ${vis.rutas} shortest paths. Pick another path in the list to see it here.`)}
+      </p>
+    )}
     <div className="absolute right-0 top-0 z-[2] flex items-center gap-1 rounded-full bg-surface p-1 shadow-sm ring-1 ring-hairline-strong">
       {highlight && (
         <button type="button" className="graph-tool w-auto gap-1.5 px-2.5 text-xs font-medium" aria-pressed={only} onClick={() => { const next = !only; setOnly(next); setView(next ? fitTo(highlight) : { k: 1, x: 0, y: 0 }); }}>
@@ -120,7 +138,9 @@ export function AttackGraph({ graph, highlight, focusNode, onNode }: {
     </div>
     <div ref={box} className={`touch-pan-y overflow-hidden ${view.k > 1 ? 'cursor-grab active:cursor-grabbing' : ''}`} style={{ touchAction: view.k > 1 ? 'none' : 'pan-y' }}
       onWheel={onWheel} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp} data-zoom={view.k.toFixed(2)}>
-    <svg viewBox={`0 0 ${layout.width} ${layout.height}`} className="h-auto w-full select-none" role="group" aria-label={L(`Grafo de ataque: ${graph.nodes.length} nodos, ${graph.edges.length} aristas, ${graph.paths.length} rutas`, `Attack graph: ${graph.nodes.length} nodes, ${graph.edges.length} edges, ${graph.paths.length} paths`)}>
+    <svg viewBox={`0 0 ${layout.width} ${layout.height}`} className="h-auto w-full select-none" role="group" aria-label={vis.resumido
+      ? L(`Grafo de ataque resumido: ${graph.nodes.length} de ${completo.nodes.length} nodos, ${graph.paths.length} de ${completo.paths.length} rutas`, `Summarised attack graph: ${graph.nodes.length} of ${completo.nodes.length} nodes, ${graph.paths.length} of ${completo.paths.length} paths`)
+      : L(`Grafo de ataque: ${graph.nodes.length} nodos, ${graph.edges.length} aristas, ${graph.paths.length} rutas`, `Attack graph: ${graph.nodes.length} nodes, ${graph.edges.length} edges, ${graph.paths.length} paths`)}>
       <defs>
         <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 1 L9 5 L0 9 z" fill="var(--color-ink-4)" /></marker>
         <marker id="arr-hot" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 1 L9 5 L0 9 z" fill="var(--color-alta)" /></marker>

@@ -13,6 +13,8 @@ export interface XNode {
 
 export const MAX_XML_BYTES = 40_000_000;
 export const MAX_XML_NODES = 1_000_000;
+/** Con el análisis por partes, el fichero entero puede ser mucho mayor: cada parte tiene sus propios topes. */
+export const MAX_XML_POR_PARTES = 400_000_000;
 
 /** Lanza si el XML declara entidades o una DTD con subconjunto, SYSTEM o PUBLIC. */
 export function assertSafeXmlText(xml: string, max = MAX_XML_BYTES): void {
@@ -125,4 +127,49 @@ export function descendants(el: XNode, name: string): XNode[] {
     for (let k = cur.children.length - 1; k >= 0; k--) stack.push(cur.children[k]);
   }
   return out;
+}
+
+/** Aviso de avance del análisis por partes (lo usa el Worker para la barra de progreso). */
+let progreso: ((hecho: number, total: number) => void) | null = null;
+export function alAvanzar(fn: ((hecho: number, total: number) => void) | null): void { progreso = fn; }
+
+/**
+ * Análisis por partes: recorre cada elemento <etiqueta> del documento (con lo que lleve dentro) y lo analiza por
+ * separado, sin construir el árbol del fichero entero. Así un .nessus de 300 MB cabe en memoria y los topes de
+ * tamaño y de elementos se aplican a cada parte. Las comprobaciones de seguridad (DTD, entidades) se hacen antes,
+ * sobre el texto completo. Devuelve el nodo raíz de cada parte, cuyo primer hijo es el elemento.
+ */
+export function* porPartes(xml: string, etiqueta: string): Generator<XNode> {
+  assertSafeXmlText(xml, MAX_XML_POR_PARTES);
+  let ultimoAviso = 0;
+  const nombre = etiqueta.toLowerCase();
+  // Apertura o cierre de la etiqueta, con o sin prefijo de espacio de nombres; «<results>» no cuenta como «<result>».
+  const re = new RegExp(`<(/?)(?:[\\w.-]+:)?${nombre}(?=[\\s/>])`, 'gi');
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(xml))) {
+    if (m[1]) continue;                                   // cierre suelto: se ignora
+    const inicio = m.index;
+    const finApertura = xml.indexOf('>', inicio);
+    if (finApertura === -1) return;
+    if (xml[finApertura - 1] === '/') { re.lastIndex = finApertura + 1; yield parseXml(xml.slice(inicio, finApertura + 1)); continue; }
+    // Busca el cierre que le corresponde, contando aperturas anidadas del mismo nombre.
+    let nivel = 1;
+    re.lastIndex = finApertura + 1;
+    let fin = xml.length;
+    let c: RegExpExecArray | null;
+    while ((c = re.exec(xml))) {
+      if (c[1]) { if (--nivel === 0) { const cierre = xml.indexOf('>', c.index); fin = cierre === -1 ? xml.length : cierre + 1; break; } }
+      else { const fa = xml.indexOf('>', c.index); if (fa !== -1 && xml[fa - 1] !== '/') nivel++; }
+    }
+    re.lastIndex = fin;
+    if (progreso && fin - ultimoAviso > 1_000_000) { ultimoAviso = fin; progreso(fin, xml.length); }
+    yield parseXml(xml.slice(inicio, fin));
+  }
+}
+
+/** La cabecera del documento hasta la primera <etiqueta> (para leer, por ejemplo, el nombre de la política). */
+export function cabecera(xml: string, etiqueta: string): XNode {
+  const m = new RegExp(`<(?:[\\w.-]+:)?${etiqueta}(?=[\\s/>])`, 'i').exec(xml);
+  const corte = m ? m.index : Math.min(xml.length, 2_000_000);
+  return parseXml(xml.slice(0, Math.min(corte, MAX_XML_BYTES)));
 }

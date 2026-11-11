@@ -1,5 +1,6 @@
 import { Plus, Route, ShieldCheck, ShieldOff, Trash2, Undo2, Users } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useRef, useCallback, useMemo, useState } from 'react';
+import { useVentana } from '../lib/ventana';
 import { AttackGraph } from '../components/AttackGraph';
 import { BloodHoundUploader } from '../components/BloodHoundUploader';
 import { Modal, TopBar } from '../components/Shell';
@@ -38,12 +39,20 @@ export function AttackPaths() {
     return ids;
   }, [selPath, focusNode, g.paths]);
 
-  const fById = new Map(project.findings.map((f) => [f.id, f]));
-  const edgeFindings = new Set(g.edges.flatMap((e) => e.findingIds));
-  const toValidate = result.scored.filter((s) => {
-    const f = fById.get(s.id);
-    return f && f.status !== 'mitigado' && (edgeFindings.has(s.id) || f.leadsTo?.length || (s.onAttackPath && (s.band === 'critica' || s.band === 'alta')));
-  });
+  // Listas largas: solo se pintan las filas visibles.
+  const rutasRef = useRef<HTMLOListElement>(null);
+  const valTbody = useRef<HTMLTableSectionElement>(null);
+  const contenido = useCallback(() => document.getElementById('contenido'), []);
+  const fById = useMemo(() => new Map(project.findings.map((f) => [f.id, f])), [project.findings]);
+  const toValidate = useMemo(() => {
+    const edgeFindings = new Set(g.edges.flatMap((e) => e.findingIds));
+    return result.scored.filter((s) => {
+      const f = fById.get(s.id);
+      return f && f.status !== 'mitigado' && (edgeFindings.has(s.id) || f.leadsTo?.length || (s.onAttackPath && (s.band === 'critica' || s.band === 'alta')));
+    });
+  }, [g.edges, result.scored, fById]);
+  const vr = useVentana(visiblePaths.length, 52, rutasRef, rutasRef);
+  const vv = useVentana(toValidate.length, 60, contenido, valTbody);
 
   if (project.assets.length === 0) {
     return (
@@ -108,8 +117,9 @@ export function AttackPaths() {
             </section>
             <section className="panel overflow-hidden">
               <SectionTitle title={L('Rutas', 'Paths')} detail={focusNode ? L(`Que pasan por ${label.get(focusNode)}`, `Going through ${label.get(focusNode)}`) : g.truncated ? L('Lista truncada: demasiadas rutas', 'Truncated list: too many paths') : L('Ordenadas por descubrimiento', 'In discovery order')} />
-              <ol className="max-h-[340px] divide-hair overflow-auto border-t border-hairline">
-                {visiblePaths.map(({ p, i }) => (
+              <ol ref={rutasRef} className="max-h-[340px] divide-hair overflow-auto border-t border-hairline">
+                {vr.arriba > 0 && <li aria-hidden="true" data-hueco="1" style={{ height: vr.arriba }} />}
+                {visiblePaths.slice(vr.inicio, vr.fin).map(({ p, i }) => (
                   <li key={i}>
                     <button type="button" data-testid="ruta" aria-pressed={selPath === i} onClick={() => setSelPath(selPath === i ? null : i)} className="row-interactive flex w-full gap-3 px-5 py-2.5 text-left aria-pressed:bg-accent/10">
                       <span className="num w-5 pt-px text-xs text-ink-3">{i + 1}</span>
@@ -120,6 +130,7 @@ export function AttackPaths() {
                     </button>
                   </li>
                 ))}
+                {vr.abajo > 0 && <li aria-hidden="true" data-hueco="1" style={{ height: vr.abajo }} />}
                 {visiblePaths.length === 0 && <li className="px-5 py-4 text-ink-3">{focusNode ? L('No hay rutas por este nodo.', 'No paths through this node.') : L('No hay rutas.', 'No paths.')} {L('Revisa que haya activos expuestos y activos críticos.', 'Check that there are exposed assets and critical assets.')}</li>}
               </ol>
             </section>
@@ -132,8 +143,9 @@ export function AttackPaths() {
             <div className="overflow-x-auto border-t border-hairline">
               <table className="table">
                 <thead><tr><th>{L('Puntuación', 'Score')}</th><th>{L('Hallazgo', 'Finding')}</th><th>{L('Movimiento que habilita', 'Movement it enables')}</th><th>{L('Estado', 'Status')}</th><th className="text-right">{L('Validación', 'Validation')}</th></tr></thead>
-                <tbody>
-                  {toValidate.map((s) => {
+                <tbody ref={valTbody}>
+                  {vv.arriba > 0 && <tr aria-hidden="true" data-hueco="1" style={{ height: vv.arriba }}><td colSpan={5} className="p-0" /></tr>}
+                  {toValidate.slice(vv.inicio, vv.fin).map((s) => {
                     const f = fById.get(s.id)!;
                     return (
                       <tr key={s.id}>
@@ -151,6 +163,7 @@ export function AttackPaths() {
                       </tr>
                     );
                   })}
+                  {vv.abajo > 0 && <tr aria-hidden="true" data-hueco="1" style={{ height: vv.abajo }}><td colSpan={5} className="p-0" /></tr>}
                   {toValidate.length === 0 && <tr><td colSpan={5} className="py-8 text-center text-ink-3">{L('No hay hallazgos pendientes de validar.', 'No findings pending validation.')}</td></tr>}
                 </tbody>
               </table>

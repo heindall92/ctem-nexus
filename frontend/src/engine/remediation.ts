@@ -250,7 +250,12 @@ export function guideFor(key: string | undefined, kind: 'cve' | 'configuracion' 
 }
 
 /** Guía en el idioma pedido: los textos en inglés salen de remediation-en.ts; la referencia es la misma. */
+const guiasEn = new Map<string, RemediationGuide>();
 export function guideIn(lang: 'es' | 'en', key: string | undefined, kind: 'cve' | 'configuracion' | 'identidad' = 'cve'): RemediationGuide {
   const g = guideFor(key, kind);
-  return lang === 'en' && GUIDES_EN[g.key] ? { ...g, ...GUIDES_EN[g.key] } : g;
+  if (lang !== 'en' || !GUIDES_EN[g.key]) return g;
+  // La traducción se compone una vez por guía (antes, una por ticket: miles de objetos iguales).
+  let en = guiasEn.get(g.key);
+  if (!en) { en = { ...g, ...GUIDES_EN[g.key] }; guiasEn.set(g.key, en); }
+  return en;
 }

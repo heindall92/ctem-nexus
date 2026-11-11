@@ -257,25 +257,35 @@ nota defendible, lo demás son importadores.
 
 ---
 
-## Fase 8 · Datos reales (1.3.0)
+## Fase 8 · Datos reales (1.3.0) ✔
 
-- [ ] **Guardado en IndexedDB**, con migración automática desde `localStorage` y petición de almacenamiento
+- [x] **Guardado en IndexedDB**, con migración automática desde `localStorage` y petición de almacenamiento
   persistente (`navigator.storage.persist()`). Los ajustes siguen en `localStorage`.
-- [ ] **Nunca más un guardado silencioso.** Si no se puede guardar, aviso fijo y visible con el motivo y el botón
+- [x] **Nunca más un guardado silencioso.** Si no se puede guardar, aviso fijo y visible con el motivo y el botón
   «Exportar proyecto ahora». Indicador permanente de «guardado hace N s» junto al nombre del proyecto.
-- [ ] **Tablas virtualizadas** en Priorización, Movilización, Alcance y Rutas: solo se pinta lo visible. Mantiene
-  teclado, lector de pantalla (`aria-rowcount`, `aria-rowindex`) y la vista de tarjetas en móvil.
-- [ ] **Cálculo en un Web Worker** (motor, «¿Y si…?», importadores): la interfaz no se congela nunca; barra de
-  progreso y botón de cancelar en las operaciones de más de 300 ms.
-- [ ] **Plan «¿Y si…?» incremental.** Hoy recalcula las rutas en cada paso. Contar rutas por arista una vez y
-  actualizar solo lo que cambia.
-- [ ] **Quitar el tope de 5.000 por fichero**: análisis por partes (XML y JSONL en flujo) y resumen previo cuando
-  el fichero trae más de 20.000 entradas («agrupar por complemento», «solo altas y críticas», «todo»).
-- [ ] **Agrupación de hallazgos**: el mismo CVE en 200 equipos es una fila que se despliega, no 200 filas.
-- [ ] Prueba de carga en la CI con un proyecto sintético de 50.000 hallazgos y 2.000 activos.
+- [x] **Tablas virtualizadas** en Priorización, Movilización, Alcance y Rutas (y en «¿Y si…?»): solo se pinta lo
+  visible. Mantiene teclado, lector de pantalla (`aria-rowcount`, `aria-rowindex`) y la vista de tarjetas en móvil.
+- [x] **Cálculo en un Web Worker** (motor, «¿Y si…?», comparación de perfiles, importadores): la interfaz no se congela;
+  barra de progreso y botón de cancelar en las lecturas de más de 300 ms. El Worker guarda una copia del proyecto y
+  recibe solo lo que cambia; las listas grandes viajan en trozos.
+- [x] **Plan «¿Y si…?» incremental.** Rutas por arista contadas una vez y solo los candidatos que sostienen aristas:
+  5.000 hallazgos de 17,5 s a 35 ms, con el mismo plan que antes en 300 grafos aleatorios.
+- [x] **Quitar el tope de 5.000 por fichero**: Nessus y OpenVAS se analizan por partes, hasta 400 MB, y con más de
+  20.000 entradas hay resumen previo («agrupar por complemento», «solo altas y críticas», «todo»). El tope de
+  seguridad (250.000) se avisa. Nuclei en JSONL ya se leía por líneas.
+- [x] **Agrupación de hallazgos**: el mismo CVE en 200 equipos es una fila que se despliega, no 200 filas (por defecto
+  con más de 1.500 hallazgos).
+- [x] Prueba de carga en la CI con un proyecto sintético de 50.000 hallazgos y 2.000 activos (`tests/carga_app.py`).
 
 **Aceptación:** con 50.000 hallazgos, cada vista responde en menos de 300 ms y ninguna tarea bloquea el hilo
 principal más de 100 ms; importar, recargar y exportar conserva todo; el e2e de carga está en la CI; axe sigue a 0.
+
+**Resultado (contenedor de desarrollo, mediana de tres visitas):** las nueve vistas se pintan entre 30 y 145 ms;
+importar, guardar y exportar 50.000 hallazgos no dejan ninguna tarea larga (antes: 765 y 520 ms); recargar, 0,3 s.
+La tarea más larga al entrar en una vista ronda los 100 ms (Rutas e Inicio, de 4,1 s en el Mapa ATT&CK antes de la
+fase): en el límite, no por debajo. La CI exige el doble (600 ms y 200 ms), porque sus máquinas van más lentas. Se
+añadieron, por lo que destapó la prueba de carga, el grafo resumido (120 nodos como máximo) y el pintado progresivo
+de los paneles secundarios.
 
 ## Fase 9 · Proteger el mapa (1.4.0)
 

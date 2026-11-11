@@ -11,7 +11,8 @@ import type { ScanHost, ScanItem, ScanParse } from './scanners';
 import type { AssetType, FindingKind } from './types';
 import { child, childrenOf, descendants, parseXml, textOf } from './xml';
 
-const MAX_ITEMS = 5000;
+/** Mismo tope de seguridad que los escáneres (ver MAX_ITEMS en scanners.ts); lo que sobra va a `truncated`. */
+const MAX_ITEMS = 250_000;
 const clip = (s: unknown, max = 300) => (typeof s === 'string' ? s : s == null ? '' : String(s)).replace(/\s+/g, ' ').trim().slice(0, max);
 /** Quita etiquetas HTML y entidades básicas de las descripciones de ZAP y Burp. */
 export const stripHtml = (s: unknown, max = 600) => clip(clip(s, 20000).replace(/<[^>]*>/g, ' ').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&'), max);
@@ -57,16 +58,18 @@ export function parseZap(text: string): ScanParse {
   const hosts: ScanHost[] = [];
   const items: ScanItem[] = [];
   let skipped = 0;
+  let truncated = 0;
   for (const site of (o.site as unknown[]).slice(0, 500)) {
     if (!isObj(site)) continue;
     const base = clip(site['@name'], 300);
     const h = webHost(base);
     if (!hosts.some((x) => x.key === h.key)) hosts.push(h);
-    for (const a of (Array.isArray(site.alerts) ? site.alerts : []).slice(0, MAX_ITEMS)) {
+    for (const a of (Array.isArray(site.alerts) ? site.alerts : [])) {
       if (!isObj(a)) continue;
       const risk = Math.round(num(a.riskcode) ?? 0);
       const confidence = Math.round(num(a.confidence) ?? 2);
-      if (risk <= 0 || confidence === 0 || items.length >= MAX_ITEMS) { skipped++; continue; } // informativo o falso positivo
+      if (risk <= 0 || confidence === 0) { skipped++; continue; } // informativo o falso positivo
+      if (items.length >= MAX_ITEMS) { truncated++; continue; }
       const name = clip(a.alert ?? a.name, 200);
       const cwe = num(a.cweid);
       const inst = (Array.isArray(a.instances) ? a.instances : []).filter(isObj);
@@ -88,7 +91,7 @@ export function parseZap(text: string): ScanParse {
       });
     }
   }
-  return { source: 'zap', tool: `OWASP ZAP${o['@version'] ? ` ${clip(o['@version'], 12)}` : ''}`, hosts, items, skipped };
+  return { source: 'zap', tool: `OWASP ZAP${o['@version'] ? ` ${clip(o['@version'], 12)}` : ''}`, hosts, items, skipped, ...(truncated ? { truncated } : {}) };
 }
 
 /* ───────────────────────── Burp Suite ───────────────────────── */
@@ -109,10 +112,12 @@ export function parseBurp(xml: string): ScanParse {
   const hosts: ScanHost[] = [];
   const items: ScanItem[] = [];
   let skipped = 0;
+  let truncated = 0;
   for (const is of childrenOf(root, 'issue')) {
     const sev = textOf(is, 'severity').toLowerCase();
     const conf = textOf(is, 'confidence').toLowerCase();
-    if (!(sev in BURP_SEV) || conf === 'false positive' || items.length >= MAX_ITEMS) { skipped++; continue; }
+    if (!(sev in BURP_SEV) || conf === 'false positive') { skipped++; continue; }
+    if (items.length >= MAX_ITEMS) { truncated++; continue; }
     const hostEl = child(is, 'host');
     const h = webHost(textOf(hostEl), hostEl?.attrs.ip ?? '');
     if (!hosts.some((x) => x.key === h.key)) hosts.push(h);
@@ -130,7 +135,7 @@ export function parseBurp(xml: string): ScanParse {
       ref: `burp:${clip(textOf(is, 'type'), 12)}:${clip(textOf(is, 'path'), 80)}`,
     });
   }
-  return { source: 'burp', tool: `Burp Suite${root.attrs.burpversion ? ` ${clip(root.attrs.burpversion, 20)}` : ''}`, hosts, items, skipped };
+  return { source: 'burp', tool: `Burp Suite${root.attrs.burpversion ? ` ${clip(root.attrs.burpversion, 20)}` : ''}`, hosts, items, skipped, ...(truncated ? { truncated } : {}) };
 }
 
 /* ───────────────────────── PingCastle ───────────────────────── */
@@ -165,10 +170,12 @@ export function parsePingCastle(xml: string): ScanParse {
   const h: ScanHost = { key: domain.toLowerCase(), ip: '', name: domain, type: 'controlador_dominio', exposed: false };
   const items: ScanItem[] = [];
   let skipped = 0;
+  let truncated = 0;
   for (const r of descendants(child(root, 'riskrules') ?? root, 'healthcheckriskrule')) {
     const points = num(textOf(r, 'points')) ?? 0;
     const riskId = clip(textOf(r, 'riskid'), 60);
-    if (!riskId || points <= 0 || items.length >= MAX_ITEMS) { skipped++; continue; }
+    if (!riskId || points <= 0) { skipped++; continue; }
+    if (items.length >= MAX_ITEMS) { truncated++; continue; }
     const rationale = clip(textOf(r, 'rationale'), 400);
     const rule = pingCastleRule(riskId, rationale);
     const details = childrenOf(child(r, 'details'), 'string').map((d) => clip(textOf(d), 120)).filter(Boolean);
@@ -181,7 +188,7 @@ export function parsePingCastle(xml: string): ScanParse {
     });
   }
   const score = num(textOf(root, 'globalscore'));
-  return { source: 'pingcastle', tool: `PingCastle${textOf(root, 'engineversion') ? ` ${clip(textOf(root, 'engineversion'), 20)}` : ''}${score !== null ? ` · puntuación ${score}/100` : ''}`, hosts: [h], items, skipped };
+  return { source: 'pingcastle', tool: `PingCastle${textOf(root, 'engineversion') ? ` ${clip(textOf(root, 'engineversion'), 20)}` : ''}${score !== null ? ` · puntuación ${score}/100` : ''}`, hosts: [h], items, skipped, ...(truncated ? { truncated } : {}) };
 }
 
 /* ───────────────────────── Certipy ───────────────────────── */
@@ -206,10 +213,12 @@ export function parseCertipy(text: string): ScanParse {
   };
   const items: ScanItem[] = [];
   let skipped = 0;
+  let truncated = 0;
   const add = (h: ScanHost, owner: string, vulns: Record<string, unknown>, who: string) => {
     for (const [esc, why] of Object.entries(vulns)) {
       const id = clip(esc, 8).toUpperCase();
-      if (!/^ESC\d{1,2}$/.test(id) || items.length >= MAX_ITEMS) { skipped++; continue; }
+      if (!/^ESC\d{1,2}$/.test(id)) { skipped++; continue; }
+      if (items.length >= MAX_ITEMS) { truncated++; continue; }
       items.push({
         hostKey: h.key, title: `AD CS ${id} en ${owner}`, cve: null, relatedCves: [],
         cvss: ESC_CRITICAL.has(id) ? 9 : 8, epss: null, kev: false, exploitPublic: true,
@@ -232,7 +241,7 @@ export function parseCertipy(text: string): ScanParse {
     const who = (Array.isArray(perms) ? perms : []).map((p) => clip(p, 80)).slice(0, 4).join(', ');
     add(caHost(ca), `la plantilla ${clip(tpl['Template Name'], 80) || '—'}`, v, who);
   }
-  return { source: 'certipy', tool: 'Certipy', hosts, items, skipped };
+  return { source: 'certipy', tool: 'Certipy', hosts, items, skipped, ...(truncated ? { truncated } : {}) };
 }
 
 export type { AssetType };

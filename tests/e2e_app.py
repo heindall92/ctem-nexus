@@ -652,12 +652,215 @@ def movil(b):
     ctx.close()
 
 
+IDB_HALLAZGOS = """() => new Promise((ok) => {
+  const r = indexedDB.open('ctem-nexus');
+  r.onsuccess = () => { try { const g = r.result.transaction('datos').objectStore('datos').get('proyecto'); g.onsuccess = () => ok(g.result ? g.result.findings.length : null); } catch (e) { ok(null); } };
+  r.onerror = () => ok(null);
+})"""
+
+
+def proyecto_grande(n):
+    """Proyecto sintético del tamaño de un Nessus mediano: con 6.000 hallazgos pasa de los 5 MB de localStorage."""
+    activos = [{"id": f"A-{i}", "name": f"Servidor {i}", "type": "servidor", "ip": f"10.0.{i // 256}.{i % 256}", "owner": "TI",
+                "criticality": 5 if i % 50 == 0 else 1 + i % 4, "internetExposed": i % 20 == 1, "tags": []} for i in range(300)]
+    hallazgos = [{"id": f"H-{i}", "title": f"Hallazgo {i} de un escáner", "kind": "cve", "cve": f"CVE-2025-{10000 + i}", "cvss": 4 + (i % 60) / 10,
+                  "epss": (i % 30) / 100, "kev": i % 33 == 0, "exploitPublic": i % 10 == 0, "assetId": f"A-{i % 300}", "status": "abierto",
+                  "remediation": "generic", "description": "x" * 400, "evidence": "y" * 300, "detectedAt": "2026-10-01"} for i in range(n)]
+    return {"format": "ctem-nexus", "version": 1, "name": f"Carga {n}", "demo": False, "assets": activos, "ranges": [], "findings": hallazgos, "edges": []}
+
+
+def guardado(b, tmp):
+    """1.3.0: el proyecto vive en IndexedDB, migra el formato antiguo y nunca falla en silencio."""
+    print("Guardado · IndexedDB")
+    grande = tmp / "proyecto-6000.json"
+    grande.write_text(json.dumps(proyecto_grande(6000)), encoding="utf-8")
+
+    # Un proyecto que no cabía en localStorage se guarda y sobrevive a recargar.
+    ctx, page, problemas = abrir(b)
+    nav(page, "Ajustes y datos")
+    page.locator('input[type=file][accept*="json"]').first.set_input_files(str(grande))
+    esperar(page, f"{S}.project.findings.length === 6000 && {S}.guardado.estado === 'guardado'", 20000)
+    estado = page.get_by_test_id("estado-guardado").first
+    check("tras importar 6.000 hallazgos, «Guardado» junto al nombre del proyecto", estado.get_attribute("data-estado") == "guardado" and "Guardado" in estado.inner_text(), estado.inner_text())
+    check("los 6.000 hallazgos están en IndexedDB", page.evaluate(IDB_HALLAZGOS) == 6000, page.evaluate(IDB_HALLAZGOS))
+    check("Ajustes dice dónde se guarda", "IndexedDB" in page.get_by_test_id("almacenamiento").inner_text(), page.get_by_test_id("almacenamiento").inner_text())
+    page.reload()
+    esperar(page, f"!!window.__CTEM__ && {S}.guardado.estado === 'guardado' && {S}.project.findings.length === 6000", 20000)
+    check("al recargar siguen los 6.000 hallazgos (en la 1.2.1 se perdían sin aviso)", page.evaluate(f"{S}.project.name") == "Carga 6000")
+    check("guardado: sin errores de consola ni peticiones", not problemas, "; ".join(problemas[:3]))
+    ctx.close()
+
+    # Migración: un proyecto guardado por la 1.2.1 en localStorage pasa a IndexedDB y libera su espacio.
+    ctx = b.new_context(viewport={"width": 1440, "height": 900}, reduced_motion="reduce")
+    ctx.add_init_script("""if (!sessionStorage.getItem('sembrado')) { sessionStorage.setItem('sembrado', '1');
+      localStorage.setItem('ctem-nexus:v1', JSON.stringify({ project: { format: 'ctem-nexus', version: 1, name: 'De la 1.2.1', demo: false, assets: [], ranges: [], findings: [], edges: [] }, settings: { lang: 'es', theme: 'light' } })); }""")
+    page = ctx.new_page()
+    page.goto(APP)
+    esperar(page, f"!!window.__CTEM__ && {S}.guardado.estado === 'guardado'", 10000)
+    check("migración: el proyecto de localStorage aparece", page.evaluate(f"{S}.project.name") == "De la 1.2.1")
+    check("migración: pasa a IndexedDB y la clave antigua se borra", page.evaluate(IDB_HALLAZGOS) == 0 and page.evaluate("localStorage.getItem('ctem-nexus:v1')") is None)
+    check("migración: los ajustes se conservan", page.evaluate("JSON.parse(localStorage.getItem('ctem-nexus:ajustes')).theme") == "light")
+    ctx.close()
+
+    # Sin espacio: aviso fijo con el motivo, «Reintentar» y «Exportar proyecto ahora».
+    ctx = b.new_context(viewport={"width": 1440, "height": 900}, reduced_motion="reduce", accept_downloads=True)
+    ctx.add_init_script("""const put = IDBObjectStore.prototype.put;
+      IDBObjectStore.prototype.put = function (...a) { if (window.__sinEspacio) throw new DOMException('Cuota superada', 'QuotaExceededError'); return put.apply(this, a); };""")
+    page = ctx.new_page()
+    page.goto(APP)
+    esperar(page, f"!!window.__CTEM__ && {S}.guardado.estado === 'guardado'", 10000)
+    page.evaluate("window.__sinEspacio = true")
+    page.get_by_role("button", name="Cargar datos de demo").click()
+    aviso = page.get_by_test_id("aviso-guardado")
+    expect(aviso).to_be_visible(timeout=5000)
+    check("sin espacio: aviso con role=alert y el motivo", aviso.get_attribute("role") == "alert" and "no tiene más espacio" in aviso.inner_text(), aviso.inner_text()[:160])
+    check("sin espacio: «Sin guardar» junto al nombre del proyecto", page.get_by_test_id("estado-guardado").first.inner_text() == "Sin guardar")
+    check("sin espacio: el aviso no se puede cerrar", aviso.get_by_role("button", name=re.compile("Ocultar|Cerrar")).count() == 0)
+    with page.expect_download() as d:
+        aviso.get_by_role("button", name="Exportar proyecto ahora").click()
+    exportado = json.loads(pathlib.Path(d.value.path()).read_text(encoding="utf-8"))
+    check("«Exportar proyecto ahora» descarga el proyecto entero", exportado.get("format") == "ctem-nexus" and len(exportado.get("findings", [])) == 20)
+    page.evaluate("window.__sinEspacio = false")
+    aviso.get_by_role("button", name="Reintentar").click()
+    expect(aviso).to_have_count(0, timeout=5000)
+    check("al reintentar con espacio se guarda y el aviso desaparece", page.evaluate(IDB_HALLAZGOS) == 20)
+    ctx.close()
+
+
+def nessus_grande(hosts, por_host, relleno=600):
+    """Nessus sintético: `hosts` equipos con `por_host` resultados cada uno (50 complementos con un CVE por resultado)."""
+    partes = ['<?xml version="1.0" ?><NessusClientData_v2><Policy><policyName>Red completa</policyName></Policy><Report name="carga">']
+    pad = "x" * relleno
+    for h in range(hosts):
+        ip = f"10.9.{h // 256}.{h % 256}"
+        partes.append(f'<ReportHost name="{ip}"><HostProperties><tag name="host-ip">{ip}</tag><tag name="host-fqdn">nodo{h}.carga.example</tag></HostProperties>')
+        for i in range(por_host):
+            partes.append(f'<ReportItem port="443" svc_name="www" protocol="tcp" severity="{1 + i % 4}" pluginID="{200000 + i % 50}" pluginName="Complemento {i % 50}">'
+                          f'<cve>CVE-2024-{20000 + i}</cve><cvss3_base_score>{4 + i % 6}.0</cvss3_base_score><synopsis>Sinopsis</synopsis><plugin_output>{pad}</plugin_output></ReportItem>')
+        partes.append("</ReportHost>")
+    partes.append("</Report></NessusClientData_v2>")
+    return "".join(partes)
+
+
+LARGAS = """window.__largas = [];
+try { new PerformanceObserver((l) => { for (const e of l.getEntries()) window.__largas.push(Math.round(e.duration)); }).observe({ type: 'longtask', buffered: true }); } catch (e) {}"""
+
+
+def datos_reales(b, tmp):
+    """1.3.0: un Nessus de 30.000 resultados se lee en segundo plano, con progreso, resumen y cancelar; las tablas
+    se virtualizan y el motor calcula en un Worker sin bloquear la página."""
+    print("Datos reales · Worker, resumen, cancelar y virtualización")
+    fichero = tmp / "red-30000.nessus"
+    fichero.write_text(nessus_grande(400, 75), encoding="utf-8")
+    ctx = b.new_context(viewport={"width": 1440, "height": 900}, reduced_motion="reduce")
+    ctx.add_init_script(LARGAS)
+    page = ctx.new_page()
+    problemas = []
+    page.on("console", lambda m: m.type == "error" and problemas.append(m.text))
+    page.on("pageerror", lambda e: problemas.append(str(e)))
+    page.on("request", lambda r: not r.url.startswith(("file:", "data:", "blob:")) and problemas.append(r.url))
+    page.goto(APP)
+    esperar(page, f"!!window.__CTEM__ && {S}.guardado.estado === 'guardado'", 10000)
+    page.evaluate(f"{S}.reset()")
+    nav(page, "Ajustes y datos")
+    page.get_by_role("button", name="Importar escáner o catálogo").click()
+    modal = page.get_by_test_id("importador-escaner")
+
+    # Cancelar: la lectura se detiene y no queda ni error ni plan. Con un fichero de 100.000 resultados hay margen.
+    enorme = tmp / "red-100000.nessus"
+    enorme.write_text(nessus_grande(1000, 100), encoding="utf-8")
+    # Sin carreras: un observador dentro de la página anota la barra y pulsa «Cancelar» en cuanto aparece (en una
+    # máquina rápida la lectura puede acabar entre dos pasos de Playwright).
+    page.evaluate("""() => { window.__progreso = new Promise((ok) => {
+      const mirar = () => {
+        const p = document.querySelector('[data-testid=progreso-tarea]');
+        if (!p) return false;
+        const r = { texto: p.textContent, barras: p.querySelectorAll('[role=progressbar]').length, estado: p.querySelectorAll('[role=status]').length };
+        [...p.querySelectorAll('button')].find((b) => b.textContent.includes('Cancelar')).click();
+        ok(r);
+        return true;
+      };
+      const o = new MutationObserver(() => { if (mirar()) o.disconnect(); });
+      o.observe(document.body, { childList: true, subtree: true });
+      setTimeout(() => { o.disconnect(); ok(null); }, 60000);
+    }); }""")
+    modal.locator("input[type=file]").set_input_files(str(enorme))
+    visto = page.evaluate("window.__progreso")
+    check(f"un Nessus de {enorme.stat().st_size / 1048576:.0f} MB enseña el progreso (role=progressbar y role=status) mientras se lee",
+          bool(visto) and visto["barras"] == 1 and visto["estado"] == 1 and "el informe" in visto["texto"], str(visto))
+    expect(page.get_by_test_id("progreso-tarea")).to_have_count(0, timeout=3000)
+    page.wait_for_timeout(500)
+    check("«Cancelar» detiene la lectura sin error ni plan", modal.get_by_role("alert").count() == 0 and page.get_by_test_id("plan-importacion").count() == 0)
+
+    # Leer de verdad: resumen con las tres opciones y sin bloquear la página.
+    page.evaluate("window.__largas = []")
+    modal.locator("input[type=file]").set_input_files(str(fichero))
+    resumen = page.get_by_test_id("resumen-escaneo")
+    expect(resumen).to_be_visible(timeout=60000)
+    largas_lectura = page.evaluate("window.__largas.slice()")
+    check("el resumen previo aparece con más de 20.000 resultados", "30.000 resultados" in resumen.inner_text() and resumen.get_by_role("radio").count() == 3, resumen.inner_text()[:160])
+    check("leer el Nessus en el Worker no bloquea la página más de 200 ms seguidos", max(largas_lectura or [0]) < 200, f"tareas largas: {sorted(largas_lectura)[-5:]}")
+    plan = page.get_by_test_id("plan-importacion")
+    check("con «Todo», el plan incluye los 30.000 resultados", "30.000" in plan.inner_text())
+    resumen.get_by_role("radio", name=re.compile("Agrupar por complemento")).check()
+    expect(plan).to_contain_text("20.000", timeout=5000)
+    check("«Agrupar por complemento» deja un hallazgo por complemento y equipo (400 × 50)", "20.000" in plan.inner_text(), plan.inner_text()[:200])
+    page.get_by_role("button", name="Incorporar al proyecto").click()
+    esperar(page, f"{S}.project.findings.length === 20000 && {S}.project.assets.length === 400", 20000)
+    check("se incorporan 20.000 hallazgos y 400 activos", True)
+
+    # El motor calcula en el Worker: aviso «Calculando…» y las vistas responden.
+    aviso = page.get_by_test_id("aviso-calculo")
+    check("el aviso de cálculo es una región role=status", aviso.get_attribute("role") == "status")
+    esperar(page, "!document.querySelector('[data-testid=aviso-calculo]').textContent", 30000)
+    page.evaluate("window.__largas = []")
+    tiempos = {}
+    for vista in ["Priorización", "Rutas de ataque", "Movilización", "Alcance", "¿Y si…?"]:
+        t = page.evaluate("performance.now()")
+        nav(page, vista)
+        page.wait_for_timeout(50)
+        tiempos[vista] = round(page.evaluate("performance.now()") - t)
+    check("con 20.000 hallazgos, cada vista responde en menos de 1 s", all(v < 1000 for v in tiempos.values()), str(tiempos))
+
+    # Agrupación: con 20.000 hallazgos se agrupa por CVE desde el principio; cada grupo se despliega con teclado.
+    nav(page, "Priorización")
+    agrupar = page.get_by_test_id("agrupar-cve")
+    check("con más de 1.500 hallazgos, Priorización agrupa por CVE desde el principio", agrupar.is_checked())
+    grupo = page.locator("tr[data-grupo]").first
+    boton = grupo.get_by_role("button")
+    check("cada grupo dice en cuántos activos está y cuántos siguen abiertos", re.search(r"\d+ activos", grupo.inner_text()) is not None and "abiertos" in grupo.inner_text(), grupo.inner_text()[:160])
+    boton.focus()
+    page.keyboard.press("Enter")
+    expect(boton).to_have_attribute("aria-expanded", "true")
+    clave = grupo.get_attribute("data-grupo")
+    miembros = page.locator(f"tr[data-en-grupo='{clave}']").count()
+    check("Intro despliega el grupo (aria-expanded) y enseña sus hallazgos debajo", miembros > 1, f"{miembros} filas")
+    page.keyboard.press("Enter")
+    expect(boton).to_have_attribute("aria-expanded", "false")
+    check("y lo vuelve a plegar", page.locator(f"tr[data-en-grupo='{clave}']").count() == 0)
+    agrupar.uncheck()
+
+    # Virtualización: la tabla declara cuántas filas hay y solo pinta las visibles.
+    tabla = page.locator("table[aria-rowcount]").first
+    expect(tabla).to_have_attribute("aria-rowcount", "20001", timeout=5000)
+    filas = tabla.locator("tbody tr:not([data-hueco])").count()
+    check("Priorización: aria-rowcount = 20.001 y menos de 100 filas pintadas", tabla.get_attribute("aria-rowcount") == "20001" and filas < 100, f"rowcount {tabla.get_attribute('aria-rowcount')}, filas {filas}")
+    tabla.evaluate("t => { const c = t.closest('.overflow-auto'); c.scrollTop = c.scrollHeight; }")
+    page.wait_for_timeout(300)
+    ultima = tabla.locator("tbody tr[aria-rowindex='20001']")
+    check("al bajar hasta el final se pinta la última fila (aria-rowindex 20001)", ultima.count() == 1)
+    check("datos reales: sin errores de consola ni peticiones", not problemas, "; ".join(problemas[:3]))
+    ctx.close()
+
+
 def main():
     tmp = OUT / "tmp"
     tmp.mkdir(exist_ok=True)
     with sync_playwright() as p:
         b = p.chromium.launch()
         escritorio(b, tmp)
+        guardado(b, tmp)
+        datos_reales(b, tmp)
         movil(b)
         b.close()
     fallos = [r for r in resultados if not r[1]]

@@ -18,3 +18,16 @@ export function readFile(file: File, maxBytes = 10 * 1024 * 1024): Promise<strin
 }
 
 export const stamp = () => new Date().toISOString().slice(0, 10);
+
+/** Descarga un Blob ya hecho (para ficheros grandes generados por partes). */
+export function downloadBlob(filename: string, blob: Blob): void {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.rel = 'noopener';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
