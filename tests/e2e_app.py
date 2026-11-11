@@ -769,13 +769,27 @@ def datos_reales(b, tmp):
     # Cancelar: la lectura se detiene y no queda ni error ni plan. Con un fichero de 100.000 resultados hay margen.
     enorme = tmp / "red-100000.nessus"
     enorme.write_text(nessus_grande(1000, 100), encoding="utf-8")
+    # Sin carreras: un observador dentro de la página anota la barra y pulsa «Cancelar» en cuanto aparece (en una
+    # máquina rápida la lectura puede acabar entre dos pasos de Playwright).
+    page.evaluate("""() => { window.__progreso = new Promise((ok) => {
+      const mirar = () => {
+        const p = document.querySelector('[data-testid=progreso-tarea]');
+        if (!p) return false;
+        const r = { texto: p.textContent, barras: p.querySelectorAll('[role=progressbar]').length, estado: p.querySelectorAll('[role=status]').length };
+        [...p.querySelectorAll('button')].find((b) => b.textContent.includes('Cancelar')).click();
+        ok(r);
+        return true;
+      };
+      const o = new MutationObserver(() => { if (mirar()) o.disconnect(); });
+      o.observe(document.body, { childList: true, subtree: true });
+      setTimeout(() => { o.disconnect(); ok(null); }, 60000);
+    }); }""")
     modal.locator("input[type=file]").set_input_files(str(enorme))
-    progreso = page.get_by_test_id("progreso-tarea")
-    expect(progreso).to_be_visible(timeout=5000)
-    check(f"un Nessus de {enorme.stat().st_size / 1048576:.0f} MB enseña el progreso (role=progressbar) mientras se lee", progreso.get_by_role("progressbar").count() == 1, progreso.inner_text())
-    progreso.get_by_role("button", name="Cancelar").click()
-    expect(progreso).to_have_count(0, timeout=3000)
-    page.wait_for_timeout(300)
+    visto = page.evaluate("window.__progreso")
+    check(f"un Nessus de {enorme.stat().st_size / 1048576:.0f} MB enseña el progreso (role=progressbar y role=status) mientras se lee",
+          bool(visto) and visto["barras"] == 1 and visto["estado"] == 1 and "el informe" in visto["texto"], str(visto))
+    expect(page.get_by_test_id("progreso-tarea")).to_have_count(0, timeout=3000)
+    page.wait_for_timeout(500)
     check("«Cancelar» detiene la lectura sin error ni plan", modal.get_by_role("alert").count() == 0 and page.get_by_test_id("plan-importacion").count() == 0)
 
     # Leer de verdad: resumen con las tres opciones y sin bloquear la página.
