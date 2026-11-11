@@ -652,12 +652,88 @@ def movil(b):
     ctx.close()
 
 
+IDB_HALLAZGOS = """() => new Promise((ok) => {
+  const r = indexedDB.open('ctem-nexus');
+  r.onsuccess = () => { try { const g = r.result.transaction('datos').objectStore('datos').get('proyecto'); g.onsuccess = () => ok(g.result ? g.result.findings.length : null); } catch (e) { ok(null); } };
+  r.onerror = () => ok(null);
+})"""
+
+
+def proyecto_grande(n):
+    """Proyecto sintético del tamaño de un Nessus mediano: con 6.000 hallazgos pasa de los 5 MB de localStorage."""
+    activos = [{"id": f"A-{i}", "name": f"Servidor {i}", "type": "servidor", "ip": f"10.0.{i // 256}.{i % 256}", "owner": "TI",
+                "criticality": 5 if i % 50 == 0 else 1 + i % 4, "internetExposed": i % 20 == 1, "tags": []} for i in range(300)]
+    hallazgos = [{"id": f"H-{i}", "title": f"Hallazgo {i} de un escáner", "kind": "cve", "cve": f"CVE-2025-{10000 + i}", "cvss": 4 + (i % 60) / 10,
+                  "epss": (i % 30) / 100, "kev": i % 33 == 0, "exploitPublic": i % 10 == 0, "assetId": f"A-{i % 300}", "status": "abierto",
+                  "remediation": "generic", "description": "x" * 400, "evidence": "y" * 300, "detectedAt": "2026-10-01"} for i in range(n)]
+    return {"format": "ctem-nexus", "version": 1, "name": f"Carga {n}", "demo": False, "assets": activos, "ranges": [], "findings": hallazgos, "edges": []}
+
+
+def guardado(b, tmp):
+    """1.3.0: el proyecto vive en IndexedDB, migra el formato antiguo y nunca falla en silencio."""
+    print("Guardado · IndexedDB")
+    grande = tmp / "proyecto-6000.json"
+    grande.write_text(json.dumps(proyecto_grande(6000)), encoding="utf-8")
+
+    # Un proyecto que no cabía en localStorage se guarda y sobrevive a recargar.
+    ctx, page, problemas = abrir(b)
+    nav(page, "Ajustes y datos")
+    page.locator('input[type=file][accept*="json"]').first.set_input_files(str(grande))
+    esperar(page, f"{S}.project.findings.length === 6000 && {S}.guardado.estado === 'guardado'", 20000)
+    estado = page.get_by_test_id("estado-guardado").first
+    check("tras importar 6.000 hallazgos, «Guardado» junto al nombre del proyecto", estado.get_attribute("data-estado") == "guardado" and "Guardado" in estado.inner_text(), estado.inner_text())
+    check("los 6.000 hallazgos están en IndexedDB", page.evaluate(IDB_HALLAZGOS) == 6000, page.evaluate(IDB_HALLAZGOS))
+    check("Ajustes dice dónde se guarda", "IndexedDB" in page.get_by_test_id("almacenamiento").inner_text(), page.get_by_test_id("almacenamiento").inner_text())
+    page.reload()
+    esperar(page, f"!!window.__CTEM__ && {S}.guardado.estado === 'guardado' && {S}.project.findings.length === 6000", 20000)
+    check("al recargar siguen los 6.000 hallazgos (en la 1.2.1 se perdían sin aviso)", page.evaluate(f"{S}.project.name") == "Carga 6000")
+    check("guardado: sin errores de consola ni peticiones", not problemas, "; ".join(problemas[:3]))
+    ctx.close()
+
+    # Migración: un proyecto guardado por la 1.2.1 en localStorage pasa a IndexedDB y libera su espacio.
+    ctx = b.new_context(viewport={"width": 1440, "height": 900}, reduced_motion="reduce")
+    ctx.add_init_script("""if (!sessionStorage.getItem('sembrado')) { sessionStorage.setItem('sembrado', '1');
+      localStorage.setItem('ctem-nexus:v1', JSON.stringify({ project: { format: 'ctem-nexus', version: 1, name: 'De la 1.2.1', demo: false, assets: [], ranges: [], findings: [], edges: [] }, settings: { lang: 'es', theme: 'light' } })); }""")
+    page = ctx.new_page()
+    page.goto(APP)
+    esperar(page, f"!!window.__CTEM__ && {S}.guardado.estado === 'guardado'", 10000)
+    check("migración: el proyecto de localStorage aparece", page.evaluate(f"{S}.project.name") == "De la 1.2.1")
+    check("migración: pasa a IndexedDB y la clave antigua se borra", page.evaluate(IDB_HALLAZGOS) == 0 and page.evaluate("localStorage.getItem('ctem-nexus:v1')") is None)
+    check("migración: los ajustes se conservan", page.evaluate("JSON.parse(localStorage.getItem('ctem-nexus:ajustes')).theme") == "light")
+    ctx.close()
+
+    # Sin espacio: aviso fijo con el motivo, «Reintentar» y «Exportar proyecto ahora».
+    ctx = b.new_context(viewport={"width": 1440, "height": 900}, reduced_motion="reduce", accept_downloads=True)
+    ctx.add_init_script("""const put = IDBObjectStore.prototype.put;
+      IDBObjectStore.prototype.put = function (...a) { if (window.__sinEspacio) throw new DOMException('Cuota superada', 'QuotaExceededError'); return put.apply(this, a); };""")
+    page = ctx.new_page()
+    page.goto(APP)
+    esperar(page, f"!!window.__CTEM__ && {S}.guardado.estado === 'guardado'", 10000)
+    page.evaluate("window.__sinEspacio = true")
+    page.get_by_role("button", name="Cargar datos de demo").click()
+    aviso = page.get_by_test_id("aviso-guardado")
+    expect(aviso).to_be_visible(timeout=5000)
+    check("sin espacio: aviso con role=alert y el motivo", aviso.get_attribute("role") == "alert" and "no tiene más espacio" in aviso.inner_text(), aviso.inner_text()[:160])
+    check("sin espacio: «Sin guardar» junto al nombre del proyecto", page.get_by_test_id("estado-guardado").first.inner_text() == "Sin guardar")
+    check("sin espacio: el aviso no se puede cerrar", aviso.get_by_role("button", name=re.compile("Ocultar|Cerrar")).count() == 0)
+    with page.expect_download() as d:
+        aviso.get_by_role("button", name="Exportar proyecto ahora").click()
+    exportado = json.loads(pathlib.Path(d.value.path()).read_text(encoding="utf-8"))
+    check("«Exportar proyecto ahora» descarga el proyecto entero", exportado.get("format") == "ctem-nexus" and len(exportado.get("findings", [])) == 20)
+    page.evaluate("window.__sinEspacio = false")
+    aviso.get_by_role("button", name="Reintentar").click()
+    expect(aviso).to_have_count(0, timeout=5000)
+    check("al reintentar con espacio se guarda y el aviso desaparece", page.evaluate(IDB_HALLAZGOS) == 20)
+    ctx.close()
+
+
 def main():
     tmp = OUT / "tmp"
     tmp.mkdir(exist_ok=True)
     with sync_playwright() as p:
         b = p.chromium.launch()
         escritorio(b, tmp)
+        guardado(b, tmp)
         movil(b)
         b.close()
     fallos = [r for r in resultados if not r[1]]

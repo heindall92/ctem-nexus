@@ -27,6 +27,11 @@ def states(page, mobile):
     J(f"{S}.loadDemo()")
     for v in VIEWS:
         J(f"{S}.setView('{v}')"); yield f"demo/{v}"
+    # 1.3.0: aviso de guardado fallido (sin espacio y sin almacenamiento) y «Sin guardar» en la barra lateral.
+    J(f"{S}.setView('panel')")
+    J("window.__CTEM__.setState({ guardado: { estado: 'error', almacen: 'indexeddb', en: null, motivo: 'el navegador no tiene más espacio para esta web' } })"); yield "guardado/sin-espacio"
+    J("window.__CTEM__.setState({ guardado: { estado: 'error', almacen: 'memoria', en: null, motivo: 'este navegador no permite guardar datos aquí' } })"); yield "guardado/memoria"
+    J("window.__CTEM__.setState({ guardado: { estado: 'guardado', almacen: 'indexeddb', en: new Date().toISOString() } })")
     J(f"{S}.setView('panel')"); page.locator(".lane-mark").first.focus(); yield "panel/ficha-franja"
     J(f"{S}.setView('priorizacion')"); J(f"{S}.selectFinding('H-001')"); yield "detalle/H-001"
     page.get_by_role("dialog").locator("input[type=checkbox]").first.check(); yield "detalle/paso-hecho"

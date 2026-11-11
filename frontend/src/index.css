@@ -327,6 +327,14 @@
     border: 1px solid rgba(0, 0, 0, 0.08);
     box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.06);
   }
+  /* Aviso de guardado fallido: tono crítico suave, texto con contraste ≥ 4,5:1 en los dos temas. */
+  .aviso-guardado {
+    background: color-mix(in srgb, var(--color-critica) 10%, var(--color-surface));
+    color: var(--color-ink);
+    border: 1px solid color-mix(in srgb, var(--color-critica) 45%, transparent);
+  }
+  .aviso-guardado svg { color: var(--color-critica); }
+  .aviso-guardado .btn svg { color: currentColor; }
   [data-theme='dark'] .demo-banner-card,
   html.dark .demo-banner-card {
     background: #14171d;

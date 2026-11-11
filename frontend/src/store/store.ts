@@ -1,4 +1,5 @@
-/* Estado de la aplicación (zustand) con persistencia segura en localStorage / memoria. */
+/* Estado de la aplicación (zustand). El proyecto se guarda en IndexedDB (lib/persistencia.ts) y los ajustes en
+ * localStorage; si no hay IndexedDB, el proyecto vuelve a localStorage y, si tampoco, se queda en memoria con aviso. */
 import { create } from 'zustand';
 import { DEMO_ANCHOR, DEMO_ASSETS, DEMO_EDGES, DEMO_FINDINGS, DEMO_RANGES } from '../data/demo';
 import { daysBetween, shiftDate } from '../engine/sla';
@@ -9,7 +10,8 @@ import { MAX_ECO_LOG, MAX_IMPORTS, MAX_SNAPSHOTS, type EcoLog, type EnsLink, typ
 import type { ImportPlan } from '../engine/merge';
 import type { Asset, Finding, FindingStatus, ManualEdge, NetworkRange, ProfileId, SlaPolicy } from '../engine/types';
 import { setFormatLang } from '../lib/format';
-import { load, remove, save } from '../lib/storage';
+import { load, remove, save, storageBackend } from '../lib/storage';
+import { borrarProyecto, escribirProyecto, leerProyecto, motivoDe, pedirPersistencia, type Almacen, type EstadoGuardado } from '../lib/persistencia';
 
 export type View = 'panel' | 'alcance' | 'priorizacion' | 'rutas' | 'mitre' | 'simulacion' | 'movilizacion' | 'ecosistema' | 'ajustes';
 
@@ -23,6 +25,10 @@ export interface Toast { id: number; text: string; tone: 'ok' | 'error' | 'info'
 interface Persisted { project: Project; settings: Settings }
 
 interface State extends Persisted {
+  /** Estado del guardado del proyecto: nunca falla en silencio. */
+  guardado: EstadoGuardado;
+  /** Vuelve a intentar guardar el proyecto tras un error. */
+  reintentarGuardado: () => void;
   view: View;
   toasts: Toast[];
   selectedFinding: string | null;
@@ -90,7 +96,11 @@ interface State extends Persisted {
   logEco: (log: Omit<EcoLog, 'at'>) => void;
 }
 
+/** Hasta la 1.2.1, proyecto y ajustes iban juntos en esta clave de localStorage. Hoy solo se lee para migrar
+ * (y como respaldo del proyecto si el navegador no tiene IndexedDB). */
 const KEY = 'ctem-nexus:v1';
+/** Ajustes (tema, idioma, acento, perfil): pequeños, siguen en localStorage para pintar el primer fotograma bien. */
+const KEY_AJUSTES = 'ctem-nexus:ajustes';
 const emptyProject = (): Project => ({ format: 'ctem-nexus', version: 1, name: 'Mi organización', demo: false, assets: [], ranges: [], findings: [], edges: [] });
 export const demoProject = (today: Date = new Date()): Project => {
   const offset = daysBetween(new Date(`${DEMO_ANCHOR}T00:00:00Z`), today);
@@ -107,9 +117,12 @@ export const demoProject = (today: Date = new Date()): Project => {
 };
 const defaults: Settings = { useApi: false, apiUrl: 'http://127.0.0.1:8000', theme: 'dark', lang: 'es', accent: 'azul', profile: { nombre: '', rol: '', organizacion: '', correo: '' } };
 
-const stored = load<Partial<Persisted>>(KEY);
+const legado = load<Partial<Persisted>>(KEY);
+const stored: Partial<Persisted> | null = { settings: load<Settings>(KEY_AJUSTES) ?? legado?.settings, project: legado?.project };
 const today = () => isoDay(new Date());
-const storedProject = stored?.project && stored.project.format === 'ctem-nexus' ? { ...emptyProject(), ...stored.project } : emptyProject();
+const esProyecto = (p: unknown): p is Project => !!p && typeof p === 'object' && (p as Project).format === 'ctem-nexus';
+// Primer fotograma: el proyecto de localStorage si lo hay (formato antiguo); el de IndexedDB llega al hidratar.
+const storedProject = esProyecto(stored?.project) ? { ...emptyProject(), ...stored.project } : emptyProject();
 const expiredAtStart = expireExceptions(storedProject.findings, today());
 const initial: Persisted = {
   project: expiredAtStart.expired.length ? { ...storedProject, findings: expiredAtStart.findings } : storedProject,
@@ -154,6 +167,8 @@ const upsert = <T extends { id: string }>(list: T[], item: T) => (list.some((x) 
 
 export const useStore = create<State>()((set, get) => ({
   ...initial,
+  guardado: { estado: 'cargando', almacen: 'indexeddb', en: null },
+  reintentarGuardado: () => { programarGuardado(0); },
   view: 'panel' as View,
   toasts: [],
   selectedFinding: null,
@@ -254,7 +269,11 @@ export const useStore = create<State>()((set, get) => ({
     set({ project: expired.length ? { ...project, findings } : project, selectedFinding: null, simFixed: [] });
     if (expired.length) get().notify(expiredText(expired, get().lang), 'info');
   },
-  reset: () => { remove(KEY); set({ project: emptyProject(), selectedFinding: null, simFixed: [] }); },
+  reset: () => {
+    remove(KEY);
+    if (almacen === 'indexeddb') void borrarProyecto().catch(() => {});
+    set({ project: emptyProject(), selectedFinding: null, simFixed: [] });
+  },
   setSettings: (p) => set((s) => ({ settings: { ...s.settings, ...p } })),
   applyImport: (plan, file) => set((s) => {
     let assets = s.project.assets;
@@ -309,13 +328,106 @@ const expiredText = (ids: string[], lang: 'es' | 'en') => (lang === 'en'
 
 if (expiredAtStart.expired.length) setTimeout(() => useStore.getState().notify(expiredText(expiredAtStart.expired, useStore.getState().lang), 'info'), 600);
 
-// Persistencia: solo proyecto y ajustes, con un pequeño agrupado de escrituras.
-let timer: ReturnType<typeof setTimeout> | undefined;
+// ─────────────────────────── Persistencia ───────────────────────────
+// Ajustes: localStorage, al momento. Proyecto: IndexedDB, agrupando escrituras y sin solapar dos a la vez.
+// No se escribe el proyecto hasta haber leído lo guardado: si no, el proyecto vacío del arranque lo pisaría.
+
+let almacen: Almacen = 'indexeddb';
+let hidratado = false;
+let cambiadoAlCargar = false;
+let timerProyecto: ReturnType<typeof setTimeout> | undefined;
+let escribiendo = false;
+let otraVez = false;
+let pidioPersistencia = false;
+/** Mientras se aplica lo leído de IndexedDB, ese cambio no cuenta como edición (no se vuelve a escribir). */
+let aplicandoLeido = false;
+/** Hay un fallo de guardado sin resolver: se avisa una vez y se dice cuando se recupera. */
+let fallando = false;
+
+const ponerGuardado = (g: Partial<EstadoGuardado>) => useStore.setState((s) => ({ guardado: { ...s.guardado, ...g } }));
+
+/** Agrupa los cambios rápidos (teclear, importar) en una sola escritura. */
+export function programarGuardado(espera = 300): void {
+  if (!hidratado) { cambiadoAlCargar = true; return; }
+  if (almacen === 'memoria') return;
+  // Con un fallo pendiente el estado sigue en «error» (el aviso no desaparece) hasta que un guardado salga bien.
+  if (!fallando) ponerGuardado({ estado: 'guardando' });
+  clearTimeout(timerProyecto);
+  timerProyecto = setTimeout(() => { void guardarYa(); }, espera);
+}
+
+async function guardarYa(): Promise<void> {
+  if (escribiendo) { otraVez = true; return; }
+  escribiendo = true;
+  const { project, lang } = useStore.getState();
+  try {
+    if (almacen === 'indexeddb') await escribirProyecto(project);
+    else if (!save(KEY, { project })) throw Object.assign(new Error('quota'), { name: 'QuotaExceededError' });
+    const seRecupera = fallando;
+    fallando = false;
+    ponerGuardado({ estado: otraVez ? 'guardando' : 'guardado', en: new Date().toISOString(), motivo: undefined });
+    if (seRecupera) useStore.getState().notify(lang === 'en' ? 'Project saved again.' : 'El proyecto vuelve a estar guardado.', 'ok');
+    if (!project.demo && !pidioPersistencia) {
+      pidioPersistencia = true;
+      void pedirPersistencia().then((persistente) => ponerGuardado({ persistente }));
+    }
+  } catch (e) {
+    const motivo = motivoDe(e, lang);
+    const yaEstaba = fallando;
+    fallando = true;
+    ponerGuardado({ estado: 'error', motivo });
+    if (!yaEstaba) {
+      useStore.getState().notify(lang === 'en'
+        ? `The project could not be saved: ${motivo}. Export it to keep your changes.`
+        : `No se ha podido guardar el proyecto: ${motivo}. Expórtalo para no perder los cambios.`, 'error');
+    }
+  } finally {
+    escribiendo = false;
+    if (otraVez) { otraVez = false; void guardarYa(); }
+  }
+}
+
+/** Lee el proyecto guardado (IndexedDB) y migra el del formato antiguo (localStorage). Exportado para las pruebas. */
+export async function hidratar(): Promise<void> {
+  try {
+    const guardado = await leerProyecto();
+    if (esProyecto(guardado) && !cambiadoAlCargar) {
+      const base = { ...emptyProject(), ...guardado };
+      const { findings, expired } = expireExceptions(base.findings, today());
+      aplicandoLeido = true;
+      try { useStore.setState({ project: expired.length ? { ...base, findings } : base }); } finally { aplicandoLeido = false; }
+      if (expired.length) useStore.getState().notify(expiredText(expired, useStore.getState().lang), 'info');
+    } else if (!esProyecto(guardado) && esProyecto(legado?.project)) {
+      // Migración: el proyecto de localStorage pasa a IndexedDB y solo entonces se libera su espacio.
+      await escribirProyecto(useStore.getState().project);
+    }
+    almacen = 'indexeddb';
+    if (legado?.project) {
+      remove(KEY);
+      save(KEY_AJUSTES, useStore.getState().settings);
+    }
+    // Leer no es guardar: «hace N s» solo cuenta escrituras de verdad (la migración sí lo es).
+    ponerGuardado({ estado: 'guardado', almacen, en: !esProyecto(guardado) && esProyecto(legado?.project) ? new Date().toISOString() : null });
+    // Si caducaron aceptaciones al leer, el proyecto cambió: se guarda.
+    if (esProyecto(guardado) && useStore.getState().project.findings !== guardado.findings && !cambiadoAlCargar) cambiadoAlCargar = true;
+  } catch {
+    // Sin IndexedDB (navegador antiguo, modo privado estricto): se sigue con localStorage como hasta la 1.2.1.
+    almacen = storageBackend() === 'local' ? 'local' : 'memoria';
+    const lang = useStore.getState().lang;
+    ponerGuardado(almacen === 'memoria'
+      ? { estado: 'error', almacen, motivo: motivoDe(new Error('no disponible'), lang) }
+      : { estado: 'guardado', almacen, en: null });
+  }
+  hidratado = true;
+  if (cambiadoAlCargar) programarGuardado(0);
+}
+
 useStore.subscribe((s, prev) => {
-  if (s.project === prev.project && s.settings === prev.settings) return;
-  clearTimeout(timer);
-  timer = setTimeout(() => save(KEY, { project: s.project, settings: s.settings }), 150);
+  if (s.settings !== prev.settings) save(KEY_AJUSTES, s.settings);
+  if (s.project !== prev.project && !aplicandoLeido) programarGuardado();
 });
+
+if (typeof window !== 'undefined') void hidratar();
 
 export const nextId = (prefix: string, ids: string[], pad = 3) => {
   let max = 0;

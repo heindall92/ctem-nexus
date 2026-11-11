@@ -37,6 +37,7 @@ import { useResult } from '../lib/analysis';
 import { download, stamp } from '../lib/download';
 import { useStore, type View } from '../store/store';
 import { SPRING } from './ui';
+import { AvisoGuardado, EstadoGuardadoLinea } from './Guardado';
 
 const NAV: Array<{ view: View; icon: ReactNode }> = [
   { view: 'panel', icon: <LayoutDashboard /> },
@@ -254,7 +255,10 @@ export function Sidebar() {
               <span className="flex size-6 items-center justify-center rounded-lg bg-accent/15 text-accent">
                 <Layers className="size-3.5" />
               </span>
-              <span className="truncate font-medium text-ink">{project.name}</span>
+              <span className="min-w-0 text-left">
+                <span className="block truncate font-medium text-ink">{project.name}</span>
+                <EstadoGuardadoLinea />
+              </span>
             </div>
             <ChevronDown className="size-3.5 text-ink-3 shrink-0 ml-1" />
           </button>
@@ -760,7 +764,7 @@ export function TopBar({ title, actions }: { title: string; subtitle?: ReactNode
       </header>
     </div>
     {/* El aviso de datos de ejemplo se desplaza con el contenido: fijo arriba ocupaba demasiado en móvil. */}
-    <div className="no-print mx-auto w-full max-w-[1280px] px-3 sm:px-6"><DemoBanner /></div>
+    <div className="no-print mx-auto w-full max-w-[1280px] px-3 sm:px-6"><AvisoGuardado /><DemoBanner /></div>
     </>
   );
 }

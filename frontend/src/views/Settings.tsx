@@ -1,5 +1,5 @@
 import { Download, FileSearch, PlugZap, SlidersHorizontal, RotateCcw, Sparkles, Upload } from 'lucide-react';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ScanUploader } from '../components/ScanUploader';
 import { PROFILE_IDS, PROFILES, type Weights } from '../engine/constants';
 import { prioritize } from '../engine/engine';
@@ -11,7 +11,7 @@ import { Modal, TopBar } from '../components/Shell';
 import { Field, PageHeader, ScoreBar, SectionTitle, Segmented, Toggle } from '../components/ui';
 import { pingApi } from '../lib/analysis';
 import { download, readFile, stamp } from '../lib/download';
-import { storageBackend } from '../lib/storage';
+import { espacio } from '../lib/persistencia';
 import { chrome, screen, useL } from '../i18n';
 import { useStore } from '../store/store';
 
@@ -27,6 +27,10 @@ export function Settings() {
   const reset = useStore((s) => s.reset);
   const loadDemo = useStore((s) => s.loadDemo);
   const notify = useStore((s) => s.notify);
+  const guardado = useStore((s) => s.guardado);
+  const [uso, setUso] = useState<{ usado: number; cuota: number } | null>(null);
+  useEffect(() => { void espacio().then(setUso); }, [guardado.en]);
+  const mb = (b: number) => `${(b / 1048576).toLocaleString(lang === 'en' ? 'en-GB' : 'es-ES', { maximumFractionDigits: b < 10485760 ? 1 : 0 })} MB`;
   const [ping, setPing] = useState<{ ok: boolean; detail: string } | null>(null);
   const [testing, setTesting] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
@@ -64,7 +68,13 @@ export function Settings() {
           <SectionTitle title={L('Proyecto', 'Project')} />
           <div className="border-t border-hairline px-5 py-4">
             <Field label={L('Nombre de la organización o del proyecto', 'Organization or project name')}><input className="field" value={project.name} onChange={(e) => setName(e.target.value)} /></Field>
-            <p className="mt-3 text-xs text-ink-3">{L('Almacenamiento', 'Storage')}: {storageBackend() === 'local' ? L('localStorage del navegador', 'browser localStorage') : L('memoria (se perderá al cerrar la pestaña; exporta el proyecto)', 'memory (lost when the tab closes; export the project)')}.</p>
+            <p className="mt-3 text-xs text-ink-3" data-testid="almacenamiento">
+              {L('Almacenamiento', 'Storage')}: {guardado.almacen === 'indexeddb' ? L('IndexedDB de este navegador', 'this browser’s IndexedDB')
+                : guardado.almacen === 'local' ? L('localStorage de este navegador (unos 5 MB como máximo)', 'this browser’s localStorage (about 5 MB at most)')
+                  : L('memoria: se perderá al cerrar la pestaña; exporta el proyecto', 'memory: lost when the tab closes; export the project')}
+              {guardado.persistente ? L(' · persistente (el navegador no lo borra por falta de espacio)', ' · persistent (the browser will not evict it for lack of space)') : ''}
+              {uso ? L(` · ${mb(uso.usado)} usados de ${mb(uso.cuota)} disponibles`, ` · ${mb(uso.usado)} used of ${mb(uso.cuota)} available`) : ''}.
+            </p>
           </div>
         </section>
 
