@@ -1,5 +1,6 @@
 import { AlertTriangle, BadgeCheck, ExternalLink, Swords, FileSearch, FileSpreadsheet, Flame, Pencil, ShieldOff, Undo2, Plus, Radar, Search, Sparkles, Trash2, Upload, Users, Zap } from 'lucide-react';
-import { useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { useMedia, useVentana } from '../lib/ventana';
 import { BloodHoundUploader } from '../components/BloodHoundUploader';
 import { NmapUploader } from '../components/NmapUploader';
 import { ScanUploader } from '../components/ScanUploader';
@@ -42,10 +43,16 @@ export function Prioritization() {
   const [showScan, setShowScan] = useState(false);
   const [showBloodhound, setShowBloodhound] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  // Listas largas: solo se pinta lo visible, y solo la tabla (escritorio) o solo las tarjetas (móvil), no las dos.
+  const escritorio = useMedia('(min-width: 640px)');
+  const tablaCont = useRef<HTMLDivElement>(null);
+  const tbodyRef = useRef<HTMLTableSectionElement>(null);
+  const tarjetasRef = useRef<HTMLUListElement>(null);
+  const contenido = useCallback(() => document.getElementById('contenido'), []);
 
   const fById = useMemo(() => new Map(project.findings.map((f) => [f.id, f])), [project.findings]);
   const aById = useMemo(() => new Map(project.assets.map((a) => [a.id, a])), [project.assets]);
-  const rows = result.scored.filter((s) => {
+  const rows = useMemo(() => result.scored.filter((s) => {
     const f = fById.get(s.id);
     if (!f) return false;
     if (band !== 'todas' && s.band !== band) return false;
@@ -53,7 +60,9 @@ export function Prioritization() {
     if (!q) return true;
     const hay = `${f.id} ${f.title} ${f.cve ?? ''} ${aById.get(f.assetId)?.name ?? ''}`.toLowerCase();
     return hay.includes(q.toLowerCase());
-  });
+  }), [result.scored, fById, aById, band, showClosed, q]);
+  const vT = useVentana(escritorio ? rows.length : 0, 58, tablaCont, tbodyRef);
+  const vM = useVentana(escritorio ? 0 : rows.length, 104, contenido, tarjetasRef);
 
   const onImport = async (file: File) => {
     try {
@@ -119,8 +128,9 @@ export function Prioritization() {
               <button type="button" className="btn btn-ghost btn-sm" onClick={() => download('plantilla-hallazgos.csv', CSV_TEMPLATE, 'text/csv;charset=utf-8')}><FileSpreadsheet />{L('Plantilla CSV', 'CSV template')}</button>
             </div>
             {/* Móvil: tarjetas en lugar de tabla */}
-            <ul className="divide-hair sm:hidden" data-testid="tarjetas-hallazgos">
-              {rows.map((sc) => {
+            {!escritorio && <ul ref={tarjetasRef} className="divide-hair sm:hidden" data-testid="tarjetas-hallazgos">
+              {vM.arriba > 0 && <li aria-hidden="true" data-hueco="1" style={{ height: vM.arriba }} />}
+              {rows.slice(vM.inicio, vM.fin).map((sc) => {
                 const f = fById.get(sc.id)!;
                 const closed = f.status === 'mitigado' || f.status === 'no_explotable';
                 return (
@@ -141,12 +151,13 @@ export function Prioritization() {
                   </li>
                 );
               })}
+              {vM.abajo > 0 && <li aria-hidden="true" data-hueco="1" style={{ height: vM.abajo }} />}
               {rows.length === 0 && <li className="px-4 py-10 text-center text-ink-3">{L('Ningún hallazgo coincide con el filtro.', 'No finding matches the filter.')}</li>}
-            </ul>
-            <div className="hidden max-h-[calc(100dvh-14rem)] overflow-auto sm:block">
-              <table className="table">
+            </ul>}
+            {escritorio && <div ref={tablaCont} className="hidden max-h-[calc(100dvh-14rem)] overflow-auto sm:block">
+              <table className="table" aria-rowcount={vT.activa ? rows.length + 1 : undefined}>
                 <thead>
-                  <tr>
+                  <tr aria-rowindex={vT.activa ? 1 : undefined}>
                     <th className="w-[6.5rem]">{L('Puntuación', 'Score')}</th>
                     <th>{L('Hallazgo', 'Finding')}</th>
                     <th>{c.thAsset}</th>
@@ -156,12 +167,13 @@ export function Prioritization() {
                     <th>{L('Estado', 'Status')}</th>
                   </tr>
                 </thead>
-                <tbody>
-                  {rows.map((s) => {
+                <tbody ref={tbodyRef}>
+                  {vT.arriba > 0 && <tr aria-hidden="true" data-hueco="1" style={{ height: vT.arriba }}><td colSpan={7} className="p-0" /></tr>}
+                  {rows.slice(vT.inicio, vT.fin).map((s, i) => {
                     const f = fById.get(s.id)!;
                     const closed = f.status === 'mitigado' || f.status === 'no_explotable';
                     return (
-                      <tr key={s.id} className={`row-interactive ${closed ? 'row-closed' : ''}`} aria-selected={selected === s.id} onClick={() => select(s.id)} tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(s.id); } }}>
+                      <tr key={s.id} aria-rowindex={vT.activa ? vT.inicio + i + 2 : undefined} className={`row-interactive ${closed ? 'row-closed' : ''}`} aria-selected={selected === s.id} onClick={() => select(s.id)} tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(s.id); } }}>
                         <td><Score score={s.score} band={s.band} muted={closed} /></td>
                         <td className="max-w-[26rem]">
                           <div className="truncate font-medium">{f.title}</div>
@@ -185,10 +197,11 @@ export function Prioritization() {
                       </tr>
                     );
                   })}
+                  {vT.abajo > 0 && <tr aria-hidden="true" data-hueco="1" style={{ height: vT.abajo }}><td colSpan={7} className="p-0" /></tr>}
                   {rows.length === 0 && <tr><td colSpan={7} className="py-10 text-center text-ink-3">{L('Ningún hallazgo coincide con el filtro.', 'No finding matches the filter.')}</td></tr>}
                 </tbody>
               </table>
-            </div>
+            </div>}
             <div className="border-t border-hairline px-4 py-2.5 text-xs text-ink-3">{L(`${rows.length} de ${plural(project.findings.length, 'hallazgo', 'hallazgos')} · ordenados por puntuación`, `${rows.length} of ${plural(project.findings.length, 'finding', 'findings')} · sorted by score`)}</div>
           </section>
         )}

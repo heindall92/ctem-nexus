@@ -1,9 +1,10 @@
 /* Estado del guardado del proyecto, siempre a la vista: «Guardado hace 12 s» junto al nombre del proyecto, y un aviso
  * que no se puede cerrar mientras haya un fallo, con la salida inmediata («Exportar proyecto ahora»). */
 import { motion } from 'motion/react';
-import { AlertTriangle, Download, RotateCw } from 'lucide-react';
+import { AlertTriangle, Download, LoaderCircle, RotateCw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useL } from '../i18n';
+import { useResult } from '../lib/analysis';
 import { download, stamp } from '../lib/download';
 import { useStore } from '../store/store';
 import { SPRING } from './ui';
@@ -70,5 +71,22 @@ export function AvisoGuardado() {
         </div>
       </motion.div>
     </div>
+  );
+}
+
+/** Con proyectos grandes el motor calcula en segundo plano: se dice, sin tapar nada, y la interfaz sigue respondiendo. */
+export function AvisoCalculo() {
+  const { status } = useResult();
+  const n = useStore((s) => s.project.findings.length);
+  const L = useL();
+  return (
+    <p role="status" data-testid="aviso-calculo" className="no-print mx-auto max-w-[1240px] px-4 text-xs text-ink-3">
+      {status.mode === 'calculando' && (
+        <span className="mt-2 inline-flex items-center gap-1.5">
+          <LoaderCircle className="size-3.5 motion-safe:animate-spin" aria-hidden="true" />
+          {L(`Calculando el análisis de ${n.toLocaleString('es-ES')} hallazgos…`, `Analysing ${n.toLocaleString('en-GB')} findings…`)}
+        </span>
+      )}
+    </p>
   );
 }

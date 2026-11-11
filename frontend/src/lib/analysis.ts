@@ -1,10 +1,44 @@
-/* Resultado del motor: local (TypeScript) siempre; API FastAPI opcional si está activada y responde. */
-import { useEffect, useMemo, useState } from 'react';
+/* Resultado del motor: local (TypeScript) siempre; API FastAPI opcional si está activada y responde.
+ * Con proyectos grandes (más de UMBRAL_WORKER hallazgos) el cálculo local va en un Web Worker: mientras tanto se
+ * muestra el resultado anterior, sin los hallazgos que ya no existen, y el estado dice «calculando». */
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { prioritize } from '../engine/engine';
-import type { EngineResult } from '../engine/types';
+import type { EngineInput, EngineResult } from '../engine/types';
+import type { RespuestaMotor } from '../engine/motor.worker';
+import MotorWorker from '../engine/motor.worker?worker&inline';
 import { useStore } from '../store/store';
 
-export type EngineStatus = { mode: 'local' } | { mode: 'api' } | { mode: 'fallback'; reason: string } | { mode: 'loading' };
+export type EngineStatus = { mode: 'local' } | { mode: 'api' } | { mode: 'fallback'; reason: string } | { mode: 'loading' } | { mode: 'calculando' };
+
+/** Hasta aquí el motor tarda unos milisegundos: se calcula al momento, sin Worker. */
+export const UMBRAL_WORKER = 1500;
+
+let worker: Worker | null = null;
+let peticiones = 0;
+const esperando = new Map<number, (r: RespuestaMotor) => void>();
+/** Calcula en el Worker. Si el navegador no permite Workers (CSP, file:// antiguo), calcula aquí. */
+function enWorker(input: EngineInput): Promise<EngineResult> {
+  try {
+    if (!worker) {
+      worker = new MotorWorker();
+      worker.onmessage = (e: MessageEvent<RespuestaMotor>) => { esperando.get(e.data.id)?.(e.data); esperando.delete(e.data.id); };
+      worker.onerror = () => { worker = null; for (const [id, f] of esperando) f({ id, error: 'worker' }); esperando.clear(); };
+    }
+    const id = ++peticiones;
+    return new Promise((ok) => {
+      esperando.set(id, (r) => ok('result' in r ? r.result : prioritize(input)));
+      worker!.postMessage({ id, input });
+    });
+  } catch {
+    return Promise.resolve(prioritize(input));
+  }
+}
+
+/** El resultado anterior, sin hallazgos que ya no están en el proyecto (las vistas los buscan por id). */
+function sinHuerfanos(r: EngineResult, input: EngineInput): EngineResult {
+  const ids = new Set(input.findings.map((f) => f.id));
+  return r.scored.every((s) => ids.has(s.id)) ? r : { ...r, scored: r.scored.filter((s) => ids.has(s.id)) };
+}
 
 export async function pingApi(url: string): Promise<{ ok: boolean; detail: string }> {
   try {
@@ -24,7 +58,22 @@ export function useAnalysis(): { result: EngineResult; status: EngineStatus } {
   const project = useStore((s) => s.project);
   const { useApi, apiUrl } = useStore((s) => s.settings);
   const input = useMemo(() => ({ assets: project.assets, findings: project.findings, edges: project.edges, profile: project.profile ?? 'defecto' as const, slaPolicy: project.slaPolicy ?? 'estandar' as const }), [project.assets, project.findings, project.edges, project.profile, project.slaPolicy]);
-  const local = useMemo(() => prioritize(input), [input]);
+  const grande = input.findings.length > UMBRAL_WORKER;
+  // Pequeño: al momento. Grande: en el Worker, conservando el último resultado mientras calcula.
+  const inmediato = useMemo(() => (grande ? null : prioritize(input)), [grande, input]);
+  const [diferido, setDiferido] = useState<{ input: EngineInput; result: EngineResult } | null>(null);
+  const ultimo = useRef<EngineResult | null>(null);
+  useEffect(() => {
+    if (!grande) return;
+    let vigente = true;
+    void enWorker(input).then((result) => { if (vigente) setDiferido({ input, result }); });
+    return () => { vigente = false; };
+  }, [grande, input]);
+  const calculando = grande && diferido?.input !== input;
+  const local: EngineResult = inmediato
+    ?? (diferido?.input === input ? diferido.result : null)
+    ?? (ultimo.current ? sinHuerfanos(ultimo.current, input) : (diferido ? sinHuerfanos(diferido.result, input) : prioritize({ ...input, findings: [] })));
+  if (!calculando) ultimo.current = local;
   const [remote, setRemote] = useState<{ input: unknown; result: EngineResult } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -46,7 +95,7 @@ export function useAnalysis(): { result: EngineResult; status: EngineStatus } {
     return () => { clearTimeout(t); ctrl.abort(); };
   }, [useApi, apiUrl, input]);
 
-  if (!useApi) return { result: local, status: { mode: 'local' } };
+  if (!useApi) return { result: local, status: calculando ? { mode: 'calculando' } : { mode: 'local' } };
   if (remote && remote.input === input && !error) return { result: remote.result, status: { mode: 'api' } };
   if (error) return { result: local, status: { mode: 'fallback', reason: error } };
   return { result: local, status: { mode: 'loading' } };

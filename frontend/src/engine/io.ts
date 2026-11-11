@@ -206,6 +206,27 @@ export function normalizeAsset(raw: Record<string, unknown>, i: number): Asset |
   };
 }
 
+/* Índice de activos para resolver referencias en O(1). Antes cada hallazgo recorría la lista entera de activos: con
+ * 6.000 hallazgos y cientos de activos, importar costaba millones de comparaciones. Se guarda por lista (WeakMap) y
+ * respeta el orden de `find`: gana el primer activo que coincide por id, nombre o IP. */
+interface IndiceActivos { porRef: Map<string, Asset>; porNombre: Map<string, Asset>; n: number }
+const indices = new WeakMap<Asset[], IndiceActivos>();
+function indiceDe(assets: Asset[]): IndiceActivos {
+  let idx = indices.get(assets);
+  if (idx && idx.n === assets.length) return idx;   // si la lista crece o mengua, se rehace
+  const porRef = new Map<string, Asset>();
+  const porNombre = new Map<string, Asset>();
+  const poner = (m: Map<string, Asset>, k: string, a: Asset) => { if (!m.has(k)) m.set(k, a); };
+  for (const a of assets) {
+    const id = a.id.toLowerCase(), nombre = a.name.toLowerCase();
+    poner(porRef, id, a); poner(porRef, nombre, a); poner(porRef, a.ip, a);
+    poner(porNombre, id, a); poner(porNombre, nombre, a);
+  }
+  idx = { porRef, porNombre, n: assets.length };
+  indices.set(assets, idx);
+  return idx;
+}
+
 /** Normaliza un hallazgo importado. Resuelve el activo por id, nombre o IP. Devuelve null si no es válido. */
 export function normalizeFinding(raw: Record<string, unknown>, i: number, assets: Asset[]): Finding | null {
   const title = str(raw.title, 200);
@@ -213,9 +234,10 @@ export function normalizeFinding(raw: Record<string, unknown>, i: number, assets
   const cve = CVE_RE.test(cveRaw) ? cveRaw : null;
   if (!title && !cve) return null;
   const assetRef = str(raw.assetId, 120).toLowerCase();
-  const asset = assets.find((a) => a.id.toLowerCase() === assetRef || a.name.toLowerCase() === assetRef || a.ip === assetRef);
+  const idx = indiceDe(assets);
+  const asset = idx.porRef.get(assetRef);
   const epss = num(raw.epss);
-  const resolveRef = (ref: string) => assets.find((a) => a.id.toLowerCase() === ref.toLowerCase() || a.name.toLowerCase() === ref.toLowerCase())?.id;
+  const resolveRef = (ref: string) => idx.porNombre.get(ref.toLowerCase())?.id;
   const leadsTo = list(raw.leadsTo).map(resolveRef).filter((x): x is string => !!x);
   const edgeFromRef = str(raw.edgeFrom, 120);
   return {

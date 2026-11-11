@@ -1,5 +1,6 @@
 import { Crown, Crosshair, Globe, Pencil, Plus, Radar, Sparkles, Trash2, TriangleAlert, Users } from 'lucide-react';
-import { useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
+import { useVentana } from '../lib/ventana';
 import { BloodHoundUploader } from '../components/BloodHoundUploader';
 import { NmapUploader } from '../components/NmapUploader';
 import { isIpOrCidr } from '../engine/io';
@@ -25,6 +26,10 @@ export function Scoping() {
   const findingsPer = new Map<string, number>();
   for (const f of project.findings) if (f.status === 'abierto' || f.status === 'validado') findingsPer.set(f.assetId, (findingsPer.get(f.assetId) ?? 0) + 1);
   const crown = project.assets.filter((a) => a.criticality === 5).length;
+  // Miles de activos: solo se pintan las filas visibles (la página hace scroll en #contenido).
+  const tbodyRef = useRef<HTMLTableSectionElement>(null);
+  const contenido = useCallback(() => document.getElementById('contenido'), []);
+  const v = useVentana(project.assets.length, 61, contenido, tbodyRef);
 
   return (
     <>
@@ -55,11 +60,12 @@ export function Scoping() {
             </Empty>
           ) : (
             <div className="overflow-x-auto border-t border-hairline">
-              <table className="table">
-                <thead><tr><th>{c.thAsset}</th><th>{c.thType}</th><th>{c.thIp}</th><th>{c.thOwner}</th><th>{c.thCrit}</th><th>{c.thExposure}</th><th>{c.thTags}</th><th className="text-right">{c.thOpen}</th><th><span className="sr-only">{L('Acciones', 'Actions')}</span></th></tr></thead>
-                <tbody>
-                  {project.assets.map((a) => (
-                    <tr key={a.id}>
+              <table className="table" aria-rowcount={v.activa ? project.assets.length + 1 : undefined}>
+                <thead><tr aria-rowindex={v.activa ? 1 : undefined}><th>{c.thAsset}</th><th>{c.thType}</th><th>{c.thIp}</th><th>{c.thOwner}</th><th>{c.thCrit}</th><th>{c.thExposure}</th><th>{c.thTags}</th><th className="text-right">{c.thOpen}</th><th><span className="sr-only">{L('Acciones', 'Actions')}</span></th></tr></thead>
+                <tbody ref={tbodyRef}>
+                  {v.arriba > 0 && <tr aria-hidden="true" data-hueco="1" style={{ height: v.arriba }}><td colSpan={9} className="p-0" /></tr>}
+                  {project.assets.slice(v.inicio, v.fin).map((a, i) => (
+                    <tr key={a.id} aria-rowindex={v.activa ? v.inicio + i + 2 : undefined}>
                       <td>
                         <div className="flex items-center gap-2 font-medium">
                           {a.criticality === 5 && <Crown className="size-3.5 text-accent" aria-label={c.crownJewel} />}
@@ -85,6 +91,7 @@ export function Scoping() {
                       </td>
                     </tr>
                   ))}
+                  {v.abajo > 0 && <tr aria-hidden="true" data-hueco="1" style={{ height: v.abajo }}><td colSpan={9} className="p-0" /></tr>}
                 </tbody>
               </table>
             </div>

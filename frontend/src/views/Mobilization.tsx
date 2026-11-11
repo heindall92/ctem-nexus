@@ -1,5 +1,6 @@
 import { AlarmClock, Check, Waypoints, ChevronDown, Copy, FileDown, FileJson, FileSpreadsheet, FileText, ListChecks, Printer } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useRef, useCallback, useMemo, useState } from 'react';
+import { useVentana } from '../lib/ventana';
 import { CyclesPanel, RetestPanel, SlaPanel } from '../components/MobilizationPanels';
 import { buildTickets, githubIssues, jiraCsv, reportMarkdown, ticketsCsv, ticketsMarkdown } from '../engine/io';
 import { fixPlan } from '../engine/simulate';
@@ -38,7 +39,11 @@ export function Mobilization() {
   const toggleStep = useStore((s) => s.toggleStep);
   const { result } = useResult();
   const s = result.summary;
-  const tickets = buildTickets(project.findings, project.assets, result, lang);
+  const tickets = useMemo(() => buildTickets(project.findings, project.assets, result, lang), [project.findings, project.assets, result, lang]);
+  // Miles de tickets: solo se pintan los visibles (la página hace scroll en #contenido).
+  const ticketsRef = useRef<HTMLUListElement>(null);
+  const contenido = useCallback(() => document.getElementById('contenido'), []);
+  const vt = useVentana(tickets.length, 62, contenido, ticketsRef);
   const [open, setOpen] = useState<string | null>(tickets[0]?.finding.id ?? null);
   const top = tickets.slice(0, 8);
   const overdue = tickets.filter((t) => slaInfo(t.finding.detectedAt, t.scored.slaDays).state === 'vencido').length;
@@ -243,8 +248,9 @@ export function Mobilization() {
                   <button type="button" className="btn" onClick={() => { download(`github-issues-${slug}-${stamp()}.json`, JSON.stringify(githubIssues(project.findings, project.assets, result, lang), null, 2), 'application/json'); notify(L('Issues de GitHub exportados en JSON (instrucciones en la ayuda).', 'GitHub issues exported as JSON (instructions in Help).')); }}><FileJson />GitHub Issues</button>
                 </div>
               </div>
-              <ul className="divide-hair border-t border-hairline">
-                {tickets.map((t) => {
+              <ul ref={ticketsRef} className="divide-hair border-t border-hairline" data-testid="tickets">
+                {vt.arriba > 0 && <li aria-hidden="true" data-hueco="1" style={{ height: vt.arriba }} />}
+                {tickets.slice(vt.inicio, vt.fin).map((t) => {
                   const isOpen = open === t.finding.id;
                   return (
                     <li key={t.finding.id}>
@@ -293,6 +299,7 @@ export function Mobilization() {
                     </li>
                   );
                 })}
+                {vt.abajo > 0 && <li aria-hidden="true" data-hueco="1" style={{ height: vt.abajo }} />}
                 {tickets.length === 0 && <li className="px-5 py-6 text-ink-3">{L('No hay hallazgos abiertos: todos están mitigados o descartados.', 'No open findings: all are mitigated or dismissed.')}</li>}
               </ul>
             </section>

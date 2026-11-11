@@ -1,7 +1,8 @@
 /* «¿Y si…?»: marca hallazgos como corregidos en borrador y ve al instante qué pasa con el índice, los críticos, el KEV
  * y las rutas. El plan propuesto es voraz sobre el grafo (rompe más rutas por hallazgo en cada paso). No toca el proyecto. */
 import { Eraser, FileText, FlaskConical, Sparkles, Wand2 } from 'lucide-react';
-import { useMemo } from 'react';
+import { useRef, useMemo } from 'react';
+import { useVentana } from '../lib/ventana';
 import { AttackGraph } from '../components/AttackGraph';
 import { TopBar } from '../components/Shell';
 import { DemoBadge, Empty, PageHeader, Reveal, SectionTitle } from '../components/ui';
@@ -44,9 +45,12 @@ export function Simulation() {
   const fixedSet = useMemo(() => new Set(fixed), [fixed]);
   const after = useMemo(() => simulate(input, fixed), [input, fixed]);
   const plan = useMemo(() => fixPlan(result, project.findings, 10), [result, project.findings]);
-  const fById = new Map(project.findings.map((f) => [f.id, f]));
-  const aName = new Map(project.assets.map((a) => [a.id, a.name]));
-  const candidates = result.scored.filter((s) => { const f = fById.get(s.id); return f && isActive(f); });
+  const fById = useMemo(() => new Map(project.findings.map((f) => [f.id, f])), [project.findings]);
+  const aName = useMemo(() => new Map(project.assets.map((a) => [a.id, a.name])), [project.assets]);
+  const candidates = useMemo(() => result.scored.filter((s) => { const f = fById.get(s.id); return f && isActive(f); }), [result.scored, fById]);
+  // Con miles de candidatos solo se pintan (y se calcula cuántas rutas rompe cada uno) los visibles.
+  const listaRef = useRef<HTMLUListElement>(null);
+  const v = useVentana(candidates.length, 64, listaRef, listaRef);
   const brokenNow = pathsBrokenBy(result.graph, fixed);
   const b = result.summary;
   const a = after.summary;
@@ -151,8 +155,9 @@ export function Simulation() {
 
           <Reveal as="section" delay={0.12} className="panel overflow-hidden" aria-label={L('Hallazgos a corregir', 'Findings to fix')}>
             <SectionTitle title={L('Hallazgos a corregir', 'Findings to fix')} detail={fixed.length ? L(`${fixed.length} marcados · rompen ${brokenNow} de ${plan.totalPaths} rutas`, `${fixed.length} selected · they break ${brokenNow} of ${plan.totalPaths} paths`) : L('Marca los que darías por corregidos.', 'Tick the ones you would count as fixed.')} />
-            <ul className="max-h-[520px] divide-hair overflow-y-auto border-t border-hairline" data-testid="candidatos-sim">
-              {candidates.map((s) => {
+            <ul ref={listaRef} className="max-h-[520px] divide-hair overflow-y-auto border-t border-hairline" data-testid="candidatos-sim">
+              {v.arriba > 0 && <li aria-hidden="true" data-hueco="1" style={{ height: v.arriba }} />}
+              {candidates.slice(v.inicio, v.fin).map((s) => {
                 const f = fById.get(s.id)!;
                 const solo = pathsBrokenBy(result.graph, [s.id]);
                 const step = stepOf.get(s.id);
@@ -174,6 +179,7 @@ export function Simulation() {
                   </li>
                 );
               })}
+              {v.abajo > 0 && <li aria-hidden="true" data-hueco="1" style={{ height: v.abajo }} />}
             </ul>
           </Reveal>
         </div>

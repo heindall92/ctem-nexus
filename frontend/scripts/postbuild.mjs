@@ -24,6 +24,8 @@ const csp = [
   `style-src ${styles.map(sha).join(' ')}`,
   "font-src data:",
   "img-src data: blob:",
+  // El motor calcula en un Web Worker incrustado (proyectos de más de 1.500 hallazgos): solo desde blob:.
+  "worker-src blob:",
   // La API opcional solo puede estar en la máquina local.
   "connect-src http://127.0.0.1:* http://localhost:*",
   "base-uri 'none'",

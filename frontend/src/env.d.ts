@@ -6,3 +6,9 @@ declare module '*?raw' {
   const text: string;
   export default text;
 }
+
+/** Web Worker incrustado (Vite «?worker&inline»): va dentro del HTML autocontenido como blob. */
+declare module '*?worker&inline' {
+  const WorkerFactory: new () => Worker;
+  export default WorkerFactory;
+}

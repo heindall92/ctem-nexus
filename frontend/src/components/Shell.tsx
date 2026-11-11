@@ -37,7 +37,7 @@ import { useResult } from '../lib/analysis';
 import { download, stamp } from '../lib/download';
 import { useStore, type View } from '../store/store';
 import { SPRING } from './ui';
-import { AvisoGuardado, EstadoGuardadoLinea } from './Guardado';
+import { AvisoCalculo, AvisoGuardado, EstadoGuardadoLinea } from './Guardado';
 
 const NAV: Array<{ view: View; icon: ReactNode }> = [
   { view: 'panel', icon: <LayoutDashboard /> },
@@ -764,7 +764,7 @@ export function TopBar({ title, actions }: { title: string; subtitle?: ReactNode
       </header>
     </div>
     {/* El aviso de datos de ejemplo se desplaza con el contenido: fijo arriba ocupaba demasiado en móvil. */}
-    <div className="no-print mx-auto w-full max-w-[1280px] px-3 sm:px-6"><AvisoGuardado /><DemoBanner /></div>
+    <div className="no-print mx-auto w-full max-w-[1280px] px-3 sm:px-6"><AvisoGuardado /><AvisoCalculo /><DemoBanner /></div>
     </>
   );
 }
