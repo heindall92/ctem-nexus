@@ -34,8 +34,8 @@ import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } f
 import { createPortal } from 'react-dom';
 import { ACCENT_SWATCHES, chrome, roleLabel, screen, useL } from '../i18n';
 import { useResult } from '../lib/analysis';
-import { download, stamp } from '../lib/download';
 import { useStore, type View } from '../store/store';
+import { exportarProyecto } from '../lib/exportar';
 import { SPRING } from './ui';
 import { AvisoCalculo, AvisoGuardado, EstadoGuardadoLinea } from './Guardado';
 
@@ -666,7 +666,7 @@ function UserMenu({
       <MenuRow icon={<HelpCircle className="size-4" />} label={t.help} onClick={() => { onClose(); setHelpOpen(true); }} />
       <div className="my-1 h-px bg-hairline" />
       <MenuRow icon={<Compass className="size-4" />} label={t.scopeShort} onClick={() => { onClose(); setView('alcance'); }} />
-      <MenuRow icon={<Download className="size-4" />} label={t.export} onClick={() => { onClose(); download(`ctem-nexus-${stamp()}.json`, JSON.stringify(project, null, 2), 'application/json'); notify(t.exported); }} />
+      <MenuRow icon={<Download className="size-4" />} label={t.export} onClick={() => { onClose(); void exportarProyecto(project).then(() => notify(t.exported)); }} />
     </motion.div>,
     document.body
   );

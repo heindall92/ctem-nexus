@@ -22,6 +22,6 @@ CTEM-Nexus trata como **hostil** todo lo que importa: XML de Nmap, JSON de Blood
 - **JSON** analizado con un *reviver* que descarta `__proto__`, `constructor` y `prototype`. Después se validan y recortan todos los campos.
 - **CSV exportado** con neutralización de fórmulas: las celdas que empiezan por `=`, `+`, `-`, `@`, tabulador o retorno de carro se prefijan con un apóstrofo.
 - **HTML autocontenido** con CSP `default-src 'none'`: scripts y estilos solo por hash SHA-256 y `connect-src` limitado a `localhost` para la API opcional. No hay peticiones a terceros ni telemetría.
-- **Datos locales**: el proyecto vive en el `localStorage` de tu navegador. «Borrar todo» en Ajustes lo elimina.
+- **Datos locales**: el proyecto vive en el IndexedDB de tu navegador (desde la 1.3.0; los ajustes, en `localStorage`). «Borrar todo» en Ajustes lo elimina. Si no se puede guardar, la aplicación lo dice con un aviso fijo y ofrece exportar el proyecto: nunca falla en silencio.
 
 **Fuera de alcance:** CTEM-Nexus no ejecuta escáneres ni se conecta a tus sistemas. Los ficheros que importas los has generado tú con tus herramientas y bajo tu autorización.

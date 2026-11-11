@@ -331,3 +331,20 @@ describe('proyecto', () => {
     expect(parseProject(JSON.stringify({ format: 'ctem-nexus', version: 1, name: 'x', slaPolicy: 'rapida' }))!.slaPolicy).toBeUndefined();
   });
 });
+
+describe('evidencia por control con soloGraves', () => {
+  it('mismos controles, totales y contradicciones; solo cambian las listas', async () => {
+    const { DEMO_ASSETS, DEMO_FINDINGS } = await import('../data/demo');
+    const { prioritize } = await import('./engine');
+    const r = prioritize({ assets: DEMO_ASSETS, findings: DEMO_FINDINGS, edges: [] });
+    const hoy = new Date('2026-10-08T10:00:00Z');
+    const todo = controlEvidence(DEMO_FINDINGS, DEMO_ASSETS, r, hoy);
+    const graves = controlEvidence(DEMO_FINDINGS, DEMO_ASSETS, r, hoy, { soloGraves: true });
+    const sinListas = (ev: typeof todo) => ev.map(({ hallazgos: _h, ...resto }) => resto);
+    expect(sinListas(graves)).toEqual(sinListas(todo));
+    expect(graves.map((e) => e.hallazgos)).toEqual(todo.map((e) => e.hallazgos.filter((h) => h.banda === 'critica' || h.banda === 'alta')));
+    const link = { generado: '', proyecto: '', estados: Object.fromEntries(todo.map((e) => [e.control, 'implantado' as const])) };
+    expect(contradictions(graves, link)).toEqual(contradictions(todo, link));
+    expect(contradictions(todo, link).length).toBeGreaterThan(0);
+  });
+});

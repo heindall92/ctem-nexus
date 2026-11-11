@@ -464,29 +464,43 @@ export interface ControlEvidence {
 }
 
 /** Hallazgos agregados por control de Rosetta (solo los activos: abiertos o validados). */
-export function controlEvidence(findings: Finding[], assets: Asset[], result: EngineResult, today: Date = new Date()): ControlEvidence[] {
+/** Mismo orden que localeCompare, sin crear un comparador en cada llamada (decenas de miles con proyectos grandes). */
+const COLADOR = new Intl.Collator();
+
+/**
+ * Evidencia por control. Con `soloGraves`, cada control lista solo sus hallazgos críticos y altos (los totales y los
+ * contadores no cambian): es lo que necesitan la vista y las contradicciones con Rosetta, y con 50.000 hallazgos
+ * ahorra decenas de miles de entradas. La exportación a Rosetta usa la lista completa.
+ */
+export function controlEvidence(findings: Finding[], assets: Asset[], result: EngineResult, today: Date = new Date(), { soloGraves = false }: { soloGraves?: boolean } = {}): ControlEvidence[] {
   const aById = new Map(assets.map((a) => [a.id, a]));
-  const sc = new Map(result.scored.map((s) => [s.id, s]));
+  const fById = new Map<string, Finding>();
+  for (const f of findings) if (!fById.has(f.id)) fById.set(f.id, f);
   const by = new Map<string, ControlEvidence>();
-  for (const f of findings) {
-    const s = sc.get(f.id);
-    if (!s || !isActive(f)) continue;
+  // Se recorre en el orden del motor (puntuación de mayor a menor): cada lista sale ya casi ordenada y la ordenación
+  // final (mismo criterio que antes) apenas trabaja. Con 50.000 hallazgos, de 240 ms a la mitad.
+  const vistos = new Set<string>();
+  for (const s of result.scored) {
+    const f = fById.get(s.id);
+    if (!f || !isActive(f) || vistos.has(s.id)) continue;
+    vistos.add(s.id);
     const due = slaInfo(f.detectedAt, s.slaDays, today);
+    const activo = aById.get(f.assetId)?.name ?? f.assetId;
     for (const cid of controlsFor(f)) {
       const c = CONTROLS[cid];
       if (!c) continue;
-      const e = by.get(cid) ?? { control: cid, titulo: c.title, ens: c.ens, iso27001: c.iso27001, nis2: c.nis2, nist: c.nist, dora: c.dora, abiertos: 0, porBanda: { critica: 0, alta: 0, media: 0, baja: 0 }, kev: 0, vencidos: 0, peor: 0, hallazgos: [] };
+      let e = by.get(cid);
+      if (!e) { e = { control: cid, titulo: c.title, ens: c.ens, iso27001: c.iso27001, nis2: c.nis2, nist: c.nist, dora: c.dora, abiertos: 0, porBanda: { critica: 0, alta: 0, media: 0, baja: 0 }, kev: 0, vencidos: 0, peor: 0, hallazgos: [] }; by.set(cid, e); }
       e.abiertos++;
       e.porBanda[s.band]++;
       if (f.kev) e.kev++;
       if (due.state === 'vencido') e.vencidos++;
       e.peor = Math.max(e.peor, s.score);
-      e.hallazgos.push({ id: f.id, titulo: f.title, cve: f.cve ?? null, banda: s.band, puntuacion: s.score, activo: aById.get(f.assetId)?.name ?? f.assetId, estado: f.status, vence: due.due });
-      by.set(cid, e);
+      if (!soloGraves || s.band === 'critica' || s.band === 'alta') e.hallazgos.push({ id: f.id, titulo: f.title, cve: f.cve ?? null, banda: s.band, puntuacion: s.score, activo, estado: f.status, vence: due.due });
     }
   }
   return [...by.values()]
-    .map((e) => ({ ...e, hallazgos: e.hallazgos.sort((a, b) => b.puntuacion - a.puntuacion || a.id.localeCompare(b.id)) }))
+    .map((e) => ({ ...e, hallazgos: e.hallazgos.sort((a, b) => b.puntuacion - a.puntuacion || COLADOR.compare(a.id, b.id)) }))
     .sort((a, b) => b.peor - a.peor || a.control.localeCompare(b.control));
 }
 

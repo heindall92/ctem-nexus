@@ -10,7 +10,7 @@ import math
 from datetime import date
 from typing import Any
 
-ENGINE_VERSION = "1.2.1"
+ENGINE_VERSION = "1.3.0"
 
 PROFILES = {
     "defecto": {"severidad": 30, "explotabilidad": 25, "criticidad": 20, "exposicion": 10, "proximidad": 15},

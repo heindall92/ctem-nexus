@@ -20,6 +20,27 @@ VIEWS = ["panel", "alcance", "priorizacion", "rutas", "mitre", "simulacion", "mo
 HELP_TABS = ["Ciclo CTEM", "Cálculo de riesgo", "Ingesta de datos", "Atajos de teclado", "Glosario", "Acerca de"]
 
 
+# Red sintética para los estados de datos reales: 200 activos en cadena (grafo de más de 120 nodos) y 600 hallazgos
+# con 40 CVE repetidos en varios activos (agrupación).
+RED_GRANDE = {
+    "format": "ctem-nexus", "version": 1, "name": "Red grande", "demo": False, "ranges": [], "edges": [],
+    "assets": [{"id": f"A-{i}", "name": f"nodo-{i:03d}", "type": "servidor", "ip": f"10.1.0.{i}", "owner": "TI", "criticality": 5 if i % 20 == 0 else 2,
+                "internetExposed": i % 15 == 1, "tags": []} for i in range(200)],
+    "findings": [{"id": f"H-{i}", "title": f"Fallo {i % 40}", "kind": "cve", "cve": f"CVE-2024-{20000 + i % 40}", "cvss": 5 + (i % 5), "epss": 0.3, "kev": i % 9 == 0,
+                  "exploitPublic": i % 4 == 0, "assetId": f"A-{i % 200}", "status": "abierto", "remediation": "patch_cve", "leadsTo": [f"A-{(i % 200 + 1) % 200}"]} for i in range(600)],
+}
+NESSUS_GRANDE = OUT / "tmp" / "a11y-21000.nessus"
+
+
+def nessus_grande(hosts, por_host):
+    partes = ['<?xml version="1.0" ?><NessusClientData_v2><Policy><policyName>Red</policyName></Policy><Report name="a11y">']
+    for h in range(hosts):
+        partes.append(f'<ReportHost name="10.7.{h // 256}.{h % 256}"><HostProperties><tag name="host-ip">10.7.{h // 256}.{h % 256}</tag></HostProperties>')
+        partes += [f'<ReportItem port="443" protocol="tcp" severity="{1 + i % 4}" pluginID="{300000 + i % 30}" pluginName="Complemento {i % 30}"><cve>CVE-2024-{30000 + i}</cve></ReportItem>' for i in range(por_host)]
+        partes.append("</ReportHost>")
+    return "".join(partes + ["</Report></NessusClientData_v2>"])
+
+
 def states(page, mobile):
     """Recorre vistas y diálogos: vacío, demo en cada vista, detalle, formularios, ingestas, ayuda, búsqueda, menús y perfil."""
     J = page.evaluate
@@ -83,6 +104,21 @@ def states(page, mobile):
     J(f"{S}.setSimFixed([])")
     J(f"{S}.addSnapshot({{at:'2026-09-08',label:'Ciclo 1',profile:'defecto',exposureIndex:93,open:17,byBand:{{critica:6,alta:6,media:3,baja:2}},kev:8,attackPaths:8,accepted:0,overdue:4,mttrDays:11}})")
     J(f"{S}.setView('movilizacion')"); yield "movilizacion/con-ciclos"
+    # 1.3.0 · datos reales: Priorización agrupada por CVE con un grupo desplegado, grafo resumido (más de 120 nodos) y
+    # resumen previo de un escaneo de más de 20.000 resultados. Después vuelve la demo para los estados siguientes.
+    page.evaluate("p => window.__CTEM__.getState().replaceProject(p)", RED_GRANDE)
+    J(f"{S}.setView('priorizacion')")
+    agrupar = page.get_by_test_id("agrupar-cve")
+    if not agrupar.is_checked():
+        agrupar.check()
+    page.locator("[data-grupo] button[aria-expanded]").first.click(); yield "priorizacion/agrupada"
+    J(f"{S}.setView('rutas')"); page.get_by_test_id("grafo-resumido").wait_for(); yield "rutas/grafo-resumido"
+    J(f"{S}.setView('priorizacion')")
+    page.get_by_role("button", name="Importar escáner").first.click()
+    page.get_by_test_id("importador-escaner").locator('input[type="file"]').set_input_files(str(NESSUS_GRANDE))
+    page.get_by_test_id("resumen-escaneo").wait_for(timeout=60000); yield "ingesta/escaner-resumen"
+    page.get_by_role("button", name="Cerrar ventana").click()
+    J(f"{S}.loadDemo()")
     eco = ROOT / "shared" / "samples" / "ecosistema"
     J(f"{S}.setView('ecosistema')")
     entrada = page.get_by_test_id("eco-importar").locator('input[type="file"]')
@@ -164,6 +200,8 @@ def settle(page):
 
 def main():
     total, report, vistos = 0, [], 0
+    NESSUS_GRANDE.parent.mkdir(parents=True, exist_ok=True)
+    NESSUS_GRANDE.write_text(nessus_grande(300, 70), encoding="utf-8")
     with sync_playwright() as p:
         b = p.chromium.launch()
         for scheme in ["light", "dark"]:

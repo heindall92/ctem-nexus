@@ -808,10 +808,27 @@ def datos_reales(b, tmp):
         tiempos[vista] = round(page.evaluate("performance.now()") - t)
     check("con 20.000 hallazgos, cada vista responde en menos de 1 s", all(v < 1000 for v in tiempos.values()), str(tiempos))
 
-    # Virtualización: la tabla declara cuántas filas hay y solo pinta las visibles.
+    # Agrupación: con 20.000 hallazgos se agrupa por CVE desde el principio; cada grupo se despliega con teclado.
     nav(page, "Priorización")
+    agrupar = page.get_by_test_id("agrupar-cve")
+    check("con más de 1.500 hallazgos, Priorización agrupa por CVE desde el principio", agrupar.is_checked())
+    grupo = page.locator("tr[data-grupo]").first
+    boton = grupo.get_by_role("button")
+    check("cada grupo dice en cuántos activos está y cuántos siguen abiertos", re.search(r"\d+ activos", grupo.inner_text()) is not None and "abiertos" in grupo.inner_text(), grupo.inner_text()[:160])
+    boton.focus()
+    page.keyboard.press("Enter")
+    expect(boton).to_have_attribute("aria-expanded", "true")
+    clave = grupo.get_attribute("data-grupo")
+    miembros = page.locator(f"tr[data-en-grupo='{clave}']").count()
+    check("Intro despliega el grupo (aria-expanded) y enseña sus hallazgos debajo", miembros > 1, f"{miembros} filas")
+    page.keyboard.press("Enter")
+    expect(boton).to_have_attribute("aria-expanded", "false")
+    check("y lo vuelve a plegar", page.locator(f"tr[data-en-grupo='{clave}']").count() == 0)
+    agrupar.uncheck()
+
+    # Virtualización: la tabla declara cuántas filas hay y solo pinta las visibles.
     tabla = page.locator("table[aria-rowcount]").first
-    expect(tabla).to_be_visible(timeout=5000)
+    expect(tabla).to_have_attribute("aria-rowcount", "20001", timeout=5000)
     filas = tabla.locator("tbody tr:not([data-hueco])").count()
     check("Priorización: aria-rowcount = 20.001 y menos de 100 filas pintadas", tabla.get_attribute("aria-rowcount") == "20001" and filas < 100, f"rowcount {tabla.get_attribute('aria-rowcount')}, filas {filas}")
     tabla.evaluate("t => { const c = t.closest('.overflow-auto'); c.scrollTop = c.scrollHeight; }")

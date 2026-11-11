@@ -5,8 +5,8 @@ import { AlertTriangle, Download, LoaderCircle, RotateCw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useL } from '../i18n';
 import { useResult } from '../lib/analysis';
-import { download, stamp } from '../lib/download';
 import { useStore } from '../store/store';
+import { exportarProyecto } from '../lib/exportar';
 import { SPRING } from './ui';
 
 /** Hace cuánto, en palabras: «hace 5 s», «hace 3 min», «a las 10:42». */
@@ -49,8 +49,7 @@ export function AvisoGuardado() {
   if (g.estado !== 'error') return null;
   const memoria = g.almacen === 'memoria';
   const exportar = () => {
-    download(`ctem-nexus-${stamp()}.json`, JSON.stringify(project, null, 2), 'application/json');
-    notify(L('Proyecto exportado. Guárdalo en un lugar seguro: contiene el mapa de tu exposición.', 'Project exported. Keep it somewhere safe: it holds your exposure map.'));
+    void exportarProyecto(project).then(() => notify(L('Proyecto exportado. Guárdalo en un lugar seguro: contiene el mapa de tu exposición.', 'Project exported. Keep it somewhere safe: it holds your exposure map.')));
   };
   return (
     <div className="no-print mx-auto mt-2 max-w-[1240px] px-2 sm:px-4">

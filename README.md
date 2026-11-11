@@ -22,7 +22,7 @@
   <img alt="Tailwind CSS 4" src="https://img.shields.io/badge/Tailwind%20CSS-4-06B6D4?style=flat&logo=tailwindcss&logoColor=white"/>
   <img alt="FastAPI opcional" src="https://img.shields.io/badge/API-FastAPI%20(opcional)-009688?style=flat&logo=fastapi&logoColor=white"/>
   <img alt="Un solo HTML" src="https://img.shields.io/badge/un%20solo-HTML%20sin%20servidor-2E8B57?style=flat"/>
-  <img alt="Pruebas 100% OK" src="https://img.shields.io/badge/pruebas-Vitest%20187%20%C2%B7%20Pytest%2029%20%C2%B7%20e2e%20164-2E8B57?style=flat"/>
+  <img alt="Pruebas 100% OK" src="https://img.shields.io/badge/pruebas-Vitest%20230%20%C2%B7%20Pytest%2029%20%C2%B7%20e2e%20193-2E8B57?style=flat"/>
   <img alt="Ecosistema GRC" src="https://img.shields.io/badge/ecosistema-Rosetta%20%C2%B7%20KAIROS%20%C2%B7%20Studio%20%C2%B7%20AD%20Auditor-6D5DFC?style=flat"/>
   <img alt="Iconos Lucide" src="https://img.shields.io/badge/iconos-Lucide-F56565?style=flat&logo=lucide&logoColor=white"/>
 </p>
@@ -84,7 +84,7 @@ Los escáneres devuelven cientos de CVE sin decir cuál importa hoy. CTEM-Nexus 
       <td valign="top"><code>├─</code> <img src="docs/assets/icons/check-check.svg" width="16" height="16" alt="" valign="middle"/> <code>pruebas_calidad:</code><br><br>
         <img src="docs/assets/stack/vitest.svg" height="48" alt="Vitest">
         <img src="docs/assets/stack/pytest.svg" height="48" alt="Pytest"><br>
-        <sub><code>Vitest 187 pruebas · Pytest 29 pruebas · e2e 164 · axe-core 0 infracciones en 236 estados · Paridad exacta TS ↔ Python (golden-demo, 3 perfiles y 4 políticas de plazos)</code></sub>
+        <sub><code>Vitest 230 pruebas · Pytest 29 pruebas · e2e 193 · axe-core 0 infracciones en 256 estados · carga con 50.000 hallazgos en la CI · Paridad exacta TS ↔ Python (golden-demo, 3 perfiles y 4 políticas de plazos)</code></sub>
       </td>
       <td valign="top"><code>╰─</code> <img src="docs/assets/icons/shield-check.svg" width="16" height="16" alt="" valign="middle"/> <code>seguridad_privacidad:</code><br><br>
         <img src="docs/assets/stack/csp.svg" height="48" alt="CSP estricta"><br>
@@ -94,7 +94,7 @@ Los escáneres devuelven cientos de CVE sin decir cuál importa hoy. CTEM-Nexus 
   </tbody>
   <tfoot>
     <tr>
-      <td colspan="2"><code>version: 1.2.1&nbsp;&nbsp;·&nbsp;&nbsp;motor: TS + FastAPI&nbsp;&nbsp;·&nbsp;&nbsp;Gartner CTEM · MITRE ATT&amp;CK · ecosistema GRC&nbsp;&nbsp;·&nbsp;&nbsp;pruebas: Vitest 187 · Pytest 29 · e2e 164&nbsp;&nbsp;·&nbsp;&nbsp;licencia: GPLv2</code></td>
+      <td colspan="2"><code>version: 1.3.0&nbsp;&nbsp;·&nbsp;&nbsp;motor: TS + FastAPI&nbsp;&nbsp;·&nbsp;&nbsp;Gartner CTEM · MITRE ATT&amp;CK · ecosistema GRC&nbsp;&nbsp;·&nbsp;&nbsp;pruebas: Vitest 230 · Pytest 29 · e2e 193&nbsp;&nbsp;·&nbsp;&nbsp;licencia: GPLv2</code></td>
     </tr>
   </tfoot>
 </table>
@@ -149,7 +149,8 @@ Los pesos cambian con el perfil (OT/industrial, Banca) y los plazos con la categ
 
 ## <img src="docs/assets/icons/shield-check.svg" width="20" height="20" valign="middle"/> Privacidad y seguridad
 
-- **Local-first:** los escaneos, el proyecto y los ficheros del ecosistema se procesan en el navegador y se guardan en su almacenamiento local. Las integraciones son por fichero: nada se envía a otra herramienta ni a ningún servidor.
+- **Local-first:** los escaneos, el proyecto y los ficheros del ecosistema se procesan en el navegador y se guardan en su almacenamiento local (IndexedDB, con almacenamiento persistente si el navegador lo concede). Las integraciones son por fichero: nada se envía a otra herramienta ni a ningún servidor.
+- **Ningún guardado falla en silencio:** junto al nombre del proyecto se ve «Guardado hace N s»; si el navegador no puede guardar (sin espacio, modo privado), aparece un aviso fijo con el motivo, «Reintentar» y «Exportar proyecto ahora».
 - **Cero dependencias externas en tiempo de ejecución:** Fuentes autoalojadas e incrustadas en base64; sin CDNs externos, sin Google Analytics y sin telemetría.
 - **Política de Seguridad de Contenido (CSP) estricta:** `default-src 'none'`, estilos y scripts autorizados exclusivamente por hash SHA-256, y conexiones limitadas a `localhost` para la API opcional.
 - **Protección contra inyección de fórmulas CSV:** Toda celda que comience por caracteres peligrosos (`=`, `+`, `-`, `@`, `\t`, `\r`) es neutralizada con apóstrofe inicial en la interfaz y en el backend.
@@ -252,7 +253,9 @@ trivy image --format json -o trivy.json registro/app:1.0
 semgrep --sarif -o semgrep.sarif
 ```
 
-Un hallazgo existente se reconoce por activo y CVE (también los relacionados) o, sin CVE, por título o guía específica: importar dos veces el mismo fichero no duplica nada. XML sin DTD ni entidades, JSON sin claves de prototipo y 60 MB como máximo por fichero.
+Un hallazgo existente se reconoce por activo y CVE (también los relacionados) o, sin CVE, por título o guía específica: importar dos veces el mismo fichero no duplica nada. XML sin DTD ni entidades y JSON sin claves de prototipo.
+
+**Ficheros grandes (1.3.0).** Hasta 400 MB por fichero y sin tope de 5.000 resultados: el fichero se lee en un Web Worker, con barra de progreso y «Cancelar», y la página sigue respondiendo. Nessus y OpenVAS se analizan por partes (cada `<ReportHost>` o `<result>` por separado). Con más de 20.000 resultados se ofrece un resumen previo por severidad y tres opciones: **todo**, **solo altas y críticas** o **agrupar por complemento** (un hallazgo por regla y equipo, con todos sus CVE). El tope de seguridad es de 250.000 resultados por fichero y, si se supera, se dice cuántos no se han leído.
 
 **Nmap XML (`-oX`).**
 - **Identificación de Activos:** Extrae IPs activas, nombres de host DNS y puertos abiertos como etiquetas de contexto.
@@ -303,6 +306,7 @@ uvicorn app.main:app --reload --port 8000   # Swagger en http://127.0.0.1:8000/d
 # Navegador (Playwright): e2e y accesibilidad sobre el HTML autocontenido
 pip install -r tests/requirements.txt
 python tests/e2e_app.py && python tests/a11y_app.py
+python tests/carga_app.py     # 50.000 hallazgos y 2.000 activos: tiempos y nada perdido
 ```
 
 Con la API arrancada, **Ajustes y datos › Motor de cálculo › Usar la API**. Si no responde, la app vuelve al motor local. Arquitectura y decisiones en [ARCHITECTURE.md](docs/ARCHITECTURE.md).
@@ -315,7 +319,7 @@ ctem-nexus/
 │   │   ├── engine/            # Motor TS sin DOM: scoring, grafo, importadores, ATT&CK, simulación, SLA, ecosistema, tests
 │   │   ├── components/        # Shell, AttackGraph, NmapUploader, UI
 │   │   ├── views/             # Panel, Alcance, Priorización, Rutas, Mapa ATT&CK, ¿Y si…?, Movilización, Ecosistema, Ajustes
-│   │   ├── store/             # Estado reactivo con persistencia local (Zustand)
+│   │   ├── store/             # Estado reactivo (Zustand) con guardado en IndexedDB
 │   │   └── index.css          # Tokens de diseño, estética oscura y estilos de impresión
 │   ├── scripts/               # Postbuild (CSP), iconos, capturas y capturas de la guía
 │   └── vite.config.ts
@@ -343,10 +347,11 @@ ctem-nexus/
 
 ## <img src="docs/assets/icons/check-check.svg" width="20" height="20" valign="middle"/> Calidad y pruebas
 
-- **Motor TypeScript:** 187 pruebas con Vitest: fórmula y grafo, importadores con casos hostiles (ZAP, Burp con su DTD inerte, PingCastle y Certipy incluidos), validación ofensiva y *retest*, deduplicación, KEV/EPSS, perfiles y políticas de plazos, riesgo aceptado, ATT&CK y capa de Navigator, simulación, SLA, exportaciones, ecosistema (sobre común, KAIROS con dependencias, ENS AD Auditor, Studio, Rosetta de ida y vuelta, Norvik, MCP-Shield con su sobre hostil y los sobres `bia`, `soa` y `hallazgos` de las herramientas hermanas, que dan exactamente el mismo resultado que sus ficheros nativos), correspondencias sin texto ISO, diccionarios ES/EN y coherencia del repositorio.
+- **Motor TypeScript:** 230 pruebas con Vitest: fórmula y grafo, importadores con casos hostiles (ZAP, Burp con su DTD inerte, PingCastle y Certipy incluidos), validación ofensiva y *retest*, deduplicación, KEV/EPSS, perfiles y políticas de plazos, riesgo aceptado, ATT&CK y capa de Navigator, simulación, SLA, exportaciones, ecosistema (sobre común, KAIROS con dependencias, ENS AD Auditor, Studio, Rosetta de ida y vuelta, Norvik, MCP-Shield con su sobre hostil y los sobres `bia`, `soa` y `hallazgos` de las herramientas hermanas, que dan exactamente el mismo resultado que sus ficheros nativos), correspondencias sin texto ISO, diccionarios ES/EN, guardado en IndexedDB (migración, cuota agotada, sin almacenamiento), análisis XML por partes, copia del proyecto en el Worker con parches y respuestas en trozos, plan «¿Y si…?» incremental idéntico al anterior en 300 grafos, agrupación por CVE, grafo resumido, exportación por partes y coherencia del repositorio.
 - **Motor Python y API:** 29 pruebas con Pytest: endpoints, Nmap multipart, XML con entidades, fórmulas CSV, paridad con el fichero dorado en los tres perfiles y las cuatro políticas de plazos, y validación de los sobres de ejemplo (también `bia`, `soa` y los `hallazgos` de ENS AD Auditor y MCP-Shield) contra el esquema JSON, que rechaza datos imposibles.
-- **Navegador (e2e):** 164 comprobaciones con Playwright sobre el HTML autocontenido: CSP, red bloqueada, todas las vistas e importadores (también ZAP, Burp, PingCastle y Certipy), validación registrada y *retest*, grafo, simulación, informe en PDF, Jira y GitHub validados, vista Ecosistema con los seis importadores, los sobres de KAIROS, Studio, ENS AD Auditor y MCP-Shield y las cuatro exportaciones, ficheros de ejemplo descargables, inglés completo en 18 pantallas y móvil sin recortes.
-- **Accesibilidad:** axe-core (WCAG 2.2 A/AA) en 236 estados (vistas, diálogos, formularios de validación y aceptación, vistas previas de importación, ayuda y búsqueda; claro y oscuro; 1440 y 390 px) y barrido de contraste propio: **0 infracciones**.
+- **Navegador (e2e):** 193 comprobaciones con Playwright sobre el HTML autocontenido: CSP, red bloqueada, todas las vistas e importadores (también ZAP, Burp, PingCastle y Certipy), validación registrada y *retest*, grafo, simulación, informe en PDF, Jira y GitHub validados, vista Ecosistema con los seis importadores, los sobres de KAIROS, Studio, ENS AD Auditor y MCP-Shield y las cuatro exportaciones, ficheros de ejemplo descargables, inglés completo en 18 pantallas, móvil sin recortes, guardado en IndexedDB que sobrevive a recargar con 6.000 hallazgos y avisa sin espacio, y un Nessus de 81 MB que se cancela, se resume, se agrupa y se importa sin bloquear la página (tablas virtualizadas con `aria-rowcount` y agrupación por CVE con teclado).
+- **Accesibilidad:** axe-core (WCAG 2.2 A/AA) en 256 estados (vistas, diálogos, formularios de validación y aceptación, vistas previas de importación, avisos de guardado, Priorización agrupada, grafo resumido y resumen previo de un escaneo enorme, ayuda y búsqueda; claro y oscuro; 1440 y 390 px) y barrido de contraste propio: **0 infracciones**.
+- **Carga (CI, 1.3.0):** un proyecto sintético de 50.000 hallazgos y 2.000 activos se importa, se calcula, se recorre vista a vista, se recarga y se exporta sin perder nada (`tests/carga_app.py`). En un portátil, cada vista se pinta en menos de 150 ms y ninguna tarea bloquea la página mucho más de 100 ms; importar, guardar y exportar no la bloquean nada. Las cifras de cada ejecución quedan en el resumen de la CI.
 - **Lighthouse 12** (con gzip, como en Pages; mediana de tres pasadas en la 1.0.0): rendimiento **96** · accesibilidad 100 · buenas prácticas 100 · SEO 100. Las vistas se cargan bajo demanda; el HTML autocontenido, que lo lleva todo en un fichero, da 94.
 
 ## <img src="docs/assets/icons/list-checks.svg" width="20" height="20" valign="middle"/> Limitaciones conocidas
@@ -363,7 +368,7 @@ ctem-nexus/
 
 ## <img src="docs/assets/icons/route.svg" width="20" height="20" valign="middle"/> Hoja de ruta
 
-Las fases 0 a 7 están cerradas: de la higiene del repositorio a la 1.2.0, en la que las herramientas hermanas ya exportan e importan el sobre común. Lo que viene, hasta la 2.0 (datos reales a escala, cifrado, grafo exacto, CVSS 4.0 y SSVC, superficie externa, validación y detección, gobierno y riesgo en euros), está en [ROADMAP.md](ROADMAP.md); los cambios de cada versión, en [CHANGELOG.md](CHANGELOG.md), y cómo colaborar, en [CONTRIBUTING.md](CONTRIBUTING.md).
+Las fases 0 a 8 están cerradas: de la higiene del repositorio a la 1.3.0, que guarda en IndexedDB y va fluida con 50.000 hallazgos. Lo que viene, hasta la 2.0 (cifrado, grafo exacto, CVSS 4.0 y SSVC, superficie externa, validación y detección, gobierno y riesgo en euros), está en [ROADMAP.md](ROADMAP.md); los cambios de cada versión, en [CHANGELOG.md](CHANGELOG.md), y cómo colaborar, en [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Licencia e independencia
 

@@ -1,18 +1,19 @@
 /* «¿Y si…?»: marca hallazgos como corregidos en borrador y ve al instante qué pasa con el índice, los críticos, el KEV
  * y las rutas. El plan propuesto es voraz sobre el grafo (rompe más rutas por hallazgo en cada paso). No toca el proyecto. */
 import { Eraser, FileText, FlaskConical, Sparkles, Wand2 } from 'lucide-react';
-import { useRef, useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useVentana } from '../lib/ventana';
 import { AttackGraph } from '../components/AttackGraph';
 import { TopBar } from '../components/Shell';
 import { DemoBadge, Empty, PageHeader, Reveal, SectionTitle } from '../components/ui';
 import { isActive } from '../engine/engine';
-import { pathsBrokenBy } from '../engine/impact';
+import { pathsBrokenBy, rutasRotasPorSolo } from '../engine/impact';
 import { fixPlan, simulate } from '../engine/simulate';
 import { useL } from '../i18n';
-import { useResult } from '../lib/analysis';
+import { calcularEnSegundoPlano, UMBRAL_WORKER, useResult } from '../lib/analysis';
 import { download, stamp } from '../lib/download';
 import { BAND_COLOR, locale, n1, plural } from '../lib/format';
+import type { EngineResult } from '../engine/types';
 import { useStore } from '../store/store';
 
 function Delta({ label, before, after, decimals = false, testId }: { label: string; before: number; after: number; decimals?: boolean; testId?: string }) {
@@ -43,7 +44,18 @@ export function Simulation() {
 
   const input = useMemo(() => ({ assets: project.assets, findings: project.findings, edges: project.edges, profile: project.profile ?? 'defecto' as const, slaPolicy: project.slaPolicy ?? 'estandar' as const }), [project]);
   const fixedSet = useMemo(() => new Set(fixed), [fixed]);
-  const after = useMemo(() => simulate(input, fixed), [input, fixed]);
+  // Sin nada marcado, «después» es el resultado actual. Con proyectos grandes, la simulación va al Worker.
+  const grande = project.findings.length > UMBRAL_WORKER;
+  const deUna = useMemo(() => (!fixed.length ? result : grande ? null : simulate(input, fixed)), [fixed, result, grande, input]);
+  const [diferido, setDiferido] = useState<{ fixed: string[]; input: typeof input; r: EngineResult } | null>(null);
+  useEffect(() => {
+    if (deUna) return;
+    let vigente = true;
+    void calcularEnSegundoPlano(input, 'simulacion', fixed).then((r) => { if (vigente && r) setDiferido({ fixed, input, r }); });
+    return () => { vigente = false; };
+  }, [deUna, input, fixed]);
+  const simulando = !deUna && !(diferido?.fixed === fixed && diferido.input === input);
+  const after = deUna ?? diferido?.r ?? result;
   const plan = useMemo(() => fixPlan(result, project.findings, 10), [result, project.findings]);
   const fById = useMemo(() => new Map(project.findings.map((f) => [f.id, f])), [project.findings]);
   const aName = useMemo(() => new Map(project.assets.map((a) => [a.id, a.name])), [project.assets]);
@@ -108,7 +120,9 @@ export function Simulation() {
       <div className="mx-auto flex max-w-[1240px] flex-col gap-5 px-4 pb-8 sm:px-8">
         {header}
 
-        <Reveal as="section" delay={0.04} className="panel grid grid-cols-2 gap-px overflow-hidden bg-[var(--color-hairline-strong)] sm:grid-cols-5 [&>*]:bg-surface [&>*:last-child]:col-span-2 sm:[&>*:last-child]:col-span-1" aria-label={L('Antes y después', 'Before and after')} aria-live="polite">
+        <p role="status" className="-mb-3 min-h-0 text-xs text-ink-3" data-testid="aviso-simulacion">{simulando ? L('Calculando la simulación…', 'Computing the simulation…') : ''}</p>
+
+        <Reveal as="section" delay={0.04} className="panel grid grid-cols-2 gap-px overflow-hidden bg-[var(--color-hairline-strong)] sm:grid-cols-5 [&>*]:bg-surface [&>*:last-child]:col-span-2 sm:[&>*:last-child]:col-span-1" aria-label={L('Antes y después', 'Before and after')} aria-live="polite" aria-busy={simulando} data-simulando={simulando ? '1' : undefined}>
           <Delta label={L('Índice de exposición', 'Exposure index')} before={b.exposureIndex} after={a.exposureIndex} decimals testId="sim-indice" />
           <Delta label={L('Críticos abiertos', 'Open critical')} before={b.byBand.critica} after={a.byBand.critica} />
           <Delta label={L('En CISA KEV', 'In CISA KEV')} before={b.kevOpen} after={a.kevOpen} />
@@ -159,7 +173,7 @@ export function Simulation() {
               {v.arriba > 0 && <li aria-hidden="true" data-hueco="1" style={{ height: v.arriba }} />}
               {candidates.slice(v.inicio, v.fin).map((s) => {
                 const f = fById.get(s.id)!;
-                const solo = pathsBrokenBy(result.graph, [s.id]);
+                const solo = rutasRotasPorSolo(result.graph).get(s.id) ?? 0;
                 const step = stepOf.get(s.id);
                 return (
                   <li key={s.id}>

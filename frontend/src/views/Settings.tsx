@@ -5,16 +5,16 @@ import { ScanUploader } from '../components/ScanUploader';
 import { PROFILE_IDS, PROFILES, type Weights } from '../engine/constants';
 import { prioritize } from '../engine/engine';
 import { SOURCE_LABEL } from '../engine/scanners';
-import type { ProfileId } from '../engine/types';
+import type { EngineResult, ProfileId } from '../engine/types';
 import { n1, plural } from '../lib/format';
 import { Modal, TopBar } from '../components/Shell';
 import { Field, PageHeader, ScoreBar, SectionTitle, Segmented, Toggle } from '../components/ui';
-import { pingApi } from '../lib/analysis';
-import { download, stamp } from '../lib/download';
+import { calcularEnSegundoPlano, pingApi, UMBRAL_WORKER } from '../lib/analysis';
 import { esCancelacion, leerProyectoEnSegundoPlano } from '../lib/segundo-plano';
 import { espacio } from '../lib/persistencia';
 import { chrome, screen, useL } from '../i18n';
 import { useStore } from '../store/store';
+import { exportarProyecto } from '../lib/exportar';
 
 export function Settings() {
   const lang = useStore((s) => s.lang);
@@ -47,12 +47,24 @@ export function Settings() {
     banca: L('Amenaza dirigida (DORA, pruebas TLPT): pesan más la explotación real y la exposición a Internet.', 'Targeted threat (DORA, TLPT testing): real exploitation and Internet exposure weigh more.'),
   };
   const FACTOR: Record<keyof Weights, string> = { severidad: L('Severidad', 'Severity'), explotabilidad: L('Explotabilidad', 'Exploitability'), criticidad: L('Criticidad', 'Criticality'), exposicion: L('Exposición', 'Exposure'), proximidad: L('Proximidad', 'Proximity') };
-  const byProfile = useMemo(() => {
-    if (!project.findings.length) return null;
-    const out = {} as Record<ProfileId, ReturnType<typeof prioritize>>;
-    for (const p of PROFILE_IDS) out[p] = prioritize({ assets: project.assets, findings: project.findings, edges: project.edges, profile: p, slaPolicy: project.slaPolicy });
-    return out;
-  }, [project.assets, project.findings, project.edges]);
+  // Comparar perfiles es calcular el motor tres veces: con proyectos grandes, en el Worker (y mientras, «calculando»).
+  const grande = project.findings.length > UMBRAL_WORKER;
+  const entradas = useMemo(() => PROFILE_IDS.map((p) => ({ assets: project.assets, findings: project.findings, edges: project.edges, profile: p, slaPolicy: project.slaPolicy })), [project.assets, project.findings, project.edges, project.slaPolicy]);
+  const deUna = useMemo(() => {
+    if (grande || !project.findings.length) return null;
+    return Object.fromEntries(entradas.map((e) => [e.profile, prioritize(e)])) as Record<ProfileId, EngineResult>;
+  }, [grande, entradas, project.findings.length]);
+  const [diferido, setDiferido] = useState<{ de: typeof entradas; r: Record<ProfileId, EngineResult> } | null>(null);
+  useEffect(() => {
+    if (!grande) return;
+    let vigente = true;
+    void Promise.all(entradas.map((e) => calcularEnSegundoPlano(e, `perfil:${e.profile}`))).then((rs) => {
+      if (vigente && rs.every(Boolean)) setDiferido({ de: entradas, r: Object.fromEntries(rs.map((r, i) => [entradas[i].profile, r])) as Record<ProfileId, EngineResult> });
+    });
+    return () => { vigente = false; };
+  }, [grande, entradas]);
+  const byProfile = deUna ?? (diferido?.de === entradas ? diferido.r : null);
+  const comparando = grande && !byProfile;
   const bandShift = (p: ProfileId) => {
     if (!byProfile || p === profile) return 0;
     const cur = new Map(byProfile[profile].scored.map((x) => [x.id, x.band]));
@@ -109,6 +121,7 @@ export function Settings() {
                 </div>
               ))}
             </dl>
+            {comparando && <p role="status" className="mt-3 text-xs text-ink-3">{L('Calculando la comparación de perfiles…', 'Computing the profile comparison…')}</p>}
             {byProfile && (
               <ul className="grid gap-2 sm:grid-cols-3" aria-label={L('Efecto de cada perfil en este proyecto', 'Effect of each profile on this project')}>
                 {PROFILE_IDS.map((p) => (
@@ -159,7 +172,7 @@ export function Settings() {
         <section className="panel overflow-hidden">
           <SectionTitle title={L('Datos', 'Data')} detail={L('Formato JSON propio (format: ctem-nexus). Al importar se validan y sanean todos los campos.', 'Own JSON format (format: ctem-nexus). Every field is validated and sanitized on import.')} />
           <div className="flex flex-wrap gap-2 border-t border-hairline px-5 py-4">
-            <button type="button" className="btn" onClick={() => { download(`ctem-nexus-${stamp()}.json`, JSON.stringify(project, null, 2), 'application/json'); notify(chrome[lang].exported); }}><Download />{L('Exportar proyecto JSON', 'Export project JSON')}</button>
+            <button type="button" className="btn" onClick={() => { void exportarProyecto(project).then(() => notify(chrome[lang].exported)); }}><Download />{L('Exportar proyecto JSON', 'Export project JSON')}</button>
             <input ref={fileRef} type="file" accept=".json,application/json" className="hidden" onChange={async (e) => {
               const file = e.target.files?.[0]; e.target.value = '';
               if (!file) return;

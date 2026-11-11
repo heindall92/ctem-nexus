@@ -86,7 +86,8 @@ export function Ecosystem() {
   const assets = project.assets;
   const aName = new Map(assets.map((a) => [a.id, a.name]));
 
-  const evidence = useMemo(() => controlEvidence(project.findings, assets, result), [project.findings, assets, result]);
+  // Para la vista bastan los totales y los hallazgos graves; la lista completa se construye al exportar.
+  const evidence = useMemo(() => controlEvidence(project.findings, assets, result, new Date(), { soloGraves: true }), [project.findings, assets, result]);
   const contra = useMemo(() => contradictions(evidence, project.rosetta), [evidence, project.rosetta]);
   const kairosLinked = assets.filter((a) => a.tags.some((t) => t.startsWith('kairos:')));
   const adFindings = project.findings.filter((f) => f.sources?.includes('adauditor'));
@@ -181,7 +182,7 @@ export function Ecosystem() {
   // Exportaciones.
   const version = __APP_VERSION__;
   const exportRosetta = () => {
-    const env = makeEnvelope('hallazgos', evidence, version, { proyecto: project.name, resumen: { indice: result.summary.exposureIndex, abiertos: result.summary.openFindings, porBanda: result.summary.byBand, kev: result.summary.kevOpen, rutas: result.summary.attackPaths } });
+    const env = makeEnvelope('hallazgos', controlEvidence(project.findings, assets, result), version, { proyecto: project.name, resumen: { indice: result.summary.exposureIndex, abiertos: result.summary.openFindings, porBanda: result.summary.byBand, kev: result.summary.kevOpen, rutas: result.summary.attackPaths } });
     download(`ctem-nexus_rosetta_${slug(project.name)}_${stamp()}.json`, json(env), 'application/json');
     logEco({ tool: 'rosetta', dir: 'salida', tipo: 'hallazgos', detail: `${evidence.length} controles con evidencia` });
     notify(L('Evidencia por control exportada para Rosetta.', 'Per-control evidence exported for Rosetta.'));

@@ -43,12 +43,14 @@ export function AttackPaths() {
   const rutasRef = useRef<HTMLOListElement>(null);
   const valTbody = useRef<HTMLTableSectionElement>(null);
   const contenido = useCallback(() => document.getElementById('contenido'), []);
-  const fById = new Map(project.findings.map((f) => [f.id, f]));
-  const edgeFindings = new Set(g.edges.flatMap((e) => e.findingIds));
-  const toValidate = result.scored.filter((s) => {
-    const f = fById.get(s.id);
-    return f && f.status !== 'mitigado' && (edgeFindings.has(s.id) || f.leadsTo?.length || (s.onAttackPath && (s.band === 'critica' || s.band === 'alta')));
-  });
+  const fById = useMemo(() => new Map(project.findings.map((f) => [f.id, f])), [project.findings]);
+  const toValidate = useMemo(() => {
+    const edgeFindings = new Set(g.edges.flatMap((e) => e.findingIds));
+    return result.scored.filter((s) => {
+      const f = fById.get(s.id);
+      return f && f.status !== 'mitigado' && (edgeFindings.has(s.id) || f.leadsTo?.length || (s.onAttackPath && (s.band === 'critica' || s.band === 'alta')));
+    });
+  }, [g.edges, result.scored, fById]);
   const vr = useVentana(visiblePaths.length, 52, rutasRef, rutasRef);
   const vv = useVentana(toValidate.length, 60, contenido, valTbody);
 

@@ -29,23 +29,29 @@ export function ExposureLanes({ items, assets, onOpen }: { items: LaneItem[]; as
   const [active, setActive] = useState<string | null>(null);
 
   const rows = useMemo(() => {
-    const by = new Map<string, LaneItem[]>();
-    for (const it of items) by.set(it.finding.assetId, [...(by.get(it.finding.assetId) ?? []), it]);
-    return [...by.entries()]
-      .map(([assetId, list]) => {
-        const sorted = [...list].sort((a, b) => a.scored.score - b.scored.score);
-        // Enjambre por carriles: cada marca va al primer carril cuyo último ocupante esté a NEAR puntos o más.
-        const lastInLane: number[] = [];
-        const placed: Array<{ it: LaneItem; lane: number }> = [];
-        for (const it of sorted) {
-          let lane = lastInLane.findIndex((x) => it.scored.score - x >= NEAR);
-          if (lane === -1) lane = lastInLane.length;
-          lastInLane[lane] = it.scored.score;
-          placed.push({ it, lane });
-        }
-        return { asset: assets.find((a) => a.id === assetId), assetId, max: sorted[sorted.length - 1].scored.score, placed, lanes: lastInLane.length };
-      })
-      .sort((a, b) => b.max - a.max);
+    // Por activo (añadiendo, sin copiar la lista en cada hallazgo) y con su puntuación más alta.
+    const by = new Map<string, { list: LaneItem[]; max: number }>();
+    for (const it of items) {
+      const e = by.get(it.finding.assetId);
+      if (e) { e.list.push(it); if (it.scored.score > e.max) e.max = it.scored.score; } else by.set(it.finding.assetId, { list: [it], max: it.scored.score });
+    }
+    const aById = new Map(assets.map((a) => [a.id, a]));
+    const orden = [...by.entries()].sort((a, b) => b[1].max - a[1].max);
+    // Los carriles solo se calculan para las filas que se pintan.
+    return orden.map(([assetId, { list, max }], i) => {
+      if (i >= MAX_ROWS) return { asset: aById.get(assetId), assetId, max, placed: [] as Array<{ it: LaneItem; lane: number }>, lanes: 0 };
+      const sorted = [...list].sort((a, b) => a.scored.score - b.scored.score);
+      // Enjambre por carriles: cada marca va al primer carril cuyo último ocupante esté a NEAR puntos o más.
+      const lastInLane: number[] = [];
+      const placed: Array<{ it: LaneItem; lane: number }> = [];
+      for (const it of sorted) {
+        let lane = lastInLane.findIndex((x) => it.scored.score - x >= NEAR);
+        if (lane === -1) lane = lastInLane.length;
+        lastInLane[lane] = it.scored.score;
+        placed.push({ it, lane });
+      }
+      return { asset: aById.get(assetId), assetId, max, placed, lanes: lastInLane.length };
+    });
   }, [items, assets]);
 
   const shown = rows.slice(0, MAX_ROWS);

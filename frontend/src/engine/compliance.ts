@@ -2,7 +2,7 @@
  * Cuenta los abiertos o validados y los mitigados con fecha de cierre. Fuera quedan los no explotables y los aceptados
  * (tienen su propio control por caducidad). Incumplido = cerrado tarde o abierto con el plazo vencido. */
 import { isActive } from './engine';
-import { daysBetween, slaInfo } from './sla';
+import { slaInfo } from './sla';
 import type { Asset, Band, EngineResult, Finding } from './types';
 
 export interface SlaBucket {
@@ -28,7 +28,17 @@ export interface SlaCompliance {
 
 const empty = (): SlaBucket => ({ total: 0, closedOnTime: 0, closedLate: 0, openInTime: 0, openOverdue: 0, compliance: null });
 const close = (b: SlaBucket) => { b.compliance = b.total ? Math.round(((b.closedOnTime + b.openInTime) / b.total) * 1000) / 1000 : null; return b; };
-const parse = (iso: string) => new Date(`${iso.slice(0, 10)}T00:00:00Z`);
+// Día UTC (ms) de una fecha AAAA-MM-DD, guardado: con 50.000 hallazgos, crear dos Date por hallazgo pesaba.
+const DIA = 86_400_000;
+const dias = new Map<string, number>();
+const dia = (iso: string): number => {
+  const k = iso.slice(0, 10);
+  let v = dias.get(k);
+  if (v === undefined) { if (dias.size > 20_000) dias.clear(); v = Date.parse(`${k}T00:00:00Z`); dias.set(k, v); }
+  return v;
+};
+/** Días enteros entre dos fechas (igual que daysBetween con fechas a medianoche UTC). */
+const entre = (a: number, b: number) => Math.round((b - a) / DIA);
 
 export const NO_OWNER = '—';
 
@@ -40,6 +50,7 @@ export function slaCompliance(findings: Finding[], assets: Asset[], result: Engi
   const byOwner = new Map<string, SlaBucket>();
   const aging = { d0_7: 0, d8_30: 0, d31_90: 0, d90: 0 };
   const overdueList: SlaCompliance['overdueList'] = [];
+  const hoyUtc = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
 
   for (const f of findings) {
     const s = sc.get(f.id);
@@ -51,14 +62,14 @@ export function slaCompliance(findings: Finding[], assets: Asset[], result: Engi
     byOwner.set(who, bucket);
     const targets = [overall, byBand[s.band], bucket];
     if (closed) {
-      const late = daysBetween(parse(f.detectedAt), parse(f.resolvedAt!)) > s.slaDays;
+      const late = entre(dia(f.detectedAt), dia(f.resolvedAt!)) > s.slaDays;
       for (const b of targets) { b.total++; if (late) b.closedLate++; else b.closedOnTime++; }
     } else {
       const info = slaInfo(f.detectedAt, s.slaDays, today);
       const over = info.state === 'vencido';
       for (const b of targets) { b.total++; if (over) b.openOverdue++; else b.openInTime++; }
       if (over) overdueList.push({ id: f.id, daysOver: -info.daysLeft, owner: who, band: s.band });
-      const age = daysBetween(parse(f.detectedAt), today);
+      const age = entre(dia(f.detectedAt), hoyUtc);
       if (age <= 7) aging.d0_7++; else if (age <= 30) aging.d8_30++; else if (age <= 90) aging.d31_90++; else aging.d90++;
     }
   }

@@ -2,7 +2,7 @@
  * (lo comprueban frontend/src/engine/engine.test.ts y backend/tests/test_parity.py). */
 import type { Band, ProfileId, SlaPolicy } from './types';
 
-export const ENGINE_VERSION = '1.2.1';
+export const ENGINE_VERSION = '1.3.0';
 
 export interface Weights { severidad: number; explotabilidad: number; criticidad: number; exposicion: number; proximidad: number }
 

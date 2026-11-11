@@ -39,8 +39,8 @@ export interface FixPlan {
  */
 export function fixPlan(result: EngineResult, findings: Finding[], limit = 10): FixPlan {
   const g = result.graph;
-  const score = new Map(result.scored.map((s) => [s.id, s.score]));
-  const active = new Set(findings.filter(isActive).map((f) => f.id));
+  const active = new Set<string>();
+  for (const f of findings) if (isActive(f)) active.add(f.id);
 
   // Índices: aristas que se pueden cortar (no manuales, con hallazgos), por hallazgo; y rutas por arista.
   const cortables = g.edges.filter((e) => !e.manual && e.findingIds.length > 0);
@@ -60,22 +60,27 @@ export function fixPlan(result: EngineResult, findings: Finding[], limit = 10): 
   const ganancia = (fresh: string[], elegidos: Set<string>, cortadas: Set<number>, rotas: Set<number>): { aristas: number[]; rutas: Set<number> } => {
     const extra = new Set(fresh);
     const aristas: number[] = [];
+    const vistas = new Set<number>();
     const rutas = new Set<number>();
     for (const f of fresh) {
       for (const k of aristasDe.get(f) ?? []) {
-        if (cortadas.has(k) || aristas.includes(k) || !cortadaCon(k, elegidos, extra)) continue;
+        if (cortadas.has(k) || vistas.has(k) || !cortadaCon(k, elegidos, extra)) continue;
         aristas.push(k);
+        vistas.add(k);
         for (const r of rutasDe[k]) if (!rotas.has(r)) rutas.add(r);
       }
     }
     return { aristas, rutas };
   };
-  const allCut = ganancia([...active], new Set(), new Set(), new Set()).rutas.size;
+  const allCut = g.paths.length ? ganancia([...active].filter((id) => aristasDe.has(id)), new Set(), new Set(), new Set()).rutas.size : 0;
+  const score = new Map<string, number>();
+  if (allCut) for (const s of result.scored) score.set(s.id, s.score);
 
   // Grupos candidatos: cada hallazgo suelto y, por cada arista, el conjunto de hallazgos activos que la sostienen.
+  // Solo los que sostienen alguna arista: los demás no rompen rutas (ganancia 0) y no cambian la elección.
   const groups = new Map<string, string[]>();
-  for (const id of active) groups.set(id, [id]);
-  for (const e of g.edges) {
+  if (allCut) for (const id of active) if (aristasDe.has(id)) groups.set(id, [id]);
+  if (allCut) for (const e of g.edges) {
     if (e.manual || e.findingIds.length < 2 || !e.findingIds.every((id) => active.has(id))) continue;
     const ids = [...e.findingIds].sort();
     groups.set(ids.join('+'), ids);

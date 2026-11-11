@@ -6,7 +6,9 @@ import { describe, expect, it } from 'vitest';
 import { importFindings, MAX_FILAS, parseProject, type Project } from './io';
 import { planImport } from './merge';
 import { MAX_ITEMS, parseNessus, parseNuclei, parseOpenVas, reducirEscaneo, resumenEscaneo, UMBRAL_RESUMEN, type ScanParse } from './scanners';
-import { atender, leerEscaneo, MAX_FICHERO, type Lectura, type Progreso } from './tareas';
+import { atender, cambiosEntre, CopiaMotor, leerEscaneo, MAX_FICHERO, recomponer, trocear, TROZO, type Lectura, type Progreso } from './tareas';
+import { prioritize } from './engine';
+import { simulate } from './simulate';
 import type { Asset, Finding } from './types';
 import { MAX_XML_BYTES, porPartes } from './xml';
 
@@ -167,5 +169,40 @@ describe('carga: 50.000 hallazgos y 2.000 activos', () => {
     expect(plan.newAssets).toHaveLength(500);
     expect(plan.newFindings.length + plan.updatedFindings.length + plan.duplicatesInFile).toBe(20000);
     expect(new Set(plan.newFindings.map((f) => f.id)).size).toBe(plan.newFindings.length);
+  });
+});
+
+describe('copia del proyecto en el Worker y respuestas en trozos', () => {
+  const activos: Asset[] = Array.from({ length: 30 }, (_, i) => ({ id: `A${i}`, name: `A${i}`, type: 'servidor', ip: '', owner: '', criticality: (i % 6 === 0 ? 5 : 2) as Asset['criticality'], internetExposed: i % 4 === 0, tags: [] }));
+  const hallazgos: Finding[] = Array.from({ length: 12000 }, (_, i) => ({ id: `H${i}`, title: `F${i}`, kind: 'cve', cve: `CVE-2024-${10000 + (i % 900)}`, cvss: 4 + (i % 6), epss: 0.2, kev: i % 50 === 0, exploitPublic: i % 7 === 0, assetId: `A${i % 30}`, status: 'abierto', remediation: 'patch_cve', leadsTo: i % 40 === 0 ? [`A${(i + 1) % 30}`] : [] }));
+
+  it('mandada en trozos y corregida con parches, calcula lo mismo que el motor en la página', () => {
+    const c = new CopiaMotor();
+    c.aplicar({ id: 0, tipo: 'base', parte: 'inicio' });
+    for (let i = 0; i < hallazgos.length; i += TROZO) c.aplicar({ id: 0, tipo: 'base', parte: 'trozo', findings: hallazgos.slice(i, i + TROZO) });
+    c.aplicar({ id: 0, tipo: 'base', parte: 'fin', assets: activos, edges: [] });
+    const calc = (fijados: string[] = []) => c.calcular({ id: 1, tipo: 'calcular', canal: 'x', profile: 'defecto', slaPolicy: 'estandar', fijados });
+    expect(calc()).toEqual(prioritize({ assets: activos, findings: hallazgos, edges: [], profile: 'defecto', slaPolicy: 'estandar' }));
+    // Un cambio de estado: solo viaja ese hallazgo.
+    const editados = hallazgos.map((f, i) => (i === 40 ? { ...f, status: 'mitigado' as const } : f));
+    const cambios = cambiosEntre(hallazgos, editados);
+    expect(cambios).toEqual([[40, editados[40]]]);
+    c.aplicar({ id: 0, tipo: 'parche', longitud: editados.length, cambios });
+    expect(calc()).toEqual(prioritize({ assets: activos, findings: editados, edges: [], profile: 'defecto', slaPolicy: 'estandar' }));
+    // «¿Y si…?» sobre la copia = simulate en la página.
+    expect(calc(['H0', 'H80'])).toEqual(simulate({ assets: activos, findings: editados, edges: [], profile: 'defecto', slaPolicy: 'estandar' }, ['H0', 'H80']));
+  });
+
+  it('las listas grandes viajan en trozos y se recomponen igual', () => {
+    const r = prioritize({ assets: activos, findings: hallazgos, edges: [] });
+    const mensajes = trocear(7, r);
+    expect(mensajes.length).toBe(Math.ceil(r.scored.length / TROZO) + 1);
+    const ultimo = mensajes.at(-1) as { result: typeof r; troceado: string };
+    expect(ultimo.troceado).toBe('scored');
+    expect(ultimo.result.scored).toEqual([]);
+    const trozos = mensajes.slice(0, -1).map((m) => (m as { trozo: unknown[] }).trozo);
+    expect(recomponer(ultimo.result, ultimo.troceado, trozos)).toEqual(r);
+    // Lo pequeño va de una vez.
+    expect(trocear(8, { format: 'ctem-nexus', findings: [1, 2, 3] })).toEqual([{ id: 8, result: { format: 'ctem-nexus', findings: [1, 2, 3] } }]);
   });
 });
